@@ -41,10 +41,15 @@ Do not combine the governing documentation change and its implementation into on
 
 - Keep commits small, cohesive, and reviewable.
 - Use imperative commit subjects and explain why in the body when the reason is not obvious.
+- Use `main` as the primary branch. New work should use short-lived branches named `feature/<topic>`, `fix/<topic>`, `docs/<topic>`, or `chore/<topic>` unless the user approves another convention.
 - Do not rewrite, squash, amend, reset, force-push, or delete user history without explicit approval.
+- Do not push, publish a branch, create a tag/release, or change an upstream without explicit user approval.
 - Preserve unrelated user changes. Never discard or overwrite work that is not part of the approved scope.
 - Do not claim a commit exists unless Git confirms it.
 - Do not commit secrets, kubeconfigs, credentials, cluster dumps, identifiable production data, or local machine artifacts.
+- Before each commit, inspect `git status`, review the staged diff, and run `git diff --check`. Before publication, also verify the intended remote/upstream, run the relevant tests, and ensure `git fsck` reports no repository corruption.
+- Configure a real repository-local author name and verified email before publishing. Automation identities must be clearly labeled and approved; never impersonate the user.
+- macOS AppleDouble files (`._*`) are prohibited. Repositories on ExFAT are particularly vulnerable: `.gitignore` protects only the worktree and cannot protect `.git`. Prefer an APFS/native Git working copy, inspect `.git` for AppleDouble files before publication, and obtain approval before deleting or repairing metadata.
 
 ## 5. Safety and Kubernetes constraints
 

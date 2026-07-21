@@ -1,7 +1,7 @@
 # Development process
 
 Status: Accepted  
-Last updated: 2026-07-21
+Last updated: 2026-07-22
 
 ## 1. Change lifecycle
 
@@ -45,3 +45,17 @@ Any new or upgraded dependency requires documented purpose, alternatives, licens
 
 Real cluster access always needs explicit approval naming the context and read-only operation. Record commands and sanitization approach. Never commit kubeconfigs or raw cluster output.
 
+## 7. Git hygiene and publication
+
+- `main` is the primary branch. Use `feature/`, `fix/`, `docs/`, or `chore/` prefixes for short-lived branches.
+- Review `git status`, the staged diff, and `git diff --check` before every commit.
+- Publishing, pushing, changing upstreams, tagging, releasing, rewriting history, and force-pushing require explicit user approval.
+- Before first publication, verify the remote URL and default branch, run applicable quality gates, confirm the working tree is clean, and run `git fsck`.
+- Use a repository-local real author identity and verified email for human commits. Clearly identify approved automation commits.
+- Never commit credentials, kubeconfigs, raw provider exports, unsanitized cluster data, local overrides, generated reports, or machine-specific files.
+- macOS `._*` AppleDouble files must not be tracked. Prefer APFS for active Git working copies. On ExFAT, verify that AppleDouble files have not entered `.git`; `.gitignore` cannot protect Git's internal directory.
+- If repository integrity checks report invalid refs or bad objects, stop publication. Diagnose and obtain approval before deleting metadata, repairing refs, recloning, or rewriting history.
+
+## 8. Ignore policy
+
+The root `.gitignore` is the canonical ignore policy. Keep it narrow enough that source, schemas, catalog records, fixtures, examples, and documentation remain visible. Secrets are ignored only as a last line of defense; contributors remain responsible for never creating or staging sensitive material in the repository.

@@ -2,6 +2,14 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-22 — Git hygiene and publication rules
+
+- Standardized the `main` branch and short-lived branch prefixes.
+- Added pre-commit and pre-publication integrity checks.
+- Required explicit approval for pushes, upstream changes, tags, releases, and history rewrites.
+- Documented author identity, sensitive-file, and macOS/ExFAT AppleDouble safeguards.
+- Established the root `.gitignore` as the canonical ignore policy.
+
 ## 2026-07-22 — Local-first provider and catalog lifecycle
 
 - Superseded offline-by-default behavior with default `auto` AKS evidence through the local authenticated Azure CLI.
