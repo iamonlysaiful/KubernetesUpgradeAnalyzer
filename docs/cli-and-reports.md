@@ -1,13 +1,15 @@
 # CLI and report contracts
 
 Status: Proposed for implementation  
-Last updated: 2026-07-21
+Last updated: 2026-07-22
 
 ## 1. Common flags
 
-Proposed common flags include `--context`, `--kubeconfig`, `--namespace`, `--timeout`, `--config`, `--output`, `--format`, `--catalog`, `--provider-evidence`, `--log-level`, and `--network-mode=offline`.
+Proposed common flags include `--context`, `--kubeconfig`, `--namespace`, `--timeout`, `--config`, `--output`, `--format`, `--catalog`, `--provider-source=auto`, `--provider-evidence`, `--subscription`, `--resource-group`, `--cluster-name`, and `--log-level`.
 
-No command mutates the cluster. An online mode is reserved and must fail as unsupported until separately approved and implemented.
+Provider source values are `auto`, `azure`, `file`, `offline`, and `none`. No command mutates the cluster or Azure resources.
+
+Standard kubeconfig resolution applies: explicit `--kubeconfig`, then normal client-go environment/default behavior; the current context is used unless `--context` is set. Multi-context batch analysis is not part of MVP.
 
 ## 2. Command behavior
 
@@ -17,6 +19,10 @@ No command mutates the cluster. An online mode is reserved and must fail as unsu
 - `kua compatibility`: run component and API compatibility; kubent is required in MVP.
 - `kua report --input assessment.json`: render canonical JSON without cluster access.
 - `kua version`: show build, Go, schema, and embedded catalog versions.
+
+`auto` provider behavior for detected AKS clusters is: use the local authenticated Azure CLI, fall back to supplied JSON evidence, then continue with exact provider availability `UNKNOWN`. `azure` and `file` require their named source. `offline` prohibits provider network access but may consume a local evidence file. `none` skips provider-specific analysis.
+
+KUA never starts `az login`; it reports the corrective command when authentication is missing or expired.
 
 ## 3. Output discipline
 
@@ -52,4 +58,3 @@ Exact automation semantics must be locked with CLI contract tests before impleme
 ## 6. HTML safety
 
 HTML is self-contained, escapes all evidence, uses no remote scripts/fonts/assets, and contains no executable user-provided markup. Markdown escapes or safely fences untrusted content.
-

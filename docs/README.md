@@ -20,10 +20,11 @@ The documents in this directory are the source of truth for KubeUpgrade Advisor.
 
 ## Architecture decisions
 
-- [`ADR-0001`](decisions/0001-offline-first.md): Offline-first execution
+- [`ADR-0001`](decisions/0001-offline-first.md): Original offline-first execution decision (superseded)
 - [`ADR-0002`](decisions/0002-aks-first-provider.md): AKS-first provider scope
 - [`ADR-0003`](decisions/0003-kubent-mvp-adapter.md): External kubent adapter for MVP
 - [`ADR-0004`](decisions/0004-destination-and-upgrade-path.md): Separate destination from sequential path
+- [`ADR-0005`](decisions/0005-local-first-provider-evidence.md): Local-first provider evidence and catalog lifecycle
 
 ## Document states
 
@@ -33,4 +34,3 @@ The documents in this directory are the source of truth for KubeUpgrade Advisor.
 - **Superseded**: retained for history and linked to its replacement.
 
 When documents disagree, accepted ADRs take precedence for the decision they cover, then product requirements, then architecture and subordinate contracts. Any conflict must be brought to the user rather than resolved silently.
-

@@ -1,7 +1,7 @@
 # Security and privacy
 
 Status: Proposed for implementation  
-Last updated: 2026-07-21
+Last updated: 2026-07-22
 
 ## 1. Trust boundaries
 
@@ -23,13 +23,15 @@ Before implementation, generate and review a least-privilege ClusterRole listing
 - Sanitize cluster UID/name, namespaces, workload names, node names, registry hosts, subscription/resource-group IDs, and event messages in fixtures and support bundles.
 - Reports may contain operational identifiers by default only when required for remediation; a future redacted report mode should be designed before external sharing.
 
-## 5. Offline guarantee
+## 5. Network and offline guarantees
 
-Default execution performs no DNS lookup, HTTP request, telemetry, update check, or cloud SDK call. Kubernetes API access is local/explicit cluster access and is not treated as general internet permission. External `kubent` invocation must receive flags/environment that prevent updates or telemetry where supported; its behavior/version must be documented and tested.
+Default `auto` mode may access the selected Kubernetes API and invoke the local Azure CLI for read-only AKS provider evidence. It performs no telemetry, arbitrary HTTP requests, update check, catalog download, vendor search, or page scraping. `--provider-source=offline` guarantees no Azure/provider network invocation; Kubernetes API access remains necessary for live analysis. External `kubent` invocation must receive flags/environment that prevent updates or telemetry where supported; its behavior/version must be documented and tested.
+
+Before invoking Azure CLI, KUA shows/logs the sanitized target identity and operation category. It uses the existing Azure authentication context, never initiates login, never changes the active subscription, never persists tokens, and never passes credentials on command arguments.
 
 ## 6. External process safety
 
-Resolve kubent from an explicit path or trusted PATH, validate its version, pass arguments without a shell, bound runtime/output, capture stdout/stderr separately, and redact diagnostics. Never interpolate resource data into a shell command.
+Resolve kubent and Azure CLI from explicit paths or trusted PATH, validate versions, pass arguments without a shell, bound runtime/output, capture stdout/stderr separately, and redact diagnostics. Permit only an allowlisted read-only Azure command shape. Never interpolate resource data into a shell command.
 
 ## 7. Supply chain
 
@@ -42,4 +44,3 @@ Pin Go modules, commit checksums, scan dependencies/licenses, produce reproducib
 - HTML/script injection: escape at renderer boundaries.
 - Symlink/output overwrite risk: validate paths and use safe atomic creation.
 - Sensitive log discovery: treat as a security defect; stop sharing artifacts and notify the user.
-

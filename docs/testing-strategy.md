@@ -1,7 +1,7 @@
 # Testing strategy
 
 Status: Proposed for implementation  
-Last updated: 2026-07-21
+Last updated: 2026-07-22
 
 ## 1. Test layers
 
@@ -23,6 +23,9 @@ Last updated: 2026-07-21
 - Unready nodes, pressure, CrashLoopBackOff, ImagePullBackOff, Pending, unbound PVC, unavailable workloads, and noisy events.
 - Mixed control-plane/node-pool versions.
 - Stale/missing/conflicting provider evidence.
+- Provider-source mode coverage: successful `auto` Azure CLI evidence, JSON fallback, failed/expired Azure authentication, unresolved AKS identity, strict `azure`/`file` failures, `none`, and proof that `offline` never invokes Azure CLI.
+- Azure CLI adapter command allowlisting, argument separation, subscription targeting, bounded output/runtime, and redaction.
+- Embedded catalog selection, validated local overrides, checksum/schema failures, and proof that assessment performs no catalog search, scrape, or download.
 - Malformed/hostile catalog, kubent output, image labels, events, and HTML content.
 
 ## 3. Determinism
@@ -45,4 +48,3 @@ Before each implementation commit is complete:
 ## 5. Coverage philosophy
 
 Prioritize decision branches and safety boundaries over a headline percentage. Every blocker rule, unknown-evidence transition, path-selection rule, redaction boundary, and exit code requires direct tests.
-

@@ -51,7 +51,7 @@ Do not combine the governing documentation change and its implementation into on
 - KUA itself must remain read-only against Kubernetes and provider APIs unless a future, separately approved design explicitly changes that boundary.
 - Prefer least-privilege access and document every required permission.
 - Never collect Kubernetes Secrets or secret payloads. Redact tokens, certificates, registry credentials, environment values, and sensitive annotations from logs, fixtures, and reports.
-- Offline is the default. No runtime outbound network access is permitted unless the user explicitly enables an approved feature that documents destinations, data sent, failure behavior, and auditability.
+- Local-first provider discovery is the default: approved read-only provider CLI commands may access their normal APIs as documented. `--provider-source=offline` must suppress provider network access. No telemetry, arbitrary web search, catalog scraping, or other outbound access is permitted unless an approved feature documents destinations, data sent, failure behavior, and auditability.
 - Never run a command against a live cluster unless the user explicitly approves the cluster and operation. Confirm the active context before any approved cluster command.
 - Use synthetic or sanitized fixtures for tests. Real cluster data requires explicit approval and documented sanitization.
 
@@ -77,4 +77,3 @@ Do not combine the governing documentation change and its implementation into on
 - Clearly label facts, proposals, assumptions, and accepted decisions.
 - Before implementation, summarize what will change, what will not change, and how it will be verified.
 - If blocked, state the exact blocker and the smallest decision or authorization needed.
-

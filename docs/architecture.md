@@ -1,11 +1,11 @@
 # Architecture
 
 Status: Proposed for implementation  
-Last updated: 2026-07-21
+Last updated: 2026-07-22
 
 ## 1. Architectural style
 
-KUA is a single Go CLI with a ports-and-adapters structure. Collection and external tools sit behind interfaces; analyzers consume a normalized snapshot; the recommendation engine consumes findings rather than raw Kubernetes clients. This makes offline fixture testing and future provider adapters possible without coupling core policy to AKS.
+KUA is a single Go CLI with a ports-and-adapters structure. Collection and external tools sit behind interfaces; analyzers consume a normalized snapshot; the recommendation engine consumes findings rather than raw Kubernetes clients. This makes deterministic fixture testing and future provider adapters possible without coupling core policy to AKS.
 
 ## 2. Logical flow
 
@@ -18,8 +18,10 @@ Preflight ----> capability/evidence limitations
    v
 Live Kubernetes collectors ----> normalized ClusterSnapshot
 External kubent adapter --------> API findings
-Optional AKS evidence ----------> provider candidates/rules
-Bundled catalog ----------------> API/component/provider knowledge
+AKS evidence resolver ----------> provider candidates/rules
+  |-- local Azure CLI (auto/azure)
+  `-- exported JSON (file/fallback)
+Embedded catalog ---------------> API/component/provider knowledge
                                    |
                                    v
         inventory + detectors + health + compatibility analyzers
@@ -44,11 +46,11 @@ Cobra command wiring only. It parses flags, loads configuration, builds dependen
 
 ### 3.2 Configuration
 
-Precedence: command flags, environment variables, config file, defaults. The effective non-sensitive configuration is captured in report metadata. Network mode defaults to `offline`; kube context defaults to the current context but must be shown before collection.
+Precedence: command flags, environment variables, config file, defaults. The effective non-sensitive configuration is captured in report metadata. Provider source defaults to `auto`; kubeconfig follows standard client-go resolution and the current context is used unless explicitly selected. The selected context and intended provider-source behavior must be shown before collection.
 
 ### 3.3 Preflight
 
-Validates kubeconfig/context, Kubernetes reachability, required discovery/RBAC access, `kubent` presence/version for relevant commands, catalog integrity, output path, and optional provider evidence. Missing optional capabilities become explicit limitations; missing required capabilities fail safely.
+Validates kubeconfig/context, Kubernetes reachability, required discovery/RBAC access, `kubent` presence/version for relevant commands, embedded/override catalog integrity, output path, provider mode, Azure CLI availability/authentication where applicable, and optional provider evidence. Missing optional capabilities become explicit limitations; missing required capabilities fail safely. KUA never initiates interactive Azure authentication.
 
 ### 3.4 Collectors
 
@@ -108,13 +110,17 @@ Canonical assessment JSON is the only renderer input. Console, Markdown, and HTM
 
 The provider-neutral interface returns provider identity confidence, candidate versions, upgrade edges, support status, and evidence metadata. The AKS adapter is first. Future EKS/GKE/OpenShift adapters implement the same contract.
 
-Offline AKS analysis can use:
+AKS evidence resolution modes are:
 
-1. bundled policy rules;
-2. a user-supplied, previously captured provider evidence file; or
-3. no availability evidence, resulting in qualified/inconclusive provider claims.
+1. `auto` (default): detect AKS, resolve cluster identity, and invoke the local authenticated Azure CLI; if that fails, use a supplied JSON evidence file; otherwise mark exact provider availability `UNKNOWN` and continue independent analysis;
+2. `azure`: require Azure CLI evidence; failure makes provider analysis inconclusive;
+3. `file`: require a user-supplied `az aks get-upgrades` JSON export;
+4. `offline`: make no Azure/provider network call, optionally consume a supplied evidence file, and qualify missing availability;
+5. `none`: skip provider-specific analysis.
 
-An opt-in online collector is not part of MVP until its Azure permissions, endpoints, data flow, and caching policy receive separate approval.
+The Azure adapter invokes `az` directly without a shell and permits only documented read operations. It uses existing authentication, accepts explicit subscription/resource-group/cluster overrides, and never changes the active subscription or initiates login. Kubeconfig provides Kubernetes API connectivity but does not itself contain Azure Resource Manager upgrade availability. AKS identity inferred from context names, API hostname, or node `providerID` is evidence with confidence, not a guaranteed mapping.
+
+The embedded catalog establishes provider policy and component compatibility knowledge but never claims cluster-specific patch availability.
 
 ## 5. Suggested repository structure
 
@@ -127,6 +133,7 @@ internal/collector/kubernetes/
 internal/detector/
 internal/analyzer/{inventory,health,api,component,provider}/
 internal/external/kubent/
+internal/external/azurecli/
 internal/provider/{core,aks}/
 internal/catalog/
 internal/engine/
@@ -147,7 +154,9 @@ CLI and adapters depend inward on application/domain contracts. Domain and engin
 
 ## 7. Failure and partial evidence
 
-- Authentication, cluster reachability, corrupt catalog, or incompatible schema: command error; no readiness claim.
+- Kubernetes authentication, cluster reachability, corrupt catalog, or incompatible schema: command error; no readiness claim.
+- In `auto` mode, missing/expired Azure authentication or unresolved AKS identity: continue independent analysis, emit an actionable limitation, and set exact provider availability to `UNKNOWN`; do not run `az login`.
+- In `azure` or `file` mode, failure of the required evidence source makes provider analysis inconclusive.
 - Forbidden optional resources: continue with `UNKNOWN` findings and lower confidence.
 - kubent unavailable for full analysis: `INCONCLUSIVE`, unless the user selected a command that does not require API analysis.
 - Detector ambiguity or unparseable version: `UNKNOWN`, never `PASS`.
@@ -160,4 +169,3 @@ Initial design targets a cluster with 5,000 pods and 100 namespaces in under two
 ## 9. Observability
 
 Use structured `slog` logging to stderr; reports go to stdout or a file. Default logging excludes container environment values, command credentials, resource specs, annotations unless allowlisted, and all Secret data. Debug logs remain sanitized.
-

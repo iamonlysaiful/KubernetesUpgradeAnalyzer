@@ -2,7 +2,7 @@
 
 Status: Accepted architecture baseline  
 Product owner: User  
-Last updated: 2026-07-21
+Last updated: 2026-07-22
 
 ## 1. Vision
 
@@ -10,7 +10,7 @@ KUA helps platform engineers decide whether a live Kubernetes cluster can be upg
 
 ## 2. Principles
 
-1. Offline by default; outbound access is opt-in and explicit.
+1. Local-first provider enrichment by default, with a strict explicit offline mode.
 2. Read-only access to Kubernetes and provider systems.
 3. No Kubernetes Secret payload collection.
 4. Explainable, deterministic recommendations.
@@ -53,8 +53,11 @@ Assess node readiness and pressure, pod phases and waiting reasons, workload ava
 
 - Evaluate detected component versions against a bundled, versioned compatibility catalog.
 - Evaluate API removals for each candidate Kubernetes minor version.
-- Apply AKS rules and available-version evidence when such evidence is present.
-- Operate without live Azure access. Provider availability that cannot be proven offline must be marked `UNKNOWN` or sourced from an explicitly supplied snapshot.
+- Read the current kubeconfig context by default, following standard kubeconfig resolution, and permit explicit kubeconfig/context selection.
+- For detected AKS clusters, default provider source `auto` invokes the locally installed, already authenticated Azure CLI to retrieve exact upgrade availability when the cluster identity can be resolved.
+- Never initiate `az login`, open a browser, change subscriptions, or mutate Azure resources. Azure failure falls back to supplied provider evidence when available; otherwise provider availability becomes `UNKNOWN` while independent Kubernetes analysis continues.
+- Support `azure`, `file`, `offline`, and `none` provider-source modes in addition to `auto`.
+- Accept user-supplied JSON exported from `az aks get-upgrades` as the offline provider-evidence source.
 
 ### 3.6 Recommendation
 
@@ -89,6 +92,7 @@ MVP outputs: console, JSON, Markdown, and self-contained HTML. PDF and interacti
 - Native deprecated API analysis.
 - Live EKS, GKE, OpenShift, or generic provider-specific recommendations.
 - Automatic catalog downloads.
+- Runtime internet searches or vendor-page scraping for compatibility claims.
 - AI-generated recommendations.
 - Security posture, cost, drift, or historical monitoring.
 
@@ -98,7 +102,7 @@ MVP outputs: console, JSON, Markdown, and self-contained HTML. PDF and interacti
 2. A removed API blocks every candidate where it is unavailable and identifies the responsible object.
 3. A component with unknown version or missing compatibility evidence cannot produce an unconditional compatibility pass.
 4. A serious health condition produces a blocker according to the approved recommendation rules.
-5. Running offline causes no outbound connection attempt.
+5. `--provider-source=offline` causes no provider network connection attempt; catalog analysis remains local.
 6. JSON output validates against its versioned schema and is deterministic after volatile timestamps are normalized.
 7. Kubernetes Secret contents never appear in logs, evidence, fixtures, or reports.
-
+8. In `auto` mode, unavailable Azure CLI/authentication degrades provider availability to `UNKNOWN` without turning unrelated findings into failures.
