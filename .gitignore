@@ -1,0 +1,52 @@
+# macOS and ExFAT AppleDouble metadata
+.DS_Store
+._*
+.AppleDouble
+.LSOverride
+
+# Editors and local workspace state
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local configuration and environment overrides
+.env
+.env.*
+!.env.example
+*.local.yaml
+*.local.yml
+*.local.json
+
+# Kubernetes, Azure, and credential material
+.kube/
+.azure/
+kubeconfig
+kubeconfig.*
+*.kubeconfig
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Local provider evidence and unsanitized assessment artifacts
+/local/
+/artifacts/
+/reports/
+/kua-report.*
+/aks-upgrades*.json
+
+# Go build and test outputs
+/bin/
+/dist/
+*.test
+*.prof
+coverage.out
+coverage.html
+
+# Temporary files and caches
+/tmp/
+/.cache/
+*.tmp
+*.log
