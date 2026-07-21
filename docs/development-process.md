@@ -59,3 +59,18 @@ Real cluster access always needs explicit approval naming the context and read-o
 ## 8. Ignore policy
 
 The root `.gitignore` is the canonical ignore policy. Keep it narrow enough that source, schemas, catalog records, fixtures, examples, and documentation remain visible. Secrets are ignored only as a last line of defense; contributors remain responsible for never creating or staging sensitive material in the repository.
+
+## 9. Recoverable cleanup procedure
+
+All cleanup, deletion, overwrite, repository repair, and other destructive operations follow this sequence:
+
+1. Resolve and list the exact targets; do not rely on broad or unresolved paths.
+2. Record the relevant pre-change state, checksums, references, or integrity results.
+3. Create a backup, reversible copy, or trash-based recovery point in an approved safe location.
+4. Verify that the recovery artifact exists and is readable; record its checksum when practical.
+5. Remove or modify only the approved targets.
+6. Run domain-appropriate integrity checks and compare critical state with the pre-change record.
+7. Report what changed, validation results, recovery location, and restoration method.
+8. Retain the recovery artifact until the user gives separate explicit approval to remove it.
+
+Successful validation does not authorize backup deletion. If validation fails, stop, preserve evidence and the recovery artifact, and request direction before attempting additional repair or restoration.

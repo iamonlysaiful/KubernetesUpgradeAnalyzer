@@ -2,6 +2,12 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-22 — Recoverable cleanup policy
+
+- Required an inventoried and verified recovery point before every destructive operation.
+- Required post-cleanup integrity validation and recorded recovery instructions.
+- Required separate user approval before deleting recovery artifacts, even after successful validation.
+
 ## 2026-07-22 — Git hygiene and publication rules
 
 - Standardized the `main` branch and short-lived branch prefixes.

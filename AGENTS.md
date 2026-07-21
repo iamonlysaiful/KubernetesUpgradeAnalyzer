@@ -53,6 +53,8 @@ Do not combine the governing documentation change and its implementation into on
 
 ## 5. Safety and Kubernetes constraints
 
+- Every cleanup, deletion, overwrite, history repair, or other destructive operation must be recoverable. Resolve and inventory exact targets first; create and verify a backup, reversible copy, or trash operation; record the recovery location and validation evidence; then change only the approved targets.
+- Validate the system and affected data after cleanup before declaring success. Keep recovery artifacts until the user separately approves their deletion, even when validation passes. Never treat approval for cleanup as approval to delete its backup.
 - KUA itself must remain read-only against Kubernetes and provider APIs unless a future, separately approved design explicitly changes that boundary.
 - Prefer least-privilege access and document every required permission.
 - Never collect Kubernetes Secrets or secret payloads. Redact tokens, certificates, registry credentials, environment values, and sensitive annotations from logs, fixtures, and reports.
