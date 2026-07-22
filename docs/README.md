@@ -18,6 +18,15 @@ The documents in this directory are the source of truth for KubeUpgrade Advisor.
 | [`open-questions.md`](open-questions.md) | Decisions still requiring owner approval |
 | [`change-log.md`](change-log.md) | Material documentation and scope changes |
 
+## Implementation plans
+
+| Document | Purpose |
+| --- | --- |
+| [`plans/mvp-implementation-plan.md`](plans/mvp-implementation-plan.md) | Ordered MVP work packages, dependencies, and approval gates |
+| [`contracts/domain-and-schema-plan.md`](contracts/domain-and-schema-plan.md) | Domain types, schemas, compatibility, and versioning plan |
+| [`plans/security-rbac-plan.md`](plans/security-rbac-plan.md) | Least-privilege Kubernetes/Azure access and security validation |
+| [`plans/validation-release-plan.md`](plans/validation-release-plan.md) | Staging validation, artifacts, release checks, and rollback |
+
 ## Architecture decisions
 
 - [`ADR-0001`](decisions/0001-offline-first.md): Original offline-first execution decision (superseded)

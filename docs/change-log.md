@@ -2,6 +2,14 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-22 — MVP development planning baseline
+
+- Expanded delivery into contract, foundation, inventory, health, component, API, AKS, recommendation, reporting, and release phases.
+- Approved Apache-2.0, module/binary/platform/version-range defaults, exit behavior, health window, critical-workload policy, and redacted reports.
+- Pinned the initial kubent contract to `0.7.3` JSON with Helm collection disabled and mandatory target-rule coverage validation.
+- Added detailed implementation, domain/schema, security/RBAC, and validation/release plans.
+- Resolved all currently recorded blocking product questions.
+
 ## 2026-07-22 — Recoverable cleanup policy
 
 - Required an inventoried and verified recovery point before every destructive operation.

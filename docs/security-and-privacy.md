@@ -21,11 +21,11 @@ Before implementation, generate and review a least-privilege ClusterRole listing
 - Do not collect ConfigMap contents by default.
 - Do not collect environment variable values, volume secret references beyond sanitized type/presence, pod logs, exec output, or full resource specs.
 - Sanitize cluster UID/name, namespaces, workload names, node names, registry hosts, subscription/resource-group IDs, and event messages in fixtures and support bundles.
-- Reports may contain operational identifiers by default only when required for remediation; a future redacted report mode should be designed before external sharing.
+- Reports may contain operational identifiers locally when required for remediation. MVP redacted mode is mandatory before external sharing and must use stable per-assessment aliases without changing findings or decisions.
 
 ## 5. Network and offline guarantees
 
-Default `auto` mode may access the selected Kubernetes API and invoke the local Azure CLI for read-only AKS provider evidence. It performs no telemetry, arbitrary HTTP requests, update check, catalog download, vendor search, or page scraping. `--provider-source=offline` guarantees no Azure/provider network invocation; Kubernetes API access remains necessary for live analysis. External `kubent` invocation must receive flags/environment that prevent updates or telemetry where supported; its behavior/version must be documented and tested.
+Default `auto` mode may access the selected Kubernetes API and invoke the local Azure CLI for read-only AKS provider evidence. It performs no telemetry, arbitrary HTTP requests, update check, catalog download, vendor search, or page scraping. `--provider-source=offline` guarantees no Azure/provider network invocation; Kubernetes API access remains necessary for live analysis. External kubent invocation uses version `0.7.3`, JSON output, and `--helm3=false`; it must receive flags/environment that prevent updates or telemetry where supported, and its behavior must be tested.
 
 Before invoking Azure CLI, KUA shows/logs the sanitized target identity and operation category. It uses the existing Azure authentication context, never initiates login, never changes the active subscription, never persists tokens, and never passes credentials on command arguments.
 

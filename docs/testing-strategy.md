@@ -25,7 +25,10 @@ Last updated: 2026-07-22
 - Stale/missing/conflicting provider evidence.
 - Provider-source mode coverage: successful `auto` Azure CLI evidence, JSON fallback, failed/expired Azure authentication, unresolved AKS identity, strict `azure`/`file` failures, `none`, and proof that `offline` never invokes Azure CLI.
 - Azure CLI adapter command allowlisting, argument separation, subscription targeting, bounded output/runtime, and redaction.
+- Kubent `0.7.3` JSON contract, Helm collector disabled, missing/unsupported version, malformed output, nonzero execution, and absent target-rule coverage.
 - Embedded catalog selection, validated local overrides, checksum/schema failures, and proof that assessment performs no catalog search, scrape, or download.
+- Thirty-minute default health event window, configured overrides, current-state blockers, and explicitly labeled/configured critical workloads.
+- Redacted reports preserve decisions/counts while replacing all configured identifiers with stable assessment-local aliases.
 - Malformed/hostile catalog, kubent output, image labels, events, and HTML content.
 
 ## 3. Determinism

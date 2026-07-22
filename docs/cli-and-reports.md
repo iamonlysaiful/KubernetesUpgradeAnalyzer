@@ -55,6 +55,12 @@ Schema version changes follow compatibility policy: additive optional fields are
 
 Exact automation semantics must be locked with CLI contract tests before implementation is considered stable.
 
+`READY_WITH_WARNINGS` returns `0`. A future explicit strict mode may assign a nonzero result without changing the default contract.
+
 ## 6. HTML safety
 
 HTML is self-contained, escapes all evidence, uses no remote scripts/fonts/assets, and contains no executable user-provided markup. Markdown escapes or safely fences untrusted content.
+
+## 7. Redaction
+
+All report formats support an MVP redacted mode for sharing. Redaction replaces cluster, subscription, resource group, namespace, workload, node, registry, and sensitive event identifiers with stable assessment-local aliases. It preserves finding IDs, versions, counts, readiness, risk, and decision logic. Local output remains unredacted by default for remediation value; reports state their redaction status.

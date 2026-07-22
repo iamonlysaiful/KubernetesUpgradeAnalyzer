@@ -50,7 +50,7 @@ Precedence: command flags, environment variables, config file, defaults. The eff
 
 ### 3.3 Preflight
 
-Validates kubeconfig/context, Kubernetes reachability, required discovery/RBAC access, `kubent` presence/version for relevant commands, embedded/override catalog integrity, output path, provider mode, Azure CLI availability/authentication where applicable, and optional provider evidence. Missing optional capabilities become explicit limitations; missing required capabilities fail safely. KUA never initiates interactive Azure authentication.
+Validates kubeconfig/context, Kubernetes reachability, required discovery/RBAC access, kubent `0.7.3` presence/version and target-rule coverage for relevant commands, embedded/override catalog integrity, output path, provider mode, Azure CLI availability/authentication where applicable, and optional provider evidence. Missing optional capabilities become explicit limitations; missing required capabilities fail safely. KUA never initiates interactive Azure authentication.
 
 ### 3.4 Collectors
 
@@ -159,6 +159,7 @@ CLI and adapters depend inward on application/domain contracts. Domain and engin
 - In `azure` or `file` mode, failure of the required evidence source makes provider analysis inconclusive.
 - Forbidden optional resources: continue with `UNKNOWN` findings and lower confidence.
 - kubent unavailable for full analysis: `INCONCLUSIVE`, unless the user selected a command that does not require API analysis.
+- kubent target-version rules not verified for any proposed stage: that stage's API compatibility is `INCONCLUSIVE`; never infer a pass from empty output.
 - Detector ambiguity or unparseable version: `UNKNOWN`, never `PASS`.
 - Report rendering failure: analysis may be retained in memory/JSON where safely possible, but the command reports failure.
 

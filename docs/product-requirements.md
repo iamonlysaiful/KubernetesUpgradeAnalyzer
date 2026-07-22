@@ -43,11 +43,11 @@ Detection must not depend solely on Helm. It may use a weighted set of evidence 
 
 ### 3.3 API compatibility
 
-For MVP, invoke an installed `kubent` binary through a controlled adapter. Report deprecated APIs, removed APIs, the affected objects, removal versions, and analyzer limitations. A future native analyzer replaces or supplements this adapter behind the same internal contract.
+For MVP, invoke an installed kubent `0.7.3` binary through a controlled adapter using JSON output. Disable kubent's Helm collector because it reads Helm release data from Secrets or ConfigMaps, which conflicts with KUA's data-minimization boundary. Report deprecated APIs, removed APIs, the affected objects, removal versions, and analyzer limitations. Verify that the bundled kubent rules cover every assessed target version; a target without verified rule coverage is `INCONCLUSIVE`. A future native analyzer replaces or supplements this adapter behind the same internal contract.
 
 ### 3.4 Health assessment
 
-Assess node readiness and pressure, pod phases and waiting reasons, workload availability, DaemonSet coverage, PVC binding, and relevant Warning events. Health findings must distinguish blockers from warnings and include resource references without secret data.
+Assess node readiness and pressure, pod phases and waiting reasons, workload availability, DaemonSet coverage, PVC binding, and relevant Warning events. Current observable state determines blockers; events from a configurable lookback window, defaulting to 30 minutes, provide warning context. Critical workloads are explicitly configured or labeled rather than guessed from names. Health findings must distinguish blockers from warnings and include resource references without secret data.
 
 ### 3.5 Compatibility and provider assessment
 
@@ -74,7 +74,7 @@ KUA may recommend destination `1.33.12` for a cluster at `1.30.x` when evidence 
 
 ### 3.7 Output
 
-MVP outputs: console, JSON, Markdown, and self-contained HTML. PDF and interactive dashboards are later phases.
+MVP outputs: console, JSON, Markdown, and self-contained HTML. Local reports show actionable resource names; a redacted output mode is required for sharing. PDF and interactive dashboards are later phases.
 
 ## 4. CLI commands
 
@@ -106,3 +106,15 @@ MVP outputs: console, JSON, Markdown, and self-contained HTML. PDF and interacti
 6. JSON output validates against its versioned schema and is deterministic after volatile timestamps are normalized.
 7. Kubernetes Secret contents never appear in logs, evidence, fixtures, or reports.
 8. In `auto` mode, unavailable Azure CLI/authentication degrades provider availability to `UNKNOWN` without turning unrelated findings into failures.
+9. Kubent is invoked with JSON output and Helm collection disabled; absent target-rule coverage makes API compatibility `INCONCLUSIVE`.
+10. Redacted reports remove configured cluster, subscription, namespace, workload, node, registry, and event identifiers without changing the underlying decision.
+
+## 7. Product and distribution baseline
+
+- Project license: Apache License 2.0; the license file is added during the separately approved foundation implementation.
+- Go module path: `github.com/iamonlysaiful/KubernetesUpgradeAnalyzer`.
+- CLI binary name: `kua`.
+- Initial release platforms: Linux and macOS on amd64 and arm64.
+- Windows support is best-effort after MVP.
+- Initial validated Kubernetes range: `1.30` through `1.33`; additional versions require catalog evidence and regression fixtures.
+- `READY_WITH_WARNINGS` exits successfully (`0`); a future strict automation mode may treat warnings as nonzero.
