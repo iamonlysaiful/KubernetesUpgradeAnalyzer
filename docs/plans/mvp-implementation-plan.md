@@ -55,6 +55,10 @@ Use short-lived `docs/`, `feature/`, `fix/`, or `chore/` branches. Each behavior
 
 Planned direct dependencies are Go standard library, Cobra, Viper, `client-go`, and schema/testing/lint tooling selected during Phase 0 review. Each dependency requires version, license, purpose, alternatives, maintenance, and vulnerability assessment before addition. Azure SDK is not needed for MVP because provider access uses the installed Azure CLI.
 
+P1-01 starts with the Go standard library only and is governed by
+`docs/contracts/foundation-contract.md`. External modules are intentionally
+deferred to focused dependency-assessment commits.
+
 ## 6. Stop conditions
 
 Stop affected work when a schema or accepted document conflicts with implementation, live access would exceed approved read-only permissions, kubent lacks verified target rules, a catalog claim lacks adequate provenance, redaction leaks an identifier, deterministic fixtures disagree, or ExFAT metadata makes Git integrity fail.

@@ -2,6 +2,14 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-22 — Phase 1 foundation contract
+
+- Added the foundation implementation contract for the Go module, `kua` binary,
+  standard-library CLI skeleton, build metadata placeholders, and exit-code
+  constants.
+- Deferred Cobra, Viper, `client-go`, schema tooling, linting, CI, and release
+  dependencies to later focused dependency-assessment changes.
+
 ## 2026-07-22 — Phase 0 schema contracts
 
 - Added Phase 0 schema contract artifacts for assessment, cluster snapshot, AKS
