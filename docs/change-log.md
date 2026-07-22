@@ -2,6 +2,14 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-22 — Phase 1 config and error contract
+
+- Added the P1-02 contract for standard-library common flag parsing, runtime
+  config defaults, log-level validation, command-error categories, and exit-code
+  mapping.
+- Confirmed P1-02 does not add Cobra, Viper, Kubernetes clients, Azure access,
+  file config loading, report rendering, or live-system access.
+
 ## 2026-07-22 — Phase 1 foundation contract
 
 - Added the foundation implementation contract for the Go module, `kua` binary,
