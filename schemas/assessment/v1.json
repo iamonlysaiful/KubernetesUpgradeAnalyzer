@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s3innovate.local/kua/schemas/assessment/v1.json",
+  "title": "KUA Assessment v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "assessmentId",
+    "generatedAt",
+    "tool",
+    "catalog",
+    "cluster",
+    "currentVersion",
+    "readiness",
+    "risk",
+    "findings",
+    "candidates",
+    "upgradePath",
+    "decisionTrace",
+    "recommendedActions",
+    "limitations"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "kua.assessment.v1" },
+    "assessmentId": { "$ref": "#/$defs/id" },
+    "generatedAt": { "$ref": "#/$defs/timestamp" },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "const": "kua" },
+        "version": { "type": "string", "minLength": 1 },
+        "kubentVersion": { "type": "string" }
+      }
+    },
+    "catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "schemaVersion", "source", "checksum"],
+      "properties": {
+        "version": { "type": "string", "minLength": 1 },
+        "schemaVersion": { "const": "kua.catalog.v1" },
+        "source": { "enum": ["EMBEDDED", "LOCAL_OVERRIDE"] },
+        "checksum": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "createdAt": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "cluster": { "$ref": "#/$defs/resourceRef" },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "source", "availabilityStatus"],
+      "properties": {
+        "type": { "enum": ["AKS", "EKS", "GKE", "OPENSHIFT", "GENERIC", "UNKNOWN"] },
+        "source": { "enum": ["auto", "azure", "file", "offline", "none"] },
+        "availabilityStatus": { "enum": ["PASS", "WARN", "FAIL", "UNKNOWN", "SKIPPED", "INCONCLUSIVE"] },
+        "evidenceId": { "$ref": "#/$defs/id" }
+      }
+    },
+    "currentVersion": { "$ref": "#/$defs/kubernetesVersion" },
+    "destinationVersion": { "$ref": "#/$defs/kubernetesVersion" },
+    "readiness": { "enum": ["READY", "READY_WITH_WARNINGS", "NOT_READY", "INCONCLUSIVE"] },
+    "risk": { "enum": ["LOW", "MEDIUM", "HIGH", "UNKNOWN"] },
+    "inventorySummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "namespaces": { "type": "integer", "minimum": 0 },
+        "nodes": { "type": "integer", "minimum": 0 },
+        "workloads": { "type": "integer", "minimum": 0 },
+        "components": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "componentDetections": { "type": "array", "items": { "$ref": "#/$defs/componentDetection" } },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "candidates": { "type": "array", "items": { "$ref": "#/$defs/candidate" } },
+    "upgradePath": { "type": "array", "items": { "$ref": "#/$defs/stage" } },
+    "decisionTrace": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["step", "result", "summary"],
+        "properties": {
+          "step": { "type": "string", "minLength": 1 },
+          "result": { "enum": ["PASS", "WARN", "FAIL", "UNKNOWN", "SKIPPED", "INCONCLUSIVE"] },
+          "summary": { "type": "string", "minLength": 1 },
+          "findingIds": { "type": "array", "items": { "$ref": "#/$defs/id" } }
+        }
+      }
+    },
+    "recommendedActions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "limitations": { "type": "array", "items": { "$ref": "#/$defs/limitation" } }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "kubernetesVersion": { "type": "string", "pattern": "^1\\.(30|31|32|33)(\\.([0-9]+))?([+-][A-Za-z0-9._-]+)?$" },
+    "confidence": { "enum": ["HIGH", "MEDIUM", "LOW", "UNKNOWN"] },
+    "resourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "name"],
+      "properties": {
+        "apiVersion": { "type": "string" },
+        "kind": { "type": "string", "minLength": 1 },
+        "namespace": { "type": "string" },
+        "name": { "type": "string", "minLength": 1 },
+        "uidAlias": { "type": "string" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "observedAt", "summary", "confidence"],
+      "properties": {
+        "source": { "type": "string", "minLength": 1 },
+        "observedAt": { "$ref": "#/$defs/timestamp" },
+        "summary": { "type": "string", "minLength": 1 },
+        "confidence": { "$ref": "#/$defs/confidence" }
+      }
+    },
+    "componentDetection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["detectionId", "productId", "method", "versionStatus", "evidence", "confidence"],
+      "properties": {
+        "detectionId": { "$ref": "#/$defs/id" },
+        "productId": { "$ref": "#/$defs/id" },
+        "version": { "type": "string" },
+        "versionStatus": { "enum": ["KNOWN", "UNKNOWN", "AMBIGUOUS", "UNPARSEABLE"] },
+        "method": { "enum": ["helm", "operator", "manifest", "managed", "unknown"] },
+        "resources": { "type": "array", "items": { "$ref": "#/$defs/resourceRef" } },
+        "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evidence" } },
+        "confidence": { "$ref": "#/$defs/confidence" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["findingId", "ruleId", "category", "status", "severity", "summary", "evidence"],
+      "properties": {
+        "findingId": { "$ref": "#/$defs/id" },
+        "ruleId": { "$ref": "#/$defs/id" },
+        "category": { "enum": ["INVENTORY", "HEALTH", "API", "COMPONENT", "PROVIDER", "CATALOG", "SECURITY"] },
+        "status": { "enum": ["PASS", "WARN", "FAIL", "UNKNOWN", "SKIPPED", "INCONCLUSIVE"] },
+        "severity": { "enum": ["INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL", "UNKNOWN"] },
+        "summary": { "type": "string", "minLength": 1 },
+        "remediation": { "type": "string" },
+        "resources": { "type": "array", "items": { "$ref": "#/$defs/resourceRef" } },
+        "candidateVersions": { "type": "array", "items": { "$ref": "#/$defs/kubernetesVersion" } },
+        "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evidence" } },
+        "limitations": { "type": "array", "items": { "$ref": "#/$defs/limitation" } }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "status", "risk"],
+      "properties": {
+        "version": { "$ref": "#/$defs/kubernetesVersion" },
+        "status": { "enum": ["PASS", "WARN", "FAIL", "UNKNOWN", "SKIPPED", "INCONCLUSIVE"] },
+        "risk": { "enum": ["LOW", "MEDIUM", "HIGH", "UNKNOWN"] },
+        "findingIds": { "type": "array", "items": { "$ref": "#/$defs/id" } }
+      }
+    },
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fromVersion", "toVersion", "status", "providerValid"],
+      "properties": {
+        "fromVersion": { "$ref": "#/$defs/kubernetesVersion" },
+        "toVersion": { "$ref": "#/$defs/kubernetesVersion" },
+        "status": { "enum": ["PASS", "WARN", "FAIL", "UNKNOWN", "SKIPPED", "INCONCLUSIVE"] },
+        "providerValid": { "type": "boolean" },
+        "findingIds": { "type": "array", "items": { "$ref": "#/$defs/id" } }
+      }
+    },
+    "limitation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "summary"],
+      "properties": {
+        "code": { "$ref": "#/$defs/id" },
+        "severity": { "enum": ["INFO", "WARN", "ERROR"] },
+        "summary": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

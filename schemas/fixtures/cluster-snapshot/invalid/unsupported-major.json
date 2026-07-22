@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "kua.cluster-snapshot.v2",
+  "snapshotId": "snapshot-bad-major",
+  "capturedAt": "2026-07-22T08:00:00Z",
+  "cluster": {
+    "identity": {
+      "kind": "Cluster",
+      "name": "cluster-001"
+    },
+    "provider": {
+      "type": "AKS",
+      "confidence": "HIGH"
+    },
+    "context": {
+      "name": "ctx-001"
+    }
+  },
+  "kubernetes": {
+    "serverVersion": "1.30.0"
+  },
+  "inventory": {
+    "namespaces": [],
+    "nodes": [],
+    "workloads": [],
+    "storage": [],
+    "networking": [],
+    "crds": [],
+    "events": []
+  },
+  "limitations": []
+}

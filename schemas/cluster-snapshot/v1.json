@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s3innovate.local/kua/schemas/cluster-snapshot/v1.json",
+  "title": "KUA ClusterSnapshot v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "snapshotId",
+    "capturedAt",
+    "cluster",
+    "kubernetes",
+    "inventory",
+    "limitations"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "kua.cluster-snapshot.v1" },
+    "snapshotId": { "$ref": "#/$defs/id" },
+    "capturedAt": { "$ref": "#/$defs/timestamp" },
+    "redaction": { "$ref": "#/$defs/redaction" },
+    "cluster": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity", "provider", "context"],
+      "properties": {
+        "identity": { "$ref": "#/$defs/resourceRef" },
+        "provider": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "confidence"],
+          "properties": {
+            "type": { "enum": ["AKS", "EKS", "GKE", "OPENSHIFT", "GENERIC", "UNKNOWN"] },
+            "confidence": { "$ref": "#/$defs/confidence" },
+            "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } }
+          }
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "kubeconfigSource": { "enum": ["DEFAULT", "EXPLICIT", "UNKNOWN"] }
+          }
+        }
+      }
+    },
+    "kubernetes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["serverVersion"],
+      "properties": {
+        "serverVersion": { "$ref": "#/$defs/kubernetesVersion" },
+        "platform": { "type": "string" },
+        "gitVersion": { "type": "string" }
+      }
+    },
+    "inventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["namespaces", "nodes", "workloads", "storage", "networking", "crds", "events"],
+      "properties": {
+        "namespaces": { "type": "array", "items": { "$ref": "#/$defs/resourceRef" } },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["ref", "kubeletVersion", "conditions"],
+            "properties": {
+              "ref": { "$ref": "#/$defs/resourceRef" },
+              "kubeletVersion": { "$ref": "#/$defs/kubernetesVersion" },
+              "providerIdPresent": { "type": "boolean" },
+              "nodePool": { "type": "string" },
+              "conditions": { "type": "array", "items": { "$ref": "#/$defs/condition" } }
+            }
+          }
+        },
+        "workloads": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["ref", "desiredReplicas", "readyReplicas", "containers"],
+            "properties": {
+              "ref": { "$ref": "#/$defs/resourceRef" },
+              "desiredReplicas": { "type": "integer", "minimum": 0 },
+              "readyReplicas": { "type": "integer", "minimum": 0 },
+              "critical": { "enum": ["CONFIGURED", "LABELED", "NO", "UNKNOWN"] },
+              "containers": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["name", "image"],
+                  "properties": {
+                    "name": { "type": "string", "minLength": 1 },
+                    "image": { "type": "string", "minLength": 1 },
+                    "imageTag": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "storage": { "type": "array", "items": { "$ref": "#/$defs/resourceRef" } },
+        "networking": { "type": "array", "items": { "$ref": "#/$defs/resourceRef" } },
+        "crds": { "type": "array", "items": { "$ref": "#/$defs/resourceRef" } },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["ref", "type", "reason", "lastSeenAt"],
+            "properties": {
+              "ref": { "$ref": "#/$defs/resourceRef" },
+              "type": { "enum": ["NORMAL", "WARNING", "UNKNOWN"] },
+              "reason": { "type": "string", "minLength": 1 },
+              "messageAlias": { "type": "string" },
+              "lastSeenAt": { "$ref": "#/$defs/timestamp" }
+            }
+          }
+        }
+      }
+    },
+    "limitations": { "type": "array", "items": { "$ref": "#/$defs/limitation" } }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "confidence": { "enum": ["HIGH", "MEDIUM", "LOW", "UNKNOWN"] },
+    "kubernetesVersion": { "type": "string", "pattern": "^1\\.(30|31|32|33)(\\.([0-9]+))?([+-][A-Za-z0-9._-]+)?$" },
+    "resourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "name"],
+      "properties": {
+        "apiVersion": { "type": "string" },
+        "kind": { "type": "string", "minLength": 1 },
+        "namespace": { "type": "string" },
+        "name": { "type": "string", "minLength": 1 },
+        "uidAlias": { "type": "string" }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "status"],
+      "properties": {
+        "type": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["TRUE", "FALSE", "UNKNOWN"] },
+        "reason": { "type": "string" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "observedAt", "summary"],
+      "properties": {
+        "source": { "type": "string", "minLength": 1 },
+        "observedAt": { "$ref": "#/$defs/timestamp" },
+        "summary": { "type": "string", "minLength": 1 }
+      }
+    },
+    "limitation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "summary"],
+      "properties": {
+        "code": { "$ref": "#/$defs/id" },
+        "severity": { "enum": ["INFO", "WARN", "ERROR"] },
+        "summary": { "type": "string", "minLength": 1 },
+        "resources": { "type": "array", "items": { "$ref": "#/$defs/resourceRef" } }
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["NONE", "STABLE_ALIAS"] },
+        "aliasScope": { "type": "string" }
+      }
+    }
+  }
+}

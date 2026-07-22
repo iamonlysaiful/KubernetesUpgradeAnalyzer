@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "kua.provider-evidence.aks.v1",
+  "evidenceId": "aks-upgrades-bad-command",
+  "capturedAt": "2026-07-22T08:03:00Z",
+  "source": {
+    "mode": "azure",
+    "method": "AZURE_CLI",
+    "command": "az aks upgrade"
+  },
+  "cluster": {
+    "provider": "AKS",
+    "identityConfidence": "HIGH"
+  },
+  "currentVersion": "1.30.0",
+  "availableUpgrades": [],
+  "limitations": []
+}

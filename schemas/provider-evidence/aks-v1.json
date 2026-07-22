@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s3innovate.local/kua/schemas/provider-evidence/aks-v1.json",
+  "title": "KUA AKS ProviderEvidence v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "evidenceId",
+    "capturedAt",
+    "source",
+    "cluster",
+    "currentVersion",
+    "availableUpgrades",
+    "limitations"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "kua.provider-evidence.aks.v1" },
+    "evidenceId": { "$ref": "#/$defs/id" },
+    "capturedAt": { "$ref": "#/$defs/timestamp" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "method"],
+      "properties": {
+        "mode": { "enum": ["auto", "azure", "file", "offline"] },
+        "method": { "enum": ["AZURE_CLI", "AZURE_CLI_EXPORT", "CATALOG", "USER_FILE"] },
+        "command": { "const": "az aks get-upgrades" },
+        "azureCliVersion": { "type": "string" }
+      }
+    },
+    "cluster": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "identityConfidence"],
+      "properties": {
+        "provider": { "const": "AKS" },
+        "subscriptionAlias": { "type": "string" },
+        "resourceGroupAlias": { "type": "string" },
+        "clusterNameAlias": { "type": "string" },
+        "region": { "type": "string" },
+        "identityConfidence": { "enum": ["HIGH", "MEDIUM", "LOW", "UNKNOWN"] }
+      }
+    },
+    "currentVersion": { "$ref": "#/$defs/kubernetesVersion" },
+    "controlPlaneVersion": { "$ref": "#/$defs/kubernetesVersion" },
+    "nodePools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["nameAlias", "currentVersion"],
+        "properties": {
+          "nameAlias": { "type": "string", "minLength": 1 },
+          "currentVersion": { "$ref": "#/$defs/kubernetesVersion" },
+          "availableUpgrades": { "type": "array", "items": { "$ref": "#/$defs/upgrade" } }
+        }
+      }
+    },
+    "availableUpgrades": { "type": "array", "items": { "$ref": "#/$defs/upgrade" } },
+    "limitations": { "type": "array", "items": { "$ref": "#/$defs/limitation" } }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "kubernetesVersion": { "type": "string", "pattern": "^1\\.(30|31|32|33)(\\.([0-9]+))?([+-][A-Za-z0-9._-]+)?$" },
+    "upgrade": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "isPreview", "supportPlan"],
+      "properties": {
+        "version": { "$ref": "#/$defs/kubernetesVersion" },
+        "isPreview": { "type": "boolean" },
+        "supportPlan": { "enum": ["STANDARD", "LTS", "UNKNOWN"] }
+      }
+    },
+    "limitation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "summary"],
+      "properties": {
+        "code": { "$ref": "#/$defs/id" },
+        "severity": { "enum": ["INFO", "WARN", "ERROR"] },
+        "summary": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}
