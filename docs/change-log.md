@@ -9,6 +9,8 @@ This log records material scope and architecture changes. Git remains the detail
 - Added the Kubernetes client-go dependency assessment for P2-01 only.
 - Reaffirmed that live cluster execution requires separate approval naming the
   context and read-only operation.
+- Narrowed the kubeconfig ignore policy so source files named `kubeconfig.go`
+  can be tracked while local kubeconfig credential files remain ignored.
 
 ## 2026-07-23 — Phase 1 CI quality contract
 
