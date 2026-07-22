@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"runtime"
 )
 
@@ -27,26 +28,51 @@ type BuildInfo struct {
 }
 
 func Run(args []string, stdout io.Writer, stderr io.Writer, build BuildInfo) int {
-	if len(args) == 0 {
+	cfg, positional, err := parseArgs(args)
+	if err != nil {
+		fmt.Fprintln(stderr, err.Message)
+		printUsage(stderr)
+		return err.Code
+	}
+	_ = newLogger(stderr, cfg.LogLevel)
+
+	if len(positional) == 0 {
 		printUsage(stderr)
 		return ExitUsage
 	}
 
-	switch args[0] {
+	switch positional[0] {
 	case "version":
 		printVersion(stdout, build)
 		return ExitReady
 	case "analyze", "inventory", "health", "compatibility", "report":
-		fmt.Fprintf(stderr, "%s %s is not implemented yet\n", binaryName, args[0])
-		return ExitExecution
+		appErr := UnimplementedError(positional[0])
+		fmt.Fprintln(stderr, appErr.Message)
+		return appErr.Code
 	case "help", "-h", "--help":
 		printUsage(stdout)
 		return ExitReady
 	default:
-		fmt.Fprintf(stderr, "unknown command %q\n", args[0])
+		fmt.Fprintf(stderr, "unknown command %q\n", positional[0])
 		printUsage(stderr)
 		return ExitUsage
 	}
+}
+
+func newLogger(w io.Writer, level string) *slog.Logger {
+	var slogLevel slog.Level
+	switch level {
+	case "debug":
+		slogLevel = slog.LevelDebug
+	case "warn":
+		slogLevel = slog.LevelWarn
+	case "error":
+		slogLevel = slog.LevelError
+	default:
+		slogLevel = slog.LevelInfo
+	}
+
+	return slog.New(slog.NewTextHandler(w, &slog.HandlerOptions{Level: slogLevel}))
 }
 
 func printUsage(w io.Writer) {

@@ -37,6 +37,29 @@ func TestRunVersion(t *testing.T) {
 	}
 }
 
+func TestRunVersionWithGlobalFlags(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{
+		"--log-level=debug",
+		"--format", "json",
+		"--provider-source", "offline",
+		"--context", "ctx-001",
+		"version",
+	}, &stdout, &stderr, BuildInfo{})
+
+	if code != ExitReady {
+		t.Fatalf("Run(version with flags) exit code = %d, want %d", code, ExitReady)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("Run(version with flags) stderr = %q, want empty", stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "kua version: 0.0.0-dev") {
+		t.Fatalf("Run(version with flags) output = %q, want version text", stdout.String())
+	}
+}
+
 func TestRunUnimplementedCommands(t *testing.T) {
 	for _, command := range []string{"analyze", "inventory", "health", "compatibility", "report"} {
 		t.Run(command, func(t *testing.T) {
@@ -65,6 +88,11 @@ func TestRunUsageErrors(t *testing.T) {
 	}{
 		{name: "no args", args: nil},
 		{name: "unknown command", args: []string{"unknown"}},
+		{name: "unknown flag", args: []string{"--unknown", "version"}},
+		{name: "missing flag value", args: []string{"--log-level"}},
+		{name: "invalid log level", args: []string{"--log-level", "trace", "version"}},
+		{name: "invalid format", args: []string{"--format", "yaml", "version"}},
+		{name: "invalid provider source", args: []string{"--provider-source", "internet", "version"}},
 	}
 
 	for _, test := range tests {
@@ -81,5 +109,38 @@ func TestRunUsageErrors(t *testing.T) {
 				t.Fatalf("Run(%s) stderr = %q, want usage text", test.name, stderr.String())
 			}
 		})
+	}
+}
+
+func TestParseArgsStoresConfig(t *testing.T) {
+	cfg, positional, err := parseArgs([]string{
+		"--log-level", "warn",
+		"--format=markdown",
+		"--provider-source=file",
+		"--context", "ctx-001",
+		"--kubeconfig", "/tmp/kubeconfig",
+		"--config", "/tmp/kua.yaml",
+		"--output", "/tmp/report.md",
+		"analyze",
+	})
+
+	if err != nil {
+		t.Fatalf("parseArgs returned error: %v", err)
+	}
+	if len(positional) != 1 || positional[0] != "analyze" {
+		t.Fatalf("parseArgs positional = %#v, want analyze", positional)
+	}
+
+	want := Config{
+		LogLevel:       "warn",
+		Format:         "markdown",
+		ProviderSource: "file",
+		Context:        "ctx-001",
+		Kubeconfig:     "/tmp/kubeconfig",
+		ConfigPath:     "/tmp/kua.yaml",
+		OutputPath:     "/tmp/report.md",
+	}
+	if cfg != want {
+		t.Fatalf("parseArgs config = %#v, want %#v", cfg, want)
 	}
 }
