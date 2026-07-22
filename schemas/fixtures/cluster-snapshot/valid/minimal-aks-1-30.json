@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "kua.cluster-snapshot.v1",
+  "snapshotId": "snapshot-aks-130",
+  "capturedAt": "2026-07-22T08:00:00Z",
+  "redaction": {
+    "mode": "STABLE_ALIAS",
+    "aliasScope": "assessment-aks-130"
+  },
+  "cluster": {
+    "identity": {
+      "kind": "Cluster",
+      "name": "cluster-001"
+    },
+    "provider": {
+      "type": "AKS",
+      "confidence": "HIGH",
+      "evidence": [
+        {
+          "source": "node.providerID",
+          "observedAt": "2026-07-22T08:00:00Z",
+          "summary": "Node provider IDs indicate AKS."
+        }
+      ]
+    },
+    "context": {
+      "name": "ctx-001",
+      "kubeconfigSource": "DEFAULT"
+    }
+  },
+  "kubernetes": {
+    "serverVersion": "1.30.0",
+    "gitVersion": "v1.30.0"
+  },
+  "inventory": {
+    "namespaces": [
+      {
+        "kind": "Namespace",
+        "name": "ns-001"
+      }
+    ],
+    "nodes": [
+      {
+        "ref": {
+          "kind": "Node",
+          "name": "node-001"
+        },
+        "kubeletVersion": "1.30.0",
+        "providerIdPresent": true,
+        "nodePool": "pool-001",
+        "conditions": [
+          {
+            "type": "Ready",
+            "status": "TRUE"
+          }
+        ]
+      }
+    ],
+    "workloads": [
+      {
+        "ref": {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "namespace": "ns-001",
+          "name": "workload-001"
+        },
+        "desiredReplicas": 2,
+        "readyReplicas": 2,
+        "critical": "CONFIGURED",
+        "containers": [
+          {
+            "name": "nginx-ingress",
+            "image": "registry-001/nginx-ingress-controller:1.12.1",
+            "imageTag": "1.12.1"
+          }
+        ]
+      }
+    ],
+    "storage": [],
+    "networking": [],
+    "crds": [],
+    "events": []
+  },
+  "limitations": []
+}

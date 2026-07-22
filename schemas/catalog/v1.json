@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s3innovate.local/kua/schemas/catalog/v1.json",
+  "title": "KUA Catalog v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "catalogVersion",
+    "createdAt",
+    "kubernetes",
+    "providers",
+    "components",
+    "sources"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "kua.catalog.v1" },
+    "catalogVersion": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.-]+)?$" },
+    "createdAt": { "$ref": "#/$defs/timestamp" },
+    "reviewAfter": { "$ref": "#/$defs/timestamp" },
+    "kubernetes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["validatedRange", "apiRules"],
+      "properties": {
+        "validatedRange": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minMinor", "maxMinor"],
+          "properties": {
+            "minMinor": { "const": "1.30" },
+            "maxMinor": { "const": "1.33" }
+          }
+        },
+        "apiRules": { "type": "array", "items": { "$ref": "#/$defs/apiRule" } }
+      }
+    },
+    "providers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/providerPolicy" }
+    },
+    "components": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/componentPolicy" }
+    },
+    "sources": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/source" }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "kubernetesMinor": { "type": "string", "pattern": "^1\\.(30|31|32|33)$" },
+    "compatibilityStatus": { "enum": ["supported", "unsupported", "conditional", "unknown"] },
+    "apiRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ruleId", "apiVersion", "kind", "status", "removedIn", "sourceId"],
+      "properties": {
+        "ruleId": { "$ref": "#/$defs/id" },
+        "apiVersion": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["removed", "deprecated"] },
+        "removedIn": { "$ref": "#/$defs/kubernetesMinor" },
+        "replacement": { "type": "string" },
+        "sourceId": { "$ref": "#/$defs/id" }
+      }
+    },
+    "providerPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "sequentialMinorUpgrades", "candidateSource", "sourceId"],
+      "properties": {
+        "provider": { "const": "AKS" },
+        "sequentialMinorUpgrades": { "type": "boolean" },
+        "candidateSource": { "enum": ["LIVE_PROVIDER_EVIDENCE", "CATALOG_POLICY"] },
+        "sourceId": { "$ref": "#/$defs/id" }
+      }
+    },
+    "componentPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["productId", "productVersionRange", "kubernetesRange", "status", "confidence", "sourceId"],
+      "properties": {
+        "productId": { "$ref": "#/$defs/id" },
+        "aliases": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "productVersionRange": { "type": "string", "minLength": 1 },
+        "kubernetesRange": { "type": "string", "minLength": 1 },
+        "status": { "$ref": "#/$defs/compatibilityStatus" },
+        "conditions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "confidence": { "enum": ["authoritative", "inferred", "community", "unknown"] },
+        "expiresAt": { "$ref": "#/$defs/timestamp" },
+        "sourceId": { "$ref": "#/$defs/id" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceId", "title", "url", "retrievedAt", "claim"],
+      "properties": {
+        "sourceId": { "$ref": "#/$defs/id" },
+        "title": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "format": "uri" },
+        "retrievedAt": { "$ref": "#/$defs/timestamp" },
+        "claim": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

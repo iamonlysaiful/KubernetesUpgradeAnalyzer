@@ -1,6 +1,6 @@
 # Domain and schema plan
 
-Status: Approved plan; individual contracts are created in Phase 0
+Status: Phase 0 contracts in progress
 Last updated: 2026-07-22
 
 ## 1. Goal
@@ -32,6 +32,14 @@ schemas/
   fixtures/<schema>/invalid/
 ```
 
+Accepted Phase 0 schema artifacts are now tracked under `schemas/`:
+
+- `schemas/assessment/v1.json`
+- `schemas/cluster-snapshot/v1.json`
+- `schemas/provider-evidence/aks-v1.json`
+- `schemas/catalog/v1.json`
+- representative valid and invalid fixtures under `schemas/fixtures/`
+
 Go domain structs and JSON Schemas must be tested for agreement. Schemas use explicit `schemaVersion` values and reject unknown major versions.
 
 ## 4. Compatibility policy
@@ -62,3 +70,21 @@ Each contract documentation change specifies required/optional fields, null vers
 - Domain dependency direction is documented and reviewable.
 - The `1.30 → 1.33.12` scenario can be represented without implementation-specific fields.
 - Unknown evidence is structurally distinct from pass/fail and cannot be omitted silently.
+
+## 8. Phase 0 contract decisions
+
+- Schema identifiers use explicit string constants such as `kua.assessment.v1`.
+- Initial Kubernetes version patterns accept `1.30` through `1.33` only.
+- Status enums include `UNKNOWN` and `INCONCLUSIVE` wherever evidence can be
+  absent, stale, ambiguous, or tool-limited.
+- Component detection records separate detection confidence from compatibility
+  findings. A known product with an unknown version is a valid detection, but it
+  cannot create a `PASS` compatibility finding.
+- AKS provider evidence permits only the read-only `az aks get-upgrades` command
+  shape and stores sanitized aliases, not raw subscription/resource identifiers.
+- The assessment contract records sequential upgrade stages so destination
+  `1.33.12` from current `1.30.0` can be represented without claiming a single
+  direct provider operation.
+- JSON Schema covers structure. Later domain validators cover cross-record rules
+  such as unique IDs, catalog source cross-references, duplicate finding IDs, and
+  unknown-evidence decision constraints.

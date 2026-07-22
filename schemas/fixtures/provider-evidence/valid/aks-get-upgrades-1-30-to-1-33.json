@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "kua.provider-evidence.aks.v1",
+  "evidenceId": "aks-upgrades-001",
+  "capturedAt": "2026-07-22T08:03:00Z",
+  "source": {
+    "mode": "azure",
+    "method": "AZURE_CLI",
+    "command": "az aks get-upgrades",
+    "azureCliVersion": "2.75.0"
+  },
+  "cluster": {
+    "provider": "AKS",
+    "subscriptionAlias": "sub-001",
+    "resourceGroupAlias": "rg-001",
+    "clusterNameAlias": "aks-001",
+    "region": "eastus",
+    "identityConfidence": "HIGH"
+  },
+  "currentVersion": "1.30.0",
+  "controlPlaneVersion": "1.30.0",
+  "nodePools": [
+    {
+      "nameAlias": "pool-001",
+      "currentVersion": "1.30.0",
+      "availableUpgrades": [
+        {
+          "version": "1.31.9",
+          "isPreview": false,
+          "supportPlan": "STANDARD"
+        }
+      ]
+    }
+  ],
+  "availableUpgrades": [
+    {
+      "version": "1.31.9",
+      "isPreview": false,
+      "supportPlan": "STANDARD"
+    },
+    {
+      "version": "1.32.7",
+      "isPreview": false,
+      "supportPlan": "STANDARD"
+    },
+    {
+      "version": "1.33.12",
+      "isPreview": false,
+      "supportPlan": "STANDARD"
+    }
+  ],
+  "limitations": []
+}

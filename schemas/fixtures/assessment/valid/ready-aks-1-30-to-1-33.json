@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "kua.assessment.v1",
+  "assessmentId": "assessment-aks-130-ready",
+  "generatedAt": "2026-07-22T08:10:00Z",
+  "tool": {
+    "name": "kua",
+    "version": "0.0.0-dev",
+    "kubentVersion": "0.7.3"
+  },
+  "catalog": {
+    "version": "0.1.0",
+    "schemaVersion": "kua.catalog.v1",
+    "source": "EMBEDDED",
+    "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "createdAt": "2026-07-22T07:00:00Z"
+  },
+  "cluster": {
+    "kind": "Cluster",
+    "name": "cluster-001"
+  },
+  "provider": {
+    "type": "AKS",
+    "source": "azure",
+    "availabilityStatus": "PASS",
+    "evidenceId": "aks-upgrades-001"
+  },
+  "currentVersion": "1.30.0",
+  "destinationVersion": "1.33.12",
+  "readiness": "READY",
+  "risk": "LOW",
+  "inventorySummary": {
+    "namespaces": 1,
+    "nodes": 1,
+    "workloads": 1,
+    "components": 1
+  },
+  "componentDetections": [
+    {
+      "detectionId": "detect-nginx-001",
+      "productId": "nginx-ingress",
+      "version": "1.12.1",
+      "versionStatus": "KNOWN",
+      "method": "manifest",
+      "resources": [
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "namespace": "ns-001",
+          "name": "workload-001"
+        }
+      ],
+      "evidence": [
+        {
+          "source": "container.image",
+          "observedAt": "2026-07-22T08:00:00Z",
+          "summary": "Image tag identifies NGINX Ingress 1.12.1.",
+          "confidence": "HIGH"
+        }
+      ],
+      "confidence": "HIGH"
+    }
+  ],
+  "findings": [
+    {
+      "findingId": "finding-provider-path-001",
+      "ruleId": "provider.aks.sequential-path",
+      "category": "PROVIDER",
+      "status": "PASS",
+      "severity": "INFO",
+      "summary": "AKS provider evidence supports sequential upgrades to 1.33.12.",
+      "candidateVersions": ["1.31.9", "1.32.7", "1.33.12"],
+      "evidence": [
+        {
+          "source": "az aks get-upgrades",
+          "observedAt": "2026-07-22T08:03:00Z",
+          "summary": "Provider evidence listed each candidate stage.",
+          "confidence": "HIGH"
+        }
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "version": "1.33.12",
+      "status": "PASS",
+      "risk": "LOW",
+      "findingIds": ["finding-provider-path-001"]
+    }
+  ],
+  "upgradePath": [
+    {
+      "fromVersion": "1.30.0",
+      "toVersion": "1.31.9",
+      "status": "PASS",
+      "providerValid": true,
+      "findingIds": ["finding-provider-path-001"]
+    },
+    {
+      "fromVersion": "1.31.9",
+      "toVersion": "1.32.7",
+      "status": "PASS",
+      "providerValid": true,
+      "findingIds": ["finding-provider-path-001"]
+    },
+    {
+      "fromVersion": "1.32.7",
+      "toVersion": "1.33.12",
+      "status": "PASS",
+      "providerValid": true,
+      "findingIds": ["finding-provider-path-001"]
+    }
+  ],
+  "decisionTrace": [
+    {
+      "step": "provider-path",
+      "result": "PASS",
+      "summary": "Selected highest provider-supported destination with sequential stages.",
+      "findingIds": ["finding-provider-path-001"]
+    }
+  ],
+  "recommendedActions": [
+    "Upgrade through each provider-supported stage and run post-stage smoke tests."
+  ],
+  "limitations": []
+}

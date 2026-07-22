@@ -2,6 +2,17 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-22 — Phase 0 schema contracts
+
+- Added Phase 0 schema contract artifacts for assessment, cluster snapshot, AKS
+  provider evidence, and catalog records.
+- Added the Phase 0 security, RBAC, external-command, redaction, and dependency
+  contract.
+- Added valid and invalid schema fixtures, including the approved
+  `1.30.0 -> 1.33.12` staged AKS recommendation scenario.
+- Documented the split between structural JSON Schema validation and later
+  semantic domain validation for cross-record recommendation rules.
+
 ## 2026-07-22 — MVP development planning baseline
 
 - Expanded delivery into contract, foundation, inventory, health, component, API, AKS, recommendation, reporting, and release phases.

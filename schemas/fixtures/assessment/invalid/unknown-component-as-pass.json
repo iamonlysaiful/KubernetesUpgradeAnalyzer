@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "kua.assessment.v1",
+  "assessmentId": "assessment-invalid-unknown-pass",
+  "generatedAt": "2026-07-22T08:10:00Z",
+  "tool": {
+    "name": "kua",
+    "version": "0.0.0-dev"
+  },
+  "catalog": {
+    "version": "0.1.0",
+    "schemaVersion": "kua.catalog.v1",
+    "source": "EMBEDDED",
+    "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "cluster": {
+    "kind": "Cluster",
+    "name": "cluster-001"
+  },
+  "currentVersion": "1.30.0",
+  "readiness": "READY",
+  "risk": "LOW",
+  "componentDetections": [
+    {
+      "detectionId": "detect-unknown-001",
+      "productId": "emqx",
+      "versionStatus": "UNKNOWN",
+      "method": "unknown",
+      "evidence": [
+        {
+          "source": "workload.name",
+          "observedAt": "2026-07-22T08:00:00Z",
+          "summary": "Product detected but version was not available.",
+          "confidence": "LOW"
+        }
+      ],
+      "confidence": "LOW"
+    }
+  ],
+  "findings": [
+    {
+      "findingId": "finding-component-invalid-001",
+      "ruleId": "component.compatibility.unknown-version",
+      "category": "COMPONENT",
+      "status": "PASS",
+      "severity": "INFO",
+      "summary": "This fixture is invalid by contract review because unknown component evidence must not pass.",
+      "evidence": [
+        {
+          "source": "component.detection",
+          "observedAt": "2026-07-22T08:00:00Z",
+          "summary": "Version unknown.",
+          "confidence": "LOW"
+        }
+      ]
+    }
+  ],
+  "candidates": [],
+  "upgradePath": [],
+  "decisionTrace": [],
+  "recommendedActions": [],
+  "limitations": []
+}

@@ -1,6 +1,6 @@
 # Security and RBAC plan
 
-Status: Approved plan; exact manifest and allowlists are Phase 0 deliverables
+Status: Phase 0 contract in progress
 Last updated: 2026-07-22
 
 ## 1. Security objectives
@@ -52,3 +52,5 @@ Required checks include malicious fixture inputs, output/path traversal, symlink
 - Redaction field matrix and prohibited-data tests approved.
 - Threat cases map to prevention/detection behavior.
 - No planned MVP behavior requires cluster/provider mutation or Secret reads.
+
+The Phase 0 contract artifact is `docs/contracts/security-rbac-contract.md`.

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "kua.catalog.v1",
+  "catalogVersion": "0.1.0",
+  "createdAt": "2026-07-22T07:00:00Z",
+  "kubernetes": {
+    "validatedRange": {
+      "minMinor": "1.30",
+      "maxMinor": "1.33"
+    },
+    "apiRules": []
+  },
+  "providers": [],
+  "components": [
+    {
+      "productId": "nginx-ingress",
+      "productVersionRange": "1.12.x",
+      "kubernetesRange": ">=1.30 <=1.33",
+      "status": "supported",
+      "confidence": "authoritative",
+      "sourceId": "src-missing"
+    }
+  ],
+  "sources": []
+}

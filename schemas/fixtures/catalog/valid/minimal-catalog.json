@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "kua.catalog.v1",
+  "catalogVersion": "0.1.0",
+  "createdAt": "2026-07-22T07:00:00Z",
+  "reviewAfter": "2026-10-22T07:00:00Z",
+  "kubernetes": {
+    "validatedRange": {
+      "minMinor": "1.30",
+      "maxMinor": "1.33"
+    },
+    "apiRules": [
+      {
+        "ruleId": "api.flowcontrol.v1beta3.removed-1-32",
+        "apiVersion": "flowcontrol.apiserver.k8s.io/v1beta3",
+        "kind": "FlowSchema",
+        "status": "removed",
+        "removedIn": "1.32",
+        "replacement": "flowcontrol.apiserver.k8s.io/v1",
+        "sourceId": "src-k8s-deprecation-guide"
+      }
+    ]
+  },
+  "providers": [
+    {
+      "provider": "AKS",
+      "sequentialMinorUpgrades": true,
+      "candidateSource": "LIVE_PROVIDER_EVIDENCE",
+      "sourceId": "src-aks-upgrade-doc"
+    }
+  ],
+  "components": [
+    {
+      "productId": "nginx-ingress",
+      "aliases": ["ingress-nginx"],
+      "productVersionRange": "1.12.x",
+      "kubernetesRange": ">=1.30 <=1.33",
+      "status": "supported",
+      "confidence": "authoritative",
+      "expiresAt": "2026-10-22T07:00:00Z",
+      "sourceId": "src-nginx-ingress-support"
+    },
+    {
+      "productId": "emqx",
+      "productVersionRange": "unknown",
+      "kubernetesRange": ">=1.30 <=1.33",
+      "status": "unknown",
+      "confidence": "unknown",
+      "sourceId": "src-emqx-unbounded"
+    }
+  ],
+  "sources": [
+    {
+      "sourceId": "src-k8s-deprecation-guide",
+      "title": "Kubernetes deprecation guide",
+      "url": "https://kubernetes.io/docs/reference/using-api/deprecation-guide/",
+      "retrievedAt": "2026-07-22T07:00:00Z",
+      "claim": "API removals are evaluated for each target minor."
+    },
+    {
+      "sourceId": "src-aks-upgrade-doc",
+      "title": "AKS upgrade control plane",
+      "url": "https://learn.microsoft.com/azure/aks/upgrade-aks-control-plane",
+      "retrievedAt": "2026-07-22T07:00:00Z",
+      "claim": "AKS upgrades proceed sequentially by minor version."
+    },
+    {
+      "sourceId": "src-nginx-ingress-support",
+      "title": "Ingress NGINX supported versions",
+      "url": "https://github.com/kubernetes/ingress-nginx",
+      "retrievedAt": "2026-07-22T07:00:00Z",
+      "claim": "Curated placeholder for Phase 0 schema validation only."
+    },
+    {
+      "sourceId": "src-emqx-unbounded",
+      "title": "EMQX compatibility evidence",
+      "url": "https://www.emqx.com/",
+      "retrievedAt": "2026-07-22T07:00:00Z",
+      "claim": "Unknown compatibility remains explicit and cannot become a pass."
+    }
+  ]
+}
