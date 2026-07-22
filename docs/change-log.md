@@ -2,6 +2,13 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Phase 1 CI quality contract
+
+- Added the P1-03 contract for GitHub Actions, local quality gates, formatting,
+  tests, vet, build, and JSON syntax checks.
+- Deferred release automation, dependency scanning, schema semantic validation,
+  lint tooling, race tests, SBOM generation, and live-system checks.
+
 ## 2026-07-22 — Phase 1 config and error contract
 
 - Added the P1-02 contract for standard-library common flag parsing, runtime

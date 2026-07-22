@@ -64,6 +64,10 @@ P1-02 remains standard-library only and is governed by
 mapping without reading config files, accessing Kubernetes, invoking providers,
 or rendering reports.
 
+P1-03 is governed by `docs/contracts/ci-quality-contract.md`. It introduces
+GitHub Actions and local quality gates only; release automation, dependency
+scanning, schema semantic validation, and live-system checks remain deferred.
+
 ## 6. Stop conditions
 
 Stop affected work when a schema or accepted document conflicts with implementation, live access would exceed approved read-only permissions, kubent lacks verified target rules, a catalog claim lacks adequate provenance, redaction leaks an identifier, deterministic fixtures disagree, or ExFAT metadata makes Git integrity fail.
