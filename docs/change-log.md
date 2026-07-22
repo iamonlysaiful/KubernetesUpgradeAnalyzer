@@ -2,6 +2,14 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Phase 2 Kubernetes preflight contract
+
+- Added the P2-01 contract for kubeconfig/context resolution, read-only
+  discovery/RBAC preflight, limitations, and fake-client test boundaries.
+- Added the Kubernetes client-go dependency assessment for P2-01 only.
+- Reaffirmed that live cluster execution requires separate approval naming the
+  context and read-only operation.
+
 ## 2026-07-23 — Phase 1 CI quality contract
 
 - Added the P1-03 contract for GitHub Actions, local quality gates, formatting,

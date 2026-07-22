@@ -26,6 +26,7 @@ The documents in this directory are the source of truth for KubeUpgrade Advisor.
 | [`contracts/foundation-contract.md`](contracts/foundation-contract.md) | Phase 1 module, CLI skeleton, version, and dependency boundary |
 | [`contracts/config-error-contract.md`](contracts/config-error-contract.md) | Phase 1 config, logging, command-error, and exit-code foundation |
 | [`contracts/ci-quality-contract.md`](contracts/ci-quality-contract.md) | Phase 1 CI workflow and local quality gate contract |
+| [`contracts/kube-preflight-contract.md`](contracts/kube-preflight-contract.md) | Phase 2 kubeconfig/context and read-only preflight contract |
 | [`contracts/domain-and-schema-plan.md`](contracts/domain-and-schema-plan.md) | Domain types, schemas, compatibility, and versioning plan |
 | [`contracts/security-rbac-contract.md`](contracts/security-rbac-contract.md) | Phase 0 read-only RBAC, external-command, redaction, and dependency contract |
 | [`plans/security-rbac-plan.md`](plans/security-rbac-plan.md) | Least-privilege Kubernetes/Azure access and security validation |
@@ -40,6 +41,12 @@ The documents in this directory are the source of truth for KubeUpgrade Advisor.
 | [`../schemas/cluster-snapshot/v1.json`](../schemas/cluster-snapshot/v1.json) | Normalized cluster snapshot schema |
 | [`../schemas/provider-evidence/aks-v1.json`](../schemas/provider-evidence/aks-v1.json) | AKS provider evidence schema |
 | [`../schemas/catalog/v1.json`](../schemas/catalog/v1.json) | Embedded catalog schema |
+
+## Dependency assessments
+
+| Document | Purpose |
+| --- | --- |
+| [`dependencies/client-go.md`](dependencies/client-go.md) | Kubernetes client-go dependency assessment for P2-01 |
 
 ## Architecture decisions
 
