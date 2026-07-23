@@ -68,6 +68,10 @@ func TestCollectCoreBuildsPartialSnapshot(t *testing.T) {
 
 func TestCollectCoreMatchesGoldenFixture(t *testing.T) {
 	snapshot := collectGoldenSnapshot(t)
+	if err := ValidateCoreSnapshot(snapshot); err != nil {
+		t.Fatalf("ValidateCoreSnapshot returned error: %v", err)
+	}
+
 	got, err := json.MarshalIndent(snapshot, "", "  ")
 	if err != nil {
 		t.Fatalf("MarshalIndent returned error: %v", err)
