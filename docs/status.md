@@ -10,7 +10,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Gate | Status | Evidence |
 | --- | --- | --- |
 | Gate A - contracts | Complete | Phase 0 contracts, schemas, fixtures, security/RBAC, and dependency rules are documented and merged. |
-| Gate B - collection safety | Passed for P2-02 | P2-02 core inventory has fake-client/golden coverage and a locally approved live smoke-test record. Later collectors still require separate Gate B expansion approval. |
+| Gate B - collection safety | Passed for P2-02 | P2-02 core inventory has fake-client/golden coverage and a locally approved live smoke-test record. Expanded live inventory is deferred and still requires separate Gate B expansion approval. |
 | Gate C - compatibility validity | Not started | Catalog source validation and kubent target-rule coverage are future Phase 4/5 work. |
 | Gate D - recommendation calibration | Not started | Recommendation matrix and staging expectations are future Phase 7 work. |
 | Gate E - release | Not started | Release validation, artifacts, SBOM, and publication are Phase 9 work. |
@@ -21,8 +21,9 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | --- | --- | --- |
 | Phase 0 - Design freeze and contracts | Complete | Merged to `main`. |
 | Phase 1 - CLI foundation | Complete | Merged to `main`, including local CI and GitHub Actions. |
-| Phase 2 - Kubernetes preflight and inventory | In progress | P2-03 fake-client inventory groups are merged; snapshot assembly consolidation is on `feature/inventory-snapshot-consolidation`; Gate B passed for namespace/node collection only. |
-| Phase 3+ | Not started | Blocked on earlier phase outputs and review gates. |
+| Phase 2 - Kubernetes preflight and inventory | Closeout draft | Fake-client inventory foundation is merged; live core inventory is verified; expanded live inventory is deferred. |
+| Phase 3 - Health analysis | Ready next | May start after Phase 2 closeout is reviewed and merged. |
+| Phase 4+ | Not started | Blocked on earlier phase outputs and review gates. |
 
 ## Current branch focus
 
@@ -72,16 +73,22 @@ P2-03 event inventory is merged:
 - fake-client full P2-03 snapshot fixture path and subset validation;
 - no live event collection until separate Gate B expansion approval.
 
-`feature/inventory-snapshot-consolidation` starts Phase 2 consolidation:
+Phase 2 consolidation is merged:
 
 - inventory snapshot assembly contract;
 - explicit fake-client collection options;
 - preserved golden fixture coverage;
 - no live expanded inventory collection until separate Gate B expansion approval.
 
-Current `kua inventory` behavior remains partial/core inventory only. Workloads,
-storage, networking, CRDs, events, health, compatibility, provider evidence,
-recommendations, and reports are not collected yet.
+`docs/phase-2-closeout` records the closeout decision:
+
+- Phase 2 foundation is complete for MVP continuation;
+- `kua inventory --format=json` remains live core inventory only;
+- expanded live inventory is deferred until a later approved Gate B expansion.
+
+Current live `kua inventory` behavior remains partial/core inventory only.
+Workloads, storage, networking, CRDs, events, health, compatibility, provider
+evidence, recommendations, and reports are not emitted from live collection yet.
 
 ## Current quality evidence
 

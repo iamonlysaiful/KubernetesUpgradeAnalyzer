@@ -84,6 +84,11 @@ P2-03 workload inventory is governed by
 workload collection for Kubernetes controller resources and does not approve live
 workload reads until Gate B is separately expanded.
 
+Phase 2 closes the MVP inventory foundation with live core inventory only and
+fake-client/golden coverage for the expanded inventory groups. Expanded live
+workload, CRD, networking, storage, and event reads are deferred until a later
+Gate B expansion is explicitly approved.
+
 ## 6. Stop conditions
 
 Stop affected work when a schema or accepted document conflicts with implementation, live access would exceed approved read-only permissions, kubent lacks verified target rules, a catalog claim lacks adequate provenance, redaction leaks an identifier, deterministic fixtures disagree, or ExFAT metadata makes Git integrity fail.

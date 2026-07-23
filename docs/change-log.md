@@ -2,6 +2,16 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Phase 2 closeout draft
+
+- Added the Phase 2 closeout record.
+- Marked the Phase 2 MVP inventory foundation as ready to close with live core
+  inventory only.
+- Deferred expanded live workload, CRD, networking, storage, and event reads
+  until a later explicit Gate B expansion.
+- Marked Phase 3 health analysis as the recommended next implementation phase
+  after closeout is reviewed and merged.
+
 ## 2026-07-23 — Inventory snapshot assembly consolidation contract
 
 - Added the Phase 2 inventory snapshot assembly consolidation contract.
