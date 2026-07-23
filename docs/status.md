@@ -21,7 +21,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | --- | --- | --- |
 | Phase 0 - Design freeze and contracts | Complete | Merged to `main`. |
 | Phase 1 - CLI foundation | Complete | Merged to `main`, including local CI and GitHub Actions. |
-| Phase 2 - Kubernetes preflight and inventory | In progress | P2-03 workload and CRD inventory are merged; networking inventory is starting on `feature/kube-networking-inventory`; Gate B passed for namespace/node collection only. |
+| Phase 2 - Kubernetes preflight and inventory | In progress | P2-03 workload and CRD inventory are merged; fake-client networking inventory is on `feature/kube-networking-inventory`; Gate B passed for namespace/node collection only. |
 | Phase 3+ | Not started | Blocked on earlier phase outputs and review gates. |
 
 ## Current branch focus
@@ -54,7 +54,8 @@ P2-03 CRD inventory is merged:
 `feature/kube-networking-inventory` starts P2-03 networking inventory:
 
 - networking collector contract;
-- fake-client tests first;
+- fake-client Service and Ingress collector tests;
+- fake-client networking snapshot fixture path and subset validation;
 - no live networking collection until separate Gate B expansion approval.
 
 Current `kua inventory` behavior remains partial/core inventory only. Workloads,

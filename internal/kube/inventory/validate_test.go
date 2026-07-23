@@ -82,3 +82,25 @@ func TestValidateCoreSnapshotRejectsInvalidCRD(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateCoreSnapshotRejectsInvalidNetworking(t *testing.T) {
+	snapshot := collectNetworkingGoldenSnapshot(t)
+	snapshot.Inventory.Networking[0].APIVersion = "v1"
+	snapshot.Inventory.Networking[0].Namespace = ""
+	snapshot.Inventory.Networking[1].Kind = "EndpointSlice"
+
+	err := ValidateCoreSnapshot(snapshot)
+	if err == nil {
+		t.Fatalf("ValidateCoreSnapshot(invalid networking) returned nil error")
+	}
+	message := err.Error()
+	for _, want := range []string{
+		"apiVersion",
+		"namespace",
+		"kind",
+	} {
+		if !strings.Contains(message, want) {
+			t.Fatalf("ValidateCoreSnapshot networking error missing %q in: %s", want, message)
+		}
+	}
+}

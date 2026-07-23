@@ -9,6 +9,8 @@ This log records material scope and architecture changes. Git remains the detail
   references only.
 - Reaffirmed that live networking reads require separate Gate B expansion
   approval.
+- Added fake-client networking collection, snapshot fixture coverage, and subset
+  validation for Service and Ingress refs.
 
 ## 2026-07-23 — Phase 2 CRD inventory contract
 
