@@ -60,3 +60,25 @@ func TestValidateCoreSnapshotRejectsInvalidWorkload(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateCoreSnapshotRejectsInvalidCRD(t *testing.T) {
+	snapshot := collectCRDGoldenSnapshot(t)
+	snapshot.Inventory.CRDs[0].APIVersion = "v1"
+	snapshot.Inventory.CRDs[0].Kind = "ConfigMap"
+	snapshot.Inventory.CRDs[0].Namespace = "team-a"
+
+	err := ValidateCoreSnapshot(snapshot)
+	if err == nil {
+		t.Fatalf("ValidateCoreSnapshot(invalid CRD) returned nil error")
+	}
+	message := err.Error()
+	for _, want := range []string{
+		"apiVersion",
+		"kind",
+		"namespace",
+	} {
+		if !strings.Contains(message, want) {
+			t.Fatalf("ValidateCoreSnapshot CRD error missing %q in: %s", want, message)
+		}
+	}
+}

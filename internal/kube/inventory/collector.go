@@ -8,6 +8,7 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
@@ -17,8 +18,9 @@ import (
 const SchemaVersion = "kua.cluster-snapshot.v1"
 
 type Collector struct {
-	Client kubernetes.Interface
-	Clock  func() time.Time
+	Client              kubernetes.Interface
+	APIExtensionsClient apiextensionsclient.Interface
+	Clock               func() time.Time
 }
 
 func NewCollector(client kubernetes.Interface) Collector {
@@ -26,6 +28,12 @@ func NewCollector(client kubernetes.Interface) Collector {
 		Client: client,
 		Clock:  time.Now,
 	}
+}
+
+func NewCollectorWithAPIExtensions(client kubernetes.Interface, apiExtensionsClient apiextensionsclient.Interface) Collector {
+	collector := NewCollector(client)
+	collector.APIExtensionsClient = apiExtensionsClient
+	return collector
 }
 
 func (c Collector) CollectCore(ctx context.Context, preflightResult preflight.Result) (Snapshot, error) {
@@ -77,7 +85,62 @@ func (c Collector) CollectSnapshotWithWorkloads(ctx context.Context, preflightRe
 	}), nil
 }
 
+func (c Collector) CollectSnapshotWithWorkloadsAndCRDs(ctx context.Context, preflightResult preflight.Result) (Snapshot, error) {
+	if c.Client == nil {
+		return Snapshot{}, fmt.Errorf("kubernetes client is required")
+	}
+	if c.APIExtensionsClient == nil {
+		return Snapshot{}, fmt.Errorf("kubernetes apiextensions client is required")
+	}
+
+	namespaces, err := c.collectNamespaces(ctx)
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("collect namespaces: %w", err)
+	}
+
+	nodes, err := c.collectNodes(ctx)
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("collect nodes: %w", err)
+	}
+
+	workloads, err := c.collectWorkloads(ctx)
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("collect workloads: %w", err)
+	}
+
+	crds, err := c.collectCRDs(ctx)
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("collect crds: %w", err)
+	}
+
+	return c.buildSnapshotWithInventory(preflightResult, Inventory{
+		Namespaces: namespaces,
+		Nodes:      nodes,
+		Workloads:  workloads,
+		Storage:    []ResourceRef{},
+		Networking: []ResourceRef{},
+		CRDs:       crds,
+		Events:     []Event{},
+	}, Limitation{
+		Code:     "PARTIAL_INVENTORY_P2_03",
+		Severity: "WARN",
+		Summary:  "P2-03 collects namespaces, nodes, supported workload controllers, and CRD definitions in fake-client fixture paths only; storage, networking, and events are intentionally not collected yet.",
+	}), nil
+}
+
 func (c Collector) buildSnapshot(preflightResult preflight.Result, namespaces []ResourceRef, nodes []Node, workloads []Workload, limitation Limitation) Snapshot {
+	return c.buildSnapshotWithInventory(preflightResult, Inventory{
+		Namespaces: namespaces,
+		Nodes:      nodes,
+		Workloads:  workloads,
+		Storage:    []ResourceRef{},
+		Networking: []ResourceRef{},
+		CRDs:       []ResourceRef{},
+		Events:     []Event{},
+	}, limitation)
+}
+
+func (c Collector) buildSnapshotWithInventory(preflightResult preflight.Result, inventory Inventory, limitation Limitation) Snapshot {
 	capturedAt := c.now().UTC()
 	return Snapshot{
 		SchemaVersion: SchemaVersion,
@@ -97,15 +160,7 @@ func (c Collector) buildSnapshot(preflightResult preflight.Result, namespaces []
 		Kubernetes: Kubernetes{
 			ServerVersion: normalizeServerVersion(preflightResult.ServerVersion),
 		},
-		Inventory: Inventory{
-			Namespaces: namespaces,
-			Nodes:      nodes,
-			Workloads:  workloads,
-			Storage:    []ResourceRef{},
-			Networking: []ResourceRef{},
-			CRDs:       []ResourceRef{},
-			Events:     []Event{},
-		},
+		Inventory:   inventory,
 		Limitations: []Limitation{limitation},
 	}
 }
