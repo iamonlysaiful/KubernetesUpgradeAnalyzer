@@ -32,6 +32,7 @@ The documents in this directory are the source of truth for KubeUpgrade Advisor.
 | [`contracts/workload-inventory-contract.md`](contracts/workload-inventory-contract.md) | Phase 2 workload inventory contract |
 | [`contracts/crd-inventory-contract.md`](contracts/crd-inventory-contract.md) | Phase 2 CRD inventory contract |
 | [`contracts/networking-inventory-contract.md`](contracts/networking-inventory-contract.md) | Phase 2 networking inventory contract |
+| [`contracts/storage-inventory-contract.md`](contracts/storage-inventory-contract.md) | Phase 2 storage inventory contract |
 | [`contracts/domain-and-schema-plan.md`](contracts/domain-and-schema-plan.md) | Domain types, schemas, compatibility, and versioning plan |
 | [`contracts/security-rbac-contract.md`](contracts/security-rbac-contract.md) | Phase 0 read-only RBAC, external-command, redaction, and dependency contract |
 | [`plans/security-rbac-plan.md`](plans/security-rbac-plan.md) | Least-privilege Kubernetes/Azure access and security validation |

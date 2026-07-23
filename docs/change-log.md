@@ -2,6 +2,13 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Phase 2 storage inventory contract
+
+- Added the P2-03 storage inventory contract.
+- Scoped storage collection to sanitized PVC, PV, and StorageClass metadata
+  references only.
+- Reaffirmed that live storage reads require separate Gate B expansion approval.
+
 ## 2026-07-23 — Phase 2 networking inventory contract
 
 - Added the P2-03 networking inventory contract.
