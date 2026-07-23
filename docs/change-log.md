@@ -2,6 +2,14 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Phase 2 workload inventory contract
+
+- Added the P2-03 workload inventory contract.
+- Scoped workload collection to controller summaries and container image strings
+  using fake clients first.
+- Reaffirmed that P2-02 Gate B covers namespace/node collection only and live
+  workload reads require separate Gate B expansion approval.
+
 ## 2026-07-23 — Gate B P2-02 smoke-test result
 
 - Recorded a sanitized Gate B P2-02 smoke-test result.

@@ -79,6 +79,11 @@ namespaces, nodes, and explicit limitations. Workloads, storage, networking,
 CRDs, events, health, compatibility, provider evidence, recommendations, and
 reports remain out of scope.
 
+P2-03 workload inventory is governed by
+`docs/contracts/workload-inventory-contract.md`. It starts with fake-client-only
+workload collection for Kubernetes controller resources and does not approve live
+workload reads until Gate B is separately expanded.
+
 ## 6. Stop conditions
 
 Stop affected work when a schema or accepted document conflicts with implementation, live access would exceed approved read-only permissions, kubent lacks verified target rules, a catalog claim lacks adequate provenance, redaction leaks an identifier, deterministic fixtures disagree, or ExFAT metadata makes Git integrity fail.
