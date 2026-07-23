@@ -2,6 +2,14 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Workload snapshot integration contract
+
+- Clarified that P2-03 may assemble workload snapshots for fake-client and
+  golden-fixture tests only.
+- Required live `kua inventory --format=json` to withhold workload records until
+  Gate B is separately expanded for workload reads.
+- Added P2-03 workload fixture and subset-validator expectations.
+
 ## 2026-07-23 — Phase 2 workload inventory contract
 
 - Added the P2-03 workload inventory contract.

@@ -21,6 +21,11 @@ This package adds fake-client-first workload snapshot collection for:
 The collected workload records populate `inventory.workloads` in
 `schemas/cluster-snapshot/v1.json`.
 
+This package may add an internal snapshot assembly path that includes workloads
+for fake-client and golden-fixture tests. `kua inventory --format=json` must not
+emit live workload records until Gate B is separately expanded for workload
+reads.
+
 This package does not collect pods, pod logs, Secret data, ConfigMap contents,
 environment variables, volumes, service account tokens, workload annotations,
 raw UIDs, owner references, storage, networking, CRDs, events, health findings,
@@ -99,3 +104,15 @@ P2-02 Gate B passed only for namespace/node collection. Live workload collection
 requires a separate Gate B expansion approval naming the context and allowing the
 specific read-only workload API operations. Until then, automated tests use fake
 clients only.
+
+## 8. Fixture and validation expectations
+
+At least one P2-03 golden fixture must include representative sanitized workload
+records for every supported controller kind. The fixture must continue to use
+empty arrays for storage, networking, CRDs, and events until those collectors are
+implemented and approved.
+
+The dependency-free snapshot subset validator must be expanded to cover workload
+required fields, `critical` enum values, non-negative replica counts, and
+container required fields before any workload snapshot path is considered
+complete.
