@@ -64,6 +64,16 @@ This log records material scope and architecture changes. Git remains the detail
 - Kept detector cohort logic, compatibility decisions, live reads, and runtime
   network access out of scope.
 
+## 2026-07-24 — Initial component detector cohort
+
+- Added workload-backed detectors for NGINX Ingress, CoreDNS, Metrics Server,
+  Azure Disk CSI, Azure File CSI, Fluent Bit, and EMQX.
+- Added tests proving ambiguous, `latest`, and conflicting component version
+  evidence remains `UNKNOWN`.
+- Added the Phase 4 closeout record and kept compatibility decisions, provider
+  evidence, kubent, recommendations, runtime internet access, and expanded live
+  reads deferred.
+
 ## 2026-07-23 — Phase 2 closeout draft
 
 - Added the Phase 2 closeout record.
