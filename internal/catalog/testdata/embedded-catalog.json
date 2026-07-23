@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "kua.catalog.v1",
+  "catalogVersion": "0.1.0",
+  "createdAt": "2026-07-23T00:00:00Z",
+  "reviewAfter": "2026-10-23T00:00:00Z",
+  "kubernetes": {
+    "validatedRange": {
+      "minMinor": "1.30",
+      "maxMinor": "1.33"
+    },
+    "apiRules": []
+  },
+  "providers": [],
+  "components": [
+    {
+      "productId": "unknown-placeholder",
+      "productVersionRange": "unknown",
+      "kubernetesRange": ">=1.30 <=1.33",
+      "status": "unknown",
+      "confidence": "unknown",
+      "sourceId": "src-placeholder"
+    }
+  ],
+  "sources": [
+    {
+      "sourceId": "src-placeholder",
+      "title": "KUA embedded placeholder catalog",
+      "url": "https://github.com/iamonlysaiful/KubernetesUpgradeAnalyzer",
+      "retrievedAt": "2026-07-23T00:00:00Z",
+      "claim": "Placeholder catalog keeps unknown compatibility explicit until reviewed records are added."
+    }
+  ]
+}
