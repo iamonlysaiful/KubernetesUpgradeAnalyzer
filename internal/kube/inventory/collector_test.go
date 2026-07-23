@@ -11,6 +11,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -153,6 +154,27 @@ func TestCollectSnapshotWithWorkloadsCRDsAndNetworkingMatchesGoldenFixture(t *te
 	}
 	if string(got) != string(want) {
 		t.Fatalf("Generated networking snapshot does not match golden fixture.\nGot:\n%s\nWant:\n%s", string(got), string(want))
+	}
+}
+
+func TestCollectSnapshotWithWorkloadsCRDsNetworkingAndStorageMatchesGoldenFixture(t *testing.T) {
+	snapshot := collectStorageGoldenSnapshot(t)
+	if err := ValidateCoreSnapshot(snapshot); err != nil {
+		t.Fatalf("ValidateCoreSnapshot returned error: %v", err)
+	}
+
+	got, err := json.MarshalIndent(snapshot, "", "  ")
+	if err != nil {
+		t.Fatalf("MarshalIndent returned error: %v", err)
+	}
+	got = append(got, '\n')
+
+	want, err := os.ReadFile("../../../schemas/fixtures/cluster-snapshot/valid/p2-03-storage-inventory.json")
+	if err != nil {
+		t.Fatalf("ReadFile golden fixture returned error: %v", err)
+	}
+	if string(got) != string(want) {
+		t.Fatalf("Generated storage snapshot does not match golden fixture.\nGot:\n%s\nWant:\n%s", string(got), string(want))
 	}
 }
 
@@ -337,6 +359,30 @@ func collectNetworkingGoldenSnapshot(t *testing.T) Snapshot {
 	return snapshot
 }
 
+func collectStorageGoldenSnapshot(t *testing.T) Snapshot {
+	t.Helper()
+
+	collector := NewCollectorWithAPIExtensions(
+		workloadNetworkingStorageGoldenClient(),
+		crdGoldenClient(),
+	)
+	collector.Clock = func() time.Time {
+		return time.Date(2026, 7, 23, 7, 8, 9, 0, time.UTC)
+	}
+
+	snapshot, err := collector.CollectSnapshotWithWorkloadsCRDsNetworkingAndStorage(context.Background(), preflight.Result{
+		Context: preflight.ContextSelection{
+			Name:             "ctx-storage-golden",
+			KubeconfigSource: preflight.KubeconfigSourceDefault,
+		},
+		ServerVersion: "v1.30.7",
+	})
+	if err != nil {
+		t.Fatalf("CollectSnapshotWithWorkloadsCRDsNetworkingAndStorage returned error: %v", err)
+	}
+	return snapshot
+}
+
 func crdGoldenClient() *apiextensionsfake.Clientset {
 	return apiextensionsfake.NewSimpleClientset(
 		&apiextensionsv1.CustomResourceDefinition{
@@ -354,6 +400,23 @@ func workloadNetworkingGoldenClient() *fake.Clientset {
 		&corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: "db", Namespace: "team-a"}},
 		&networkingv1.Ingress{ObjectMeta: metav1.ObjectMeta{Name: "edge", Namespace: "team-a"}},
 	)...)
+}
+
+func workloadNetworkingStorageGoldenClient() *fake.Clientset {
+	return fake.NewSimpleClientset(append(workloadNetworkingGoldenObjects(),
+		&corev1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "pv-001"}},
+		&storagev1.StorageClass{ObjectMeta: metav1.ObjectMeta{Name: "managed-001"}},
+		&corev1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "cache", Namespace: "team-a"}},
+		&corev1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "data", Namespace: "team-b"}},
+	)...)
+}
+
+func workloadNetworkingGoldenObjects() []runtime.Object {
+	return append(workloadGoldenObjects(),
+		&corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: "api", Namespace: "team-b"}},
+		&corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: "db", Namespace: "team-a"}},
+		&networkingv1.Ingress{ObjectMeta: metav1.ObjectMeta{Name: "edge", Namespace: "team-a"}},
+	)
 }
 
 func workloadGoldenClient() *fake.Clientset {

@@ -94,6 +94,9 @@ func validateInventory(inventory Inventory) []string {
 	for i, workload := range inventory.Workloads {
 		problems = append(problems, validateWorkload(i, workload)...)
 	}
+	for i, storage := range inventory.Storage {
+		problems = append(problems, validateStorage(i, storage)...)
+	}
 	for i, networking := range inventory.Networking {
 		problems = append(problems, validateNetworking(i, networking)...)
 	}
@@ -155,6 +158,38 @@ func validateWorkload(index int, workload Workload) []string {
 		if container.Image == "" {
 			problems = append(problems, containerPrefix+".image is required")
 		}
+	}
+	return problems
+}
+
+func validateStorage(index int, ref ResourceRef) []string {
+	var problems []string
+	prefix := fmt.Sprintf("inventory.storage[%d]", index)
+	switch ref.Kind {
+	case "PersistentVolumeClaim":
+		problems = append(problems, validateResourceRef(prefix, ref, true)...)
+		if ref.APIVersion != "v1" {
+			problems = append(problems, prefix+".apiVersion must be v1 for PersistentVolumeClaim")
+		}
+	case "PersistentVolume":
+		problems = append(problems, validateResourceRef(prefix, ref, false)...)
+		if ref.APIVersion != "v1" {
+			problems = append(problems, prefix+".apiVersion must be v1 for PersistentVolume")
+		}
+		if ref.Namespace != "" {
+			problems = append(problems, prefix+".namespace must be empty for PersistentVolume")
+		}
+	case "StorageClass":
+		problems = append(problems, validateResourceRef(prefix, ref, false)...)
+		if ref.APIVersion != "storage.k8s.io/v1" {
+			problems = append(problems, prefix+".apiVersion must be storage.k8s.io/v1 for StorageClass")
+		}
+		if ref.Namespace != "" {
+			problems = append(problems, prefix+".namespace must be empty for StorageClass")
+		}
+	default:
+		problems = append(problems, validateResourceRef(prefix, ref, false)...)
+		problems = append(problems, prefix+".kind is invalid")
 	}
 	return problems
 }

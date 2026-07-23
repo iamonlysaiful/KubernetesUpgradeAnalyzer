@@ -21,7 +21,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | --- | --- | --- |
 | Phase 0 - Design freeze and contracts | Complete | Merged to `main`. |
 | Phase 1 - CLI foundation | Complete | Merged to `main`, including local CI and GitHub Actions. |
-| Phase 2 - Kubernetes preflight and inventory | In progress | P2-03 workload, CRD, and networking inventory are merged; storage inventory is starting on `feature/kube-storage-inventory`; Gate B passed for namespace/node collection only. |
+| Phase 2 - Kubernetes preflight and inventory | In progress | P2-03 workload, CRD, and networking inventory are merged; fake-client storage inventory is on `feature/kube-storage-inventory`; Gate B passed for namespace/node collection only. |
 | Phase 3+ | Not started | Blocked on earlier phase outputs and review gates. |
 
 ## Current branch focus
@@ -61,7 +61,8 @@ P2-03 networking inventory is merged:
 `feature/kube-storage-inventory` starts P2-03 storage inventory:
 
 - storage collector contract;
-- fake-client tests first;
+- fake-client PVC, PV, and StorageClass collector tests;
+- fake-client storage snapshot fixture path and subset validation;
 - no live storage collection until separate Gate B expansion approval.
 
 Current `kua inventory` behavior remains partial/core inventory only. Workloads,

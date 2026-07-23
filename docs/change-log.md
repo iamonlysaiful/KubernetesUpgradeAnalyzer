@@ -8,6 +8,8 @@ This log records material scope and architecture changes. Git remains the detail
 - Scoped storage collection to sanitized PVC, PV, and StorageClass metadata
   references only.
 - Reaffirmed that live storage reads require separate Gate B expansion approval.
+- Added fake-client storage collection, snapshot fixture coverage, and subset
+  validation for PVC, PV, and StorageClass refs.
 
 ## 2026-07-23 — Phase 2 networking inventory contract
 
