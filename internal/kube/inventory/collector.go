@@ -43,6 +43,41 @@ func (c Collector) CollectCore(ctx context.Context, preflightResult preflight.Re
 		return Snapshot{}, fmt.Errorf("collect nodes: %w", err)
 	}
 
+	return c.buildSnapshot(preflightResult, namespaces, nodes, []Workload{}, Limitation{
+		Code:     "PARTIAL_INVENTORY_P2_02",
+		Severity: "WARN",
+		Summary:  "P2-02 collects namespaces and nodes only; workloads, storage, networking, CRDs, and events are intentionally not collected yet.",
+	}), nil
+}
+
+func (c Collector) CollectSnapshotWithWorkloads(ctx context.Context, preflightResult preflight.Result) (Snapshot, error) {
+	if c.Client == nil {
+		return Snapshot{}, fmt.Errorf("kubernetes client is required")
+	}
+
+	namespaces, err := c.collectNamespaces(ctx)
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("collect namespaces: %w", err)
+	}
+
+	nodes, err := c.collectNodes(ctx)
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("collect nodes: %w", err)
+	}
+
+	workloads, err := c.collectWorkloads(ctx)
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("collect workloads: %w", err)
+	}
+
+	return c.buildSnapshot(preflightResult, namespaces, nodes, workloads, Limitation{
+		Code:     "PARTIAL_INVENTORY_P2_03",
+		Severity: "WARN",
+		Summary:  "P2-03 collects namespaces, nodes, and supported workload controllers in fake-client fixture paths only; storage, networking, CRDs, and events are intentionally not collected yet.",
+	}), nil
+}
+
+func (c Collector) buildSnapshot(preflightResult preflight.Result, namespaces []ResourceRef, nodes []Node, workloads []Workload, limitation Limitation) Snapshot {
 	capturedAt := c.now().UTC()
 	return Snapshot{
 		SchemaVersion: SchemaVersion,
@@ -65,20 +100,14 @@ func (c Collector) CollectCore(ctx context.Context, preflightResult preflight.Re
 		Inventory: Inventory{
 			Namespaces: namespaces,
 			Nodes:      nodes,
-			Workloads:  []Workload{},
+			Workloads:  workloads,
 			Storage:    []ResourceRef{},
 			Networking: []ResourceRef{},
 			CRDs:       []ResourceRef{},
 			Events:     []Event{},
 		},
-		Limitations: []Limitation{
-			{
-				Code:     "PARTIAL_INVENTORY_P2_02",
-				Severity: "WARN",
-				Summary:  "P2-02 collects namespaces and nodes only; workloads, storage, networking, CRDs, and events are intentionally not collected yet.",
-			},
-		},
-	}, nil
+		Limitations: []Limitation{limitation},
+	}
 }
 
 func (c Collector) now() time.Time {

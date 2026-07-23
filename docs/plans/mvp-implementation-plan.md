@@ -1,7 +1,7 @@
 # MVP implementation plan
 
-Status: Approved plan; implementation not yet authorized
-Last updated: 2026-07-22
+Status: Approved plan; implementation in progress
+Last updated: 2026-07-23
 
 ## 1. Delivery model
 

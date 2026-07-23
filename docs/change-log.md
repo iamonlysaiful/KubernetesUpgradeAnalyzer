@@ -2,6 +2,15 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Workload snapshot fixture path
+
+- Added a fake-client-only workload snapshot path for P2-03 fixtures without
+  changing live `kua inventory --format=json` behavior.
+- Added a sanitized golden cluster snapshot fixture covering supported workload
+  controller kinds.
+- Expanded subset validation for workload refs, replica counts, criticality
+  values, and container required fields.
+
 ## 2026-07-23 — Workload snapshot integration contract
 
 - Clarified that P2-03 may assemble workload snapshots for fake-client and
