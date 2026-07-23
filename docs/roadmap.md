@@ -28,7 +28,10 @@ Exit: skeleton builds and tests on Linux/macOS amd64/arm64; unimplemented comman
 - Implement read-only collectors and normalized sanitized snapshot.
 - Render deterministic console/JSON inventory with partial-RBAC limitations.
 
-Exit: inventory acceptance fixtures and approved live read-only smoke test pass.
+Exit: inventory acceptance fixtures and approved live read-only core smoke test
+pass. Expanded live inventory may be deferred when fake-client collector
+coverage is complete and downstream MVP features do not yet consume expanded
+live records.
 
 ## Phase 3 — Health analysis
 

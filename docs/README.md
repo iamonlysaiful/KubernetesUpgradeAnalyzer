@@ -41,6 +41,7 @@ The documents in this directory are the source of truth for KubeUpgrade Advisor.
 | [`plans/gate-b-smoke-test-plan.md`](plans/gate-b-smoke-test-plan.md) | Proposed Gate B live read-only smoke-test approval plan |
 | [`plans/validation-release-plan.md`](plans/validation-release-plan.md) | Staging validation, artifacts, release checks, and rollback |
 | [`validation/gate-b-p2-02-record.md`](validation/gate-b-p2-02-record.md) | Draft Gate B P2-02 validation record |
+| [`validation/phase-2-closeout.md`](validation/phase-2-closeout.md) | Draft Phase 2 closeout record |
 
 ## Schema contracts
 
