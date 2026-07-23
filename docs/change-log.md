@@ -10,6 +10,15 @@ This log records material scope and architecture changes. Git remains the detail
 - Confirmed Phase 3 starts from fake-client inventory fixtures while expanded
   live inventory remains deferred.
 
+## 2026-07-23 — Health rule foundation
+
+- Added the internal health finding model, rule interface, runner, default
+  options, and deterministic clock injection.
+- Added stable finding ordering by severity, rule ID, resource namespace, kind,
+  name, and summary.
+- Kept Phase 3 health rules, CLI commands, and live Kubernetes reads out of this
+  foundation slice.
+
 ## 2026-07-23 — Phase 2 closeout draft
 
 - Added the Phase 2 closeout record.
