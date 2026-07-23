@@ -1,0 +1,259 @@
+{
+  "schemaVersion": "kua.cluster-snapshot.v1",
+  "snapshotId": "ctx-events-golden-20260723T080910Z",
+  "capturedAt": "2026-07-23T08:09:10Z",
+  "cluster": {
+    "identity": {
+      "kind": "Cluster",
+      "name": "ctx-events-golden"
+    },
+    "provider": {
+      "type": "UNKNOWN",
+      "confidence": "UNKNOWN"
+    },
+    "context": {
+      "name": "ctx-events-golden",
+      "kubeconfigSource": "DEFAULT"
+    }
+  },
+  "kubernetes": {
+    "serverVersion": "1.30.7"
+  },
+  "inventory": {
+    "namespaces": [
+      {
+        "apiVersion": "v1",
+        "kind": "Namespace",
+        "name": "team-a"
+      },
+      {
+        "apiVersion": "v1",
+        "kind": "Namespace",
+        "name": "team-b"
+      }
+    ],
+    "nodes": [
+      {
+        "ref": {
+          "apiVersion": "v1",
+          "kind": "Node",
+          "name": "node-a"
+        },
+        "kubeletVersion": "1.30.7",
+        "providerIdPresent": false,
+        "conditions": []
+      }
+    ],
+    "workloads": [
+      {
+        "ref": {
+          "apiVersion": "apps/v1",
+          "kind": "DaemonSet",
+          "namespace": "team-a",
+          "name": "agent"
+        },
+        "desiredReplicas": 4,
+        "readyReplicas": 3,
+        "critical": "UNKNOWN",
+        "containers": [
+          {
+            "name": "agent",
+            "image": "registry-001/agent@sha256:abc123"
+          }
+        ]
+      },
+      {
+        "ref": {
+          "apiVersion": "apps/v1",
+          "kind": "ReplicaSet",
+          "namespace": "team-a",
+          "name": "legacy"
+        },
+        "desiredReplicas": 3,
+        "readyReplicas": 3,
+        "critical": "UNKNOWN",
+        "containers": [
+          {
+            "name": "legacy",
+            "image": "registry-001/legacy"
+          }
+        ]
+      },
+      {
+        "ref": {
+          "apiVersion": "apps/v1",
+          "kind": "StatefulSet",
+          "namespace": "team-a",
+          "name": "db"
+        },
+        "desiredReplicas": 1,
+        "readyReplicas": 1,
+        "critical": "UNKNOWN",
+        "containers": [
+          {
+            "name": "db",
+            "image": "registry-001/db:12",
+            "imageTag": "12"
+          }
+        ]
+      },
+      {
+        "ref": {
+          "apiVersion": "batch/v1",
+          "kind": "CronJob",
+          "namespace": "team-b",
+          "name": "nightly"
+        },
+        "desiredReplicas": 0,
+        "readyReplicas": 0,
+        "critical": "UNKNOWN",
+        "containers": [
+          {
+            "name": "nightly",
+            "image": "registry-001/nightly:1.0.0",
+            "imageTag": "1.0.0"
+          }
+        ]
+      },
+      {
+        "ref": {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "namespace": "team-b",
+          "name": "api"
+        },
+        "desiredReplicas": 3,
+        "readyReplicas": 2,
+        "critical": "UNKNOWN",
+        "containers": [
+          {
+            "name": "api",
+            "image": "registry-001/app-api:1.2.3",
+            "imageTag": "1.2.3"
+          },
+          {
+            "name": "worker",
+            "image": "registry-001/app-worker:2.1.0",
+            "imageTag": "2.1.0"
+          }
+        ]
+      },
+      {
+        "ref": {
+          "apiVersion": "batch/v1",
+          "kind": "Job",
+          "namespace": "team-b",
+          "name": "migrate"
+        },
+        "desiredReplicas": 2,
+        "readyReplicas": 1,
+        "critical": "UNKNOWN",
+        "containers": [
+          {
+            "name": "migrate",
+            "image": "registry-001/migrate:2026.07",
+            "imageTag": "2026.07"
+          }
+        ]
+      }
+    ],
+    "storage": [
+      {
+        "apiVersion": "v1",
+        "kind": "PersistentVolume",
+        "name": "pv-001"
+      },
+      {
+        "apiVersion": "storage.k8s.io/v1",
+        "kind": "StorageClass",
+        "name": "managed-001"
+      },
+      {
+        "apiVersion": "v1",
+        "kind": "PersistentVolumeClaim",
+        "namespace": "team-a",
+        "name": "cache"
+      },
+      {
+        "apiVersion": "v1",
+        "kind": "PersistentVolumeClaim",
+        "namespace": "team-b",
+        "name": "data"
+      }
+    ],
+    "networking": [
+      {
+        "apiVersion": "networking.k8s.io/v1",
+        "kind": "Ingress",
+        "namespace": "team-a",
+        "name": "edge"
+      },
+      {
+        "apiVersion": "v1",
+        "kind": "Service",
+        "namespace": "team-a",
+        "name": "db"
+      },
+      {
+        "apiVersion": "v1",
+        "kind": "Service",
+        "namespace": "team-b",
+        "name": "api"
+      }
+    ],
+    "crds": [
+      {
+        "apiVersion": "apiextensions.k8s.io/v1",
+        "kind": "CustomResourceDefinition",
+        "name": "alerts.example.test"
+      },
+      {
+        "apiVersion": "apiextensions.k8s.io/v1",
+        "kind": "CustomResourceDefinition",
+        "name": "widgets.example.test"
+      }
+    ],
+    "events": [
+      {
+        "ref": {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "namespace": "team-a",
+          "name": "api"
+        },
+        "type": "NORMAL",
+        "reason": "ScalingReplicaSet",
+        "lastSeenAt": "2026-07-23T08:00:00Z"
+      },
+      {
+        "ref": {
+          "apiVersion": "v1",
+          "kind": "Pod",
+          "namespace": "team-b",
+          "name": "api-pod"
+        },
+        "type": "WARNING",
+        "reason": "BackOff",
+        "lastSeenAt": "2026-07-23T09:00:00Z"
+      },
+      {
+        "ref": {
+          "apiVersion": "v1",
+          "kind": "Service",
+          "namespace": "team-a",
+          "name": "edge"
+        },
+        "type": "UNKNOWN",
+        "reason": "UnknownType",
+        "lastSeenAt": "2026-07-23T10:00:00Z"
+      }
+    ]
+  },
+  "limitations": [
+    {
+      "code": "PARTIAL_INVENTORY_P2_03",
+      "severity": "WARN",
+      "summary": "P2-03 fake-client fixture path collects namespace, node, workload, storage, networking, CRD, and event metadata; live expanded inventory remains gated."
+    }
+  ]
+}

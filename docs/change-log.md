@@ -2,6 +2,16 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Phase 2 events inventory contract
+
+- Added the P2-03 events inventory contract.
+- Scoped event collection to sanitized metadata and reason/type/timestamp fields
+  only.
+- Required raw event messages to stay out of snapshots and fixtures.
+- Reaffirmed that live event reads require separate Gate B expansion approval.
+- Added fake-client event collection, full P2-03 fake snapshot fixture coverage,
+  and subset validation for event refs, type, reason, and timestamps.
+
 ## 2026-07-23 — Phase 2 storage inventory contract
 
 - Added the P2-03 storage inventory contract.
