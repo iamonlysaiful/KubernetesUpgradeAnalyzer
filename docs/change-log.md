@@ -9,6 +9,8 @@ This log records material scope and architecture changes. Git remains the detail
   only.
 - Required raw event messages to stay out of snapshots and fixtures.
 - Reaffirmed that live event reads require separate Gate B expansion approval.
+- Added fake-client event collection, full P2-03 fake snapshot fixture coverage,
+  and subset validation for event refs, type, reason, and timestamps.
 
 ## 2026-07-23 — Phase 2 storage inventory contract
 

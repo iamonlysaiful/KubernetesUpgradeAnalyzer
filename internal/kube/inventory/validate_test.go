@@ -125,3 +125,27 @@ func TestValidateCoreSnapshotRejectsInvalidStorage(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateCoreSnapshotRejectsInvalidEvent(t *testing.T) {
+	snapshot := collectEventsGoldenSnapshot(t)
+	snapshot.Inventory.Events[0].Ref.APIVersion = ""
+	snapshot.Inventory.Events[0].Type = "NOTICE"
+	snapshot.Inventory.Events[0].Reason = ""
+	snapshot.Inventory.Events[0].LastSeenAt = "not-a-time"
+
+	err := ValidateCoreSnapshot(snapshot)
+	if err == nil {
+		t.Fatalf("ValidateCoreSnapshot(invalid event) returned nil error")
+	}
+	message := err.Error()
+	for _, want := range []string{
+		"apiVersion",
+		"type",
+		"reason",
+		"lastSeenAt",
+	} {
+		if !strings.Contains(message, want) {
+			t.Fatalf("ValidateCoreSnapshot event error missing %q in: %s", want, message)
+		}
+	}
+}

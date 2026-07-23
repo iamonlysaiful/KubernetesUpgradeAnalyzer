@@ -103,6 +103,9 @@ func validateInventory(inventory Inventory) []string {
 	for i, crd := range inventory.CRDs {
 		problems = append(problems, validateCRD(i, crd)...)
 	}
+	for i, event := range inventory.Events {
+		problems = append(problems, validateEvent(i, event)...)
+	}
 	return problems
 }
 
@@ -225,6 +228,25 @@ func validateCRD(index int, crd ResourceRef) []string {
 	}
 	if crd.Namespace != "" {
 		problems = append(problems, prefix+".namespace must be empty")
+	}
+	return problems
+}
+
+func validateEvent(index int, event Event) []string {
+	var problems []string
+	prefix := fmt.Sprintf("inventory.events[%d]", index)
+	problems = append(problems, validateResourceRef(prefix+".ref", event.Ref, false)...)
+	if event.Ref.APIVersion == "" {
+		problems = append(problems, prefix+".ref.apiVersion is required")
+	}
+	if !oneOf(event.Type, "NORMAL", "WARNING", "UNKNOWN") {
+		problems = append(problems, prefix+".type is invalid")
+	}
+	if event.Reason == "" {
+		problems = append(problems, prefix+".reason is required")
+	}
+	if _, err := time.Parse(time.RFC3339, event.LastSeenAt); err != nil {
+		problems = append(problems, prefix+".lastSeenAt must be RFC3339")
 	}
 	return problems
 }

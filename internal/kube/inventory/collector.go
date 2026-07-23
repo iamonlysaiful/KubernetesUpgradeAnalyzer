@@ -229,6 +229,64 @@ func (c Collector) CollectSnapshotWithWorkloadsCRDsNetworkingAndStorage(ctx cont
 	}), nil
 }
 
+func (c Collector) CollectSnapshotWithFullFakeInventory(ctx context.Context, preflightResult preflight.Result) (Snapshot, error) {
+	if c.Client == nil {
+		return Snapshot{}, fmt.Errorf("kubernetes client is required")
+	}
+	if c.APIExtensionsClient == nil {
+		return Snapshot{}, fmt.Errorf("kubernetes apiextensions client is required")
+	}
+
+	namespaces, err := c.collectNamespaces(ctx)
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("collect namespaces: %w", err)
+	}
+
+	nodes, err := c.collectNodes(ctx)
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("collect nodes: %w", err)
+	}
+
+	workloads, err := c.collectWorkloads(ctx)
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("collect workloads: %w", err)
+	}
+
+	storage, err := c.collectStorage(ctx)
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("collect storage: %w", err)
+	}
+
+	networking, err := c.collectNetworking(ctx)
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("collect networking: %w", err)
+	}
+
+	crds, err := c.collectCRDs(ctx)
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("collect crds: %w", err)
+	}
+
+	events, err := c.collectEvents(ctx)
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("collect events: %w", err)
+	}
+
+	return c.buildSnapshotWithInventory(preflightResult, Inventory{
+		Namespaces: namespaces,
+		Nodes:      nodes,
+		Workloads:  workloads,
+		Storage:    storage,
+		Networking: networking,
+		CRDs:       crds,
+		Events:     events,
+	}, Limitation{
+		Code:     "PARTIAL_INVENTORY_P2_03",
+		Severity: "WARN",
+		Summary:  "P2-03 fake-client fixture path collects namespace, node, workload, storage, networking, CRD, and event metadata; live expanded inventory remains gated.",
+	}), nil
+}
+
 func (c Collector) buildSnapshot(preflightResult preflight.Result, namespaces []ResourceRef, nodes []Node, workloads []Workload, limitation Limitation) Snapshot {
 	return c.buildSnapshotWithInventory(preflightResult, Inventory{
 		Namespaces: namespaces,

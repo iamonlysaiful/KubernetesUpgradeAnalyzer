@@ -178,6 +178,27 @@ func TestCollectSnapshotWithWorkloadsCRDsNetworkingAndStorageMatchesGoldenFixtur
 	}
 }
 
+func TestCollectSnapshotWithFullFakeInventoryMatchesGoldenFixture(t *testing.T) {
+	snapshot := collectEventsGoldenSnapshot(t)
+	if err := ValidateCoreSnapshot(snapshot); err != nil {
+		t.Fatalf("ValidateCoreSnapshot returned error: %v", err)
+	}
+
+	got, err := json.MarshalIndent(snapshot, "", "  ")
+	if err != nil {
+		t.Fatalf("MarshalIndent returned error: %v", err)
+	}
+	got = append(got, '\n')
+
+	want, err := os.ReadFile("../../../schemas/fixtures/cluster-snapshot/valid/p2-03-events-inventory.json")
+	if err != nil {
+		t.Fatalf("ReadFile golden fixture returned error: %v", err)
+	}
+	if string(got) != string(want) {
+		t.Fatalf("Generated events snapshot does not match golden fixture.\nGot:\n%s\nWant:\n%s", string(got), string(want))
+	}
+}
+
 func collectGoldenSnapshot(t *testing.T) Snapshot {
 	t.Helper()
 
@@ -383,6 +404,30 @@ func collectStorageGoldenSnapshot(t *testing.T) Snapshot {
 	return snapshot
 }
 
+func collectEventsGoldenSnapshot(t *testing.T) Snapshot {
+	t.Helper()
+
+	collector := NewCollectorWithAPIExtensions(
+		workloadNetworkingStorageEventsGoldenClient(),
+		crdGoldenClient(),
+	)
+	collector.Clock = func() time.Time {
+		return time.Date(2026, 7, 23, 8, 9, 10, 0, time.UTC)
+	}
+
+	snapshot, err := collector.CollectSnapshotWithFullFakeInventory(context.Background(), preflight.Result{
+		Context: preflight.ContextSelection{
+			Name:             "ctx-events-golden",
+			KubeconfigSource: preflight.KubeconfigSourceDefault,
+		},
+		ServerVersion: "v1.30.7",
+	})
+	if err != nil {
+		t.Fatalf("CollectSnapshotWithFullFakeInventory returned error: %v", err)
+	}
+	return snapshot
+}
+
 func crdGoldenClient() *apiextensionsfake.Clientset {
 	return apiextensionsfake.NewSimpleClientset(
 		&apiextensionsv1.CustomResourceDefinition{
@@ -403,12 +448,24 @@ func workloadNetworkingGoldenClient() *fake.Clientset {
 }
 
 func workloadNetworkingStorageGoldenClient() *fake.Clientset {
-	return fake.NewSimpleClientset(append(workloadNetworkingGoldenObjects(),
+	return fake.NewSimpleClientset(workloadNetworkingStorageGoldenObjects()...)
+}
+
+func workloadNetworkingStorageEventsGoldenClient() *fake.Clientset {
+	return fake.NewSimpleClientset(append(workloadNetworkingStorageGoldenObjects(),
+		eventObject("event-a", "team-a", "apps/v1", "Deployment", "api", corev1.EventTypeNormal, "ScalingReplicaSet", time.Date(2026, 7, 23, 8, 0, 0, 0, time.UTC)),
+		eventObject("event-b", "team-b", "v1", "Pod", "api-pod", corev1.EventTypeWarning, "BackOff", time.Date(2026, 7, 23, 9, 0, 0, 0, time.UTC)),
+		eventObject("event-c", "team-a", "v1", "Service", "edge", "Custom", "UnknownType", time.Date(2026, 7, 23, 10, 0, 0, 0, time.UTC)),
+	)...)
+}
+
+func workloadNetworkingStorageGoldenObjects() []runtime.Object {
+	return append(workloadNetworkingGoldenObjects(),
 		&corev1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "pv-001"}},
 		&storagev1.StorageClass{ObjectMeta: metav1.ObjectMeta{Name: "managed-001"}},
 		&corev1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "cache", Namespace: "team-a"}},
 		&corev1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: "data", Namespace: "team-b"}},
-	)...)
+	)
 }
 
 func workloadNetworkingGoldenObjects() []runtime.Object {
