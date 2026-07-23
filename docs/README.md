@@ -34,6 +34,7 @@ The documents in this directory are the source of truth for KubeUpgrade Advisor.
 | [`plans/security-rbac-plan.md`](plans/security-rbac-plan.md) | Least-privilege Kubernetes/Azure access and security validation |
 | [`plans/gate-b-smoke-test-plan.md`](plans/gate-b-smoke-test-plan.md) | Proposed Gate B live read-only smoke-test approval plan |
 | [`plans/validation-release-plan.md`](plans/validation-release-plan.md) | Staging validation, artifacts, release checks, and rollback |
+| [`validation/gate-b-p2-02-record.md`](validation/gate-b-p2-02-record.md) | Draft Gate B P2-02 validation record |
 
 ## Schema contracts
 

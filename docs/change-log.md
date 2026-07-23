@@ -2,6 +2,14 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Gate B validation record template
+
+- Added a draft Gate B P2-02 validation record.
+- Recorded the approval, pre-run, execution, scope verification, output review,
+  post-run, and decision fields required before any live smoke-test result can
+  be accepted.
+- Reaffirmed that the record is not approval to run against a live cluster.
+
 ## 2026-07-23 — Gate B smoke-test plan
 
 - Added a proposed Gate B smoke-test plan for P2-02 core inventory.
