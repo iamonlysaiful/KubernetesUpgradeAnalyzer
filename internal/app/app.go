@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -94,6 +95,18 @@ func runInventoryPreflight(cfg Config, stdout io.Writer, stderr io.Writer, runne
 		return appErr.Code
 	}
 
+	if cfg.Format == "json" {
+		if err := printInventoryPreflightJSON(stdout, result); err != nil {
+			appErr := ExecutionError("inventory preflight JSON render failed: "+err.Error(), err)
+			fmt.Fprintln(stderr, appErr.Message)
+			return appErr.Code
+		}
+		if result.HasRequiredFailure() {
+			return ExitInconclusive
+		}
+		return ExitReady
+	}
+
 	fmt.Fprintln(stdout, "inventory preflight only")
 	fmt.Fprintf(stdout, "context: %s\n", result.Context.Name)
 	fmt.Fprintf(stdout, "kubeconfigSource: %s\n", result.Context.KubeconfigSource)
@@ -107,6 +120,36 @@ func runInventoryPreflight(cfg Config, stdout io.Writer, stderr io.Writer, runne
 		return ExitInconclusive
 	}
 	return ExitReady
+}
+
+type inventoryPreflightDocument struct {
+	SchemaVersion    string                      `json:"schemaVersion"`
+	Kind             string                      `json:"kind"`
+	PreflightOnly    bool                        `json:"preflightOnly"`
+	Context          string                      `json:"context"`
+	KubeconfigSource string                      `json:"kubeconfigSource"`
+	ServerVersion    string                      `json:"serverVersion"`
+	Discovery        preflight.Status            `json:"discovery"`
+	RequiredFailure  bool                        `json:"requiredFailure"`
+	PermissionChecks []preflight.PermissionCheck `json:"permissionChecks"`
+	Limitations      []preflight.Limitation      `json:"limitations"`
+}
+
+func printInventoryPreflightJSON(stdout io.Writer, result preflight.Result) error {
+	encoder := json.NewEncoder(stdout)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(inventoryPreflightDocument{
+		SchemaVersion:    schemaVersion,
+		Kind:             "InventoryPreflight",
+		PreflightOnly:    true,
+		Context:          result.Context.Name,
+		KubeconfigSource: string(result.Context.KubeconfigSource),
+		ServerVersion:    result.ServerVersion,
+		Discovery:        result.DiscoveryStatus,
+		RequiredFailure:  result.HasRequiredFailure(),
+		PermissionChecks: result.PermissionChecks,
+		Limitations:      result.Limitations,
+	})
 }
 
 func newLogger(w io.Writer, level string) *slog.Logger {
