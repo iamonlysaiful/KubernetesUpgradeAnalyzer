@@ -112,3 +112,16 @@ path instead of rendering partial data that cannot satisfy the P2-02 contract.
 Automated tests must use fake clients and sanitized fixtures only. Live cluster
 smoke testing remains blocked until the user approves Gate B for a named context
 and read-only operation.
+
+P2-02 snapshot fixtures must be deterministic and safe to commit:
+
+- generated from fake Kubernetes clients or hand-written sanitized examples;
+- no real cluster names, node names, provider IDs, UIDs, labels, annotations,
+  IPs, image paths, event messages, or kubeconfig-derived values;
+- stable timestamps and snapshot IDs;
+- sorted namespaces, nodes, and node conditions;
+- JSON matching `schemas/cluster-snapshot/v1.json`;
+- explicit `PARTIAL_INVENTORY_P2_02` limitation.
+
+At least one P2-02 golden fixture must cover the generated partial/core snapshot
+shape used by `kua inventory --format=json`.

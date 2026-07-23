@@ -2,6 +2,15 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Core inventory fixture contract
+
+- Added deterministic P2-02 snapshot fixture requirements for fake-client
+  namespace/node collection.
+- Required fixture output to avoid real cluster identifiers and to include the
+  explicit partial-inventory limitation.
+- Established a golden fixture for `kua inventory --format=json` partial/core
+  snapshot output.
+
 ## 2026-07-23 — Inventory JSON partial snapshot handoff
 
 - Updated the P2-02 contract so `kua inventory --format=json` may emit a
