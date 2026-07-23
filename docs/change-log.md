@@ -83,6 +83,16 @@ This log records material scope and architecture changes. Git remains the detail
   produce `UNKNOWN` or `INCONCLUSIVE`, never `PASS`.
 - Reaffirmed that live kubent execution requires separate explicit approval.
 
+## 2026-07-24 — Kubent adapter foundation
+
+- Added the internal kubent adapter foundation with process-runner abstraction,
+  controlled argument construction, version validation, output bounds, and JSON
+  parsing.
+- Added process-fake tests for supported and unsupported versions, malformed
+  output, nonzero exit, oversized output, and shell-free argument construction.
+- Kept target-rule coverage validation, normalized API findings, live kubent
+  execution, and go/no-go decisions out of this foundation slice.
+
 ## 2026-07-23 — Phase 2 closeout draft
 
 - Added the Phase 2 closeout record.
