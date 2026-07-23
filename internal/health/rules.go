@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/inventory"
 )
@@ -13,6 +14,9 @@ const (
 	RuleNodePressure        = "health.node.pressure"
 	RuleNodeKubeletSkew     = "health.node.kubeletSkew"
 	RuleWorkloadUnavailable = "health.workload.unavailable"
+	RuleStoragePVCUnknown   = "health.storage.pvcUnknown"
+	RuleEventWarning        = "health.event.warning"
+	RuleEventUnknownType    = "health.event.unknownType"
 )
 
 var minorVersionPattern = regexp.MustCompile(`^v?1\.([0-9]+)(?:\.([0-9]+))?`)
@@ -24,6 +28,20 @@ func NodeAndWorkloadRules() []Rule {
 		NodeKubeletSkewRule{},
 		WorkloadUnavailableRule{},
 	}
+}
+
+func StorageAndEventRules() []Rule {
+	return []Rule{
+		StoragePVCUnknownRule{},
+		EventWarningRule{},
+		EventUnknownTypeRule{},
+	}
+}
+
+func DefaultRules() []Rule {
+	rules := NodeAndWorkloadRules()
+	rules = append(rules, StorageAndEventRules()...)
+	return rules
 }
 
 type NodeReadinessRule struct{}
@@ -145,6 +163,79 @@ func (WorkloadUnavailableRule) ID() string {
 	return RuleWorkloadUnavailable
 }
 
+type StoragePVCUnknownRule struct{}
+
+func (StoragePVCUnknownRule) ID() string {
+	return RuleStoragePVCUnknown
+}
+
+func (StoragePVCUnknownRule) Evaluate(snapshot inventory.Snapshot, options Options) []Finding {
+	if len(snapshot.Inventory.Storage) > 0 || len(snapshot.Inventory.Workloads) == 0 {
+		return nil
+	}
+	return []Finding{{
+		RuleID:   RuleStoragePVCUnknown,
+		Severity: SeverityInfo,
+		Status:   StatusUnknown,
+		Resource: ResourceFromInventory(snapshot.Cluster.Identity),
+		Summary:  "storage inventory evidence is unavailable",
+		Evidence: map[string]string{
+			"storageItems": fmt.Sprintf("%d", len(snapshot.Inventory.Storage)),
+			"workloads":    fmt.Sprintf("%d", len(snapshot.Inventory.Workloads)),
+		},
+	}}
+}
+
+type EventWarningRule struct{}
+
+func (EventWarningRule) ID() string {
+	return RuleEventWarning
+}
+
+func (EventWarningRule) Evaluate(snapshot inventory.Snapshot, options Options) []Finding {
+	options = options.withDefaults()
+	var findings []Finding
+	for _, event := range snapshot.Inventory.Events {
+		if event.Type != "WARNING" || !eventInLookback(event, options) {
+			continue
+		}
+		findings = append(findings, Finding{
+			RuleID:   RuleEventWarning,
+			Severity: SeverityWarning,
+			Status:   StatusWarn,
+			Resource: ResourceFromInventory(event.Ref),
+			Summary:  fmt.Sprintf("warning event observed for %s %s", event.Ref.Kind, event.Ref.Name),
+			Evidence: eventEvidence(event),
+		})
+	}
+	return findings
+}
+
+type EventUnknownTypeRule struct{}
+
+func (EventUnknownTypeRule) ID() string {
+	return RuleEventUnknownType
+}
+
+func (EventUnknownTypeRule) Evaluate(snapshot inventory.Snapshot, options Options) []Finding {
+	options = options.withDefaults()
+	var findings []Finding
+	for _, event := range snapshot.Inventory.Events {
+		if event.Type != "UNKNOWN" || !eventInLookback(event, options) {
+			continue
+		}
+		findings = append(findings, Finding{
+			RuleID:   RuleEventUnknownType,
+			Severity: SeverityInfo,
+			Status:   StatusUnknown,
+			Resource: ResourceFromInventory(event.Ref),
+			Summary:  fmt.Sprintf("event type is unknown for %s %s", event.Ref.Kind, event.Ref.Name),
+			Evidence: eventEvidence(event),
+		})
+	}
+	return findings
+}
+
 func (WorkloadUnavailableRule) Evaluate(snapshot inventory.Snapshot, options Options) []Finding {
 	var findings []Finding
 	for _, workload := range snapshot.Inventory.Workloads {
@@ -206,4 +297,27 @@ func replicaEvidence(workload inventory.Workload) map[string]string {
 		"desiredReplicas": fmt.Sprintf("%d", workload.DesiredReplicas),
 		"readyReplicas":   fmt.Sprintf("%d", workload.ReadyReplicas),
 	}
+}
+
+func eventInLookback(event inventory.Event, options Options) bool {
+	lastSeenAt, err := time.Parse(time.RFC3339, event.LastSeenAt)
+	if err != nil {
+		return false
+	}
+	now := options.Now()
+	if lastSeenAt.After(now) {
+		return true
+	}
+	return !lastSeenAt.Before(now.Add(-options.EventLookback))
+}
+
+func eventEvidence(event inventory.Event) map[string]string {
+	evidence := map[string]string{
+		"type":       event.Type,
+		"lastSeenAt": event.LastSeenAt,
+	}
+	if event.Reason != "" {
+		evidence["reason"] = event.Reason
+	}
+	return evidence
 }
