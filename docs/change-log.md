@@ -2,6 +2,15 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Inventory preflight JSON contract
+
+- Added the P2-01 `kua inventory --format=json` contract for deterministic
+  machine-readable preflight output.
+- Required both console and JSON formats to explicitly identify P2-01 output as
+  preflight-only.
+- Reaffirmed that unknown, denied, or incomplete preflight evidence must not be
+  rendered as `PASS`.
+
 ## 2026-07-23 — Project gate status
 
 - Added `docs/status.md` to track current gate status, phase status, active

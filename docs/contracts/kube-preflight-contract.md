@@ -25,7 +25,32 @@ cluster without separate user approval naming the context and operation.
 During P2-01, `kua inventory` output is explicitly labeled as preflight-only.
 It must not imply that full inventory collection has started.
 
-## 2. Kubeconfig and context behavior
+## 2. Preflight output behavior
+
+During P2-01, `kua inventory` supports:
+
+- `--format=console`: deterministic human-readable preflight summary;
+- `--format=json`: deterministic machine-readable preflight summary.
+
+Both formats must state that the result is preflight-only. JSON output must emit
+only JSON on stdout and diagnostics on stderr. The JSON object contains:
+
+- `schemaVersion`;
+- `kind`;
+- `preflightOnly`;
+- `context`;
+- `kubeconfigSource`;
+- `serverVersion`;
+- `discovery`;
+- `requiredFailure`;
+- `permissionChecks`;
+- `limitations`.
+
+Permission checks and limitations preserve the normalized status and evidence
+classes from the preflight package. Unknown, denied, or incomplete evidence must
+not be rendered as pass.
+
+## 3. Kubeconfig and context behavior
 
 Resolution order:
 
@@ -42,7 +67,7 @@ Before any approved live read, KUA must show or log the selected context and the
 fact that it will perform read-only discovery/RBAC checks. It must not show
 kubeconfig contents, tokens, certificates, or raw user credentials.
 
-## 3. Read-only checks
+## 4. Read-only checks
 
 Approved P2-01 live preflight checks, when separately authorized, are:
 
@@ -54,7 +79,7 @@ Approved P2-01 live preflight checks, when separately authorized, are:
 
 Secrets are excluded. `watch` is excluded. Mutation verbs are excluded.
 
-## 4. RBAC evidence classes
+## 5. RBAC evidence classes
 
 P2-01 classifies permissions using the approved RBAC contract:
 
@@ -66,13 +91,13 @@ Denied required evidence makes the affected command fail safely or become
 `INCONCLUSIVE` once analyzers exist. Denied optional evidence becomes an explicit
 limitation and future `UNKNOWN` findings.
 
-## 5. Test boundary
+## 6. Test boundary
 
 Automated tests use fake clients, synthetic kubeconfig data, and sanitized
 fixtures only. Real kubeconfig files and live clusters require separate approval
 and must not be committed.
 
-## 6. Dependency approval
+## 7. Dependency approval
 
 P2-01 requires Kubernetes client-go modules. The dependency assessment is
 recorded in `docs/dependencies/client-go.md`; adding those modules to `go.mod`

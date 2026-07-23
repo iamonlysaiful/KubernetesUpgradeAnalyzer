@@ -28,6 +28,10 @@ KUA never starts `az login`; it reports the corrective command when authenticati
 
 Human output goes to stdout. Logs and diagnostics go to stderr. JSON mode emits only JSON on stdout. File writes should be atomic and must not overwrite an existing file unless an approved `--force` contract is added.
 
+During P2-01, `kua inventory` is a preflight-only command. Its console and JSON
+outputs must explicitly say they are preflight-only and must not imply that full
+inventory collection has happened.
+
 ## 4. Canonical assessment
 
 Top-level fields include:
