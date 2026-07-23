@@ -2,6 +2,16 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Phase 2 core inventory contract
+
+- Added the P2-02 contract for partial/core snapshot collection.
+- Scoped P2-02 to cluster metadata, server version, namespaces, nodes, and
+  explicit limitations only.
+- Required future inventory groups to remain empty with limitations rather than
+  implying absence of resources.
+- Reaffirmed that live collection remains blocked until Gate B approval names a
+  context and read-only operation.
+
 ## 2026-07-23 — Inventory preflight JSON contract
 
 - Added the P2-01 `kua inventory --format=json` contract for deterministic
