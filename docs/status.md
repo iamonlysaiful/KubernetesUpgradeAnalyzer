@@ -31,7 +31,9 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 `feature/kube-inventory-collectors` starts P2-02 work:
 
 - core inventory contract for partial snapshot collection;
-- planned namespace and node collectors using fake-client tests first;
+- namespace and node collectors using fake-client tests first;
+- planned `kua inventory --format=json` partial snapshot wiring after required
+  preflight succeeds;
 - explicit limitations for intentionally empty future inventory groups.
 
 Current `kua inventory` behavior is still preflight-first. Any P2-02 inventory

@@ -50,6 +50,11 @@ Permission checks and limitations preserve the normalized status and evidence
 classes from the preflight package. Unknown, denied, or incomplete evidence must
 not be rendered as pass.
 
+After P2-02, `kua inventory --format=json` is allowed to advance from this
+preflight document to a partial/core `ClusterSnapshot` document, but only after
+the required preflight checks pass. The P2-01 preflight result remains the gate
+for safe collection.
+
 ## 3. Kubeconfig and context behavior
 
 Resolution order:

@@ -27,9 +27,21 @@ explicitly labeled as partial/core inventory. It must not imply that workload,
 storage, networking, CRD, event, health, API-compatibility, component, provider,
 or recommendation analysis has happened.
 
+P2-02 updates `kua inventory --format=json` to run preflight first and then emit
+the partial/core `ClusterSnapshot` JSON only when required preflight evidence
+passes. If required preflight evidence fails, the command returns
+`INCONCLUSIVE` and does not render a snapshot that could be mistaken for
+complete inventory.
+
+`--format=console` may remain a conservative preflight/core summary during this
+package. Full human inventory rendering remains a later report/output package.
+
 ## 2. Snapshot shape
 
 The emitted snapshot follows `schemas/cluster-snapshot/v1.json`.
+
+JSON snapshot output must emit only JSON on stdout. Diagnostics, collection
+errors, and limitations summaries outside the snapshot go to stderr.
 
 Because the schema requires future inventory groups, P2-02 must populate
 out-of-scope groups as empty arrays:
@@ -90,6 +102,10 @@ Every partial or denied collection path records a limitation. Required examples:
 Required evidence denial or collection failure returns an inconclusive result for
 the affected command. Unknown, denied, missing, or intentionally skipped evidence
 must never be rendered as `PASS`.
+
+Namespace or node collection failure prevents snapshot emission because those
+collections are required for P2-02. The command records the failure as an error
+path instead of rendering partial data that cannot satisfy the P2-02 contract.
 
 ## 6. Test boundary
 

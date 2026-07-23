@@ -2,6 +2,15 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Inventory JSON partial snapshot handoff
+
+- Updated the P2-02 contract so `kua inventory --format=json` may emit a
+  partial/core `ClusterSnapshot` after required preflight checks pass.
+- Kept console rendering conservative and deferred full human inventory
+  rendering to a later output package.
+- Required namespace/node collection failures to stop snapshot emission instead
+  of producing misleading partial data.
+
 ## 2026-07-23 — Phase 2 core inventory contract
 
 - Added the P2-02 contract for partial/core snapshot collection.
