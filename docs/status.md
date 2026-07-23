@@ -23,7 +23,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Phase 1 - CLI foundation | Complete | Merged to `main`, including local CI and GitHub Actions. |
 | Phase 2 - Kubernetes preflight and inventory | Complete | Fake-client inventory foundation is merged; live core inventory is verified; expanded live inventory is deferred. |
 | Phase 3 - Health analysis | Complete | Health foundation and internal rules are merged; no expanded live collection was introduced. |
-| Phase 4 - Component detection and catalog | In progress | Catalog loader foundation is being implemented without runtime internet access. |
+| Phase 4 - Component detection and catalog | In progress | Catalog loader is merged; component detection foundation is being implemented without runtime internet access. |
 | Phase 5+ | Not started | Blocked on earlier phase outputs and review gates. |
 
 ## Current branch focus
@@ -108,6 +108,14 @@ P4-02 catalog loader foundation is in progress:
 - source-reference and duplicate-alias validation;
 - checksum capture for loaded catalog bytes;
 - no runtime internet access or catalog download behavior.
+
+P4-03 component detection foundation is in progress:
+
+- detection result model;
+- detector runner;
+- deterministic ordering;
+- version normalization that preserves `UNKNOWN` for ambiguous evidence;
+- no detector cohort logic or compatibility decisions.
 
 Current live `kua inventory` behavior remains partial/core inventory only.
 Workloads, storage, networking, CRDs, events, health, compatibility, provider

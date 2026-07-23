@@ -55,6 +55,15 @@ This log records material scope and architecture changes. Git remains the detail
 - Kept runtime internet search, catalog downloads, compatibility decisions, and
   recommendations out of scope.
 
+## 2026-07-24 — Component detection foundation
+
+- Added the internal component detection result model, detector interface,
+  runner, deterministic sorting, and sanitized resource references.
+- Added version normalization helpers that treat missing, `latest`, `unknown`,
+  and digest-only image evidence as `UNKNOWN`.
+- Kept detector cohort logic, compatibility decisions, live reads, and runtime
+  network access out of scope.
+
 ## 2026-07-23 — Phase 2 closeout draft
 
 - Added the Phase 2 closeout record.
