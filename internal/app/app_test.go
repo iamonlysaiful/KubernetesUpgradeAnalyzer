@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"os"
 	"strings"
 	"testing"
 
@@ -158,22 +159,37 @@ func TestRunInventoryPreflightJSON(t *testing.T) {
 		InventoryCollector: fakeInventoryCollector{
 			snapshot: inventory.Snapshot{
 				SchemaVersion: inventory.SchemaVersion,
-				SnapshotID:    "ctx-json-20260723T010203Z",
+				SnapshotID:    "ctx-golden-20260723T010203Z",
 				CapturedAt:    "2026-07-23T01:02:03Z",
 				Cluster: inventory.Cluster{
-					Identity: inventory.ResourceRef{Kind: "Cluster", Name: "ctx-json"},
+					Identity: inventory.ResourceRef{Kind: "Cluster", Name: "ctx-golden"},
 					Provider: inventory.Provider{Type: "UNKNOWN", Confidence: "UNKNOWN"},
-					Context:  inventory.Context{Name: "ctx-json", KubeconfigSource: "DEFAULT"},
+					Context:  inventory.Context{Name: "ctx-golden", KubeconfigSource: "DEFAULT"},
 				},
-				Kubernetes: inventory.Kubernetes{ServerVersion: "1.31.4"},
+				Kubernetes: inventory.Kubernetes{ServerVersion: "1.30.7"},
 				Inventory: inventory.Inventory{
-					Namespaces: []inventory.ResourceRef{{APIVersion: "v1", Kind: "Namespace", Name: "default"}},
-					Nodes: []inventory.Node{{
-						Ref:               inventory.ResourceRef{APIVersion: "v1", Kind: "Node", Name: "node-001"},
-						KubeletVersion:    "1.31.4",
-						ProviderIDPresent: true,
-						Conditions:        []inventory.Condition{{Type: "Ready", Status: "TRUE"}},
-					}},
+					Namespaces: []inventory.ResourceRef{
+						{APIVersion: "v1", Kind: "Namespace", Name: "alpha"},
+						{APIVersion: "v1", Kind: "Namespace", Name: "zeta"},
+					},
+					Nodes: []inventory.Node{
+						{
+							Ref:               inventory.ResourceRef{APIVersion: "v1", Kind: "Node", Name: "node-a"},
+							KubeletVersion:    "1.30.6",
+							ProviderIDPresent: false,
+							Conditions:        []inventory.Condition{},
+						},
+						{
+							Ref:               inventory.ResourceRef{APIVersion: "v1", Kind: "Node", Name: "node-b"},
+							KubeletVersion:    "1.30.7",
+							ProviderIDPresent: true,
+							NodePool:          "pool-b",
+							Conditions: []inventory.Condition{
+								{Type: "MemoryPressure", Status: "FALSE", Reason: "SufficientMemory"},
+								{Type: "Ready", Status: "TRUE", Reason: "KubeletReady"},
+							},
+						},
+					},
 					Workloads:  []inventory.Workload{},
 					Storage:    []inventory.ResourceRef{},
 					Networking: []inventory.ResourceRef{},
@@ -183,7 +199,7 @@ func TestRunInventoryPreflightJSON(t *testing.T) {
 				Limitations: []inventory.Limitation{{
 					Code:     "PARTIAL_INVENTORY_P2_02",
 					Severity: "WARN",
-					Summary:  "partial inventory",
+					Summary:  "P2-02 collects namespaces and nodes only; workloads, storage, networking, CRDs, and events are intentionally not collected yet.",
 				}},
 			},
 		},
@@ -198,6 +214,13 @@ func TestRunInventoryPreflightJSON(t *testing.T) {
 	if strings.Contains(stdout.String(), "inventory preflight only") {
 		t.Fatalf("Run(inventory json) emitted console text:\n%s", stdout.String())
 	}
+	want, err := os.ReadFile("../../schemas/fixtures/cluster-snapshot/valid/p2-02-core-inventory.json")
+	if err != nil {
+		t.Fatalf("ReadFile golden fixture returned error: %v", err)
+	}
+	if stdout.String() != string(want) {
+		t.Fatalf("Run(inventory json) output does not match golden fixture.\nGot:\n%s\nWant:\n%s", stdout.String(), string(want))
+	}
 
 	var got inventory.Snapshot
 	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
@@ -206,14 +229,14 @@ func TestRunInventoryPreflightJSON(t *testing.T) {
 	if got.SchemaVersion != inventory.SchemaVersion {
 		t.Fatalf("Run(inventory json) schemaVersion = %q, want %q", got.SchemaVersion, inventory.SchemaVersion)
 	}
-	if got.Cluster.Context.Name != "ctx-json" {
-		t.Fatalf("Run(inventory json) context = %q, want ctx-json", got.Cluster.Context.Name)
+	if got.Cluster.Context.Name != "ctx-golden" {
+		t.Fatalf("Run(inventory json) context = %q, want ctx-golden", got.Cluster.Context.Name)
 	}
-	if len(got.Inventory.Namespaces) != 1 || got.Inventory.Namespaces[0].Name != "default" {
-		t.Fatalf("Run(inventory json) namespaces = %#v, want default", got.Inventory.Namespaces)
+	if len(got.Inventory.Namespaces) != 2 || got.Inventory.Namespaces[0].Name != "alpha" {
+		t.Fatalf("Run(inventory json) namespaces = %#v, want alpha,zeta", got.Inventory.Namespaces)
 	}
-	if len(got.Inventory.Nodes) != 1 || got.Inventory.Nodes[0].ProviderIDPresent != true {
-		t.Fatalf("Run(inventory json) nodes = %#v, want one node with provider ID present", got.Inventory.Nodes)
+	if len(got.Inventory.Nodes) != 2 || got.Inventory.Nodes[1].ProviderIDPresent != true {
+		t.Fatalf("Run(inventory json) nodes = %#v, want two nodes with node-b provider ID present", got.Inventory.Nodes)
 	}
 	if len(got.Limitations) != 1 || got.Limitations[0].Code != "PARTIAL_INVENTORY_P2_02" {
 		t.Fatalf("Run(inventory json) limitations = %d, want 1", len(got.Limitations))
