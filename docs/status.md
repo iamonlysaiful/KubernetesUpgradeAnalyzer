@@ -10,7 +10,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Gate | Status | Evidence |
 | --- | --- | --- |
 | Gate A - contracts | Complete | Phase 0 contracts, schemas, fixtures, security/RBAC, and dependency rules are documented and merged. |
-| Gate B - collection safety | Not open | P2-01 preflight is in progress; live cluster access is still blocked until the user approves a named context and read-only operation. |
+| Gate B - collection safety | Plan drafted; not open | P2-02 core inventory has fake-client/golden coverage; live cluster access is still blocked until the user approves the proposed Gate B smoke test for a named context and operation. |
 | Gate C - compatibility validity | Not started | Catalog source validation and kubent target-rule coverage are future Phase 4/5 work. |
 | Gate D - recommendation calibration | Not started | Recommendation matrix and staging expectations are future Phase 7 work. |
 | Gate E - release | Not started | Release validation, artifacts, SBOM, and publication are Phase 9 work. |
@@ -21,21 +21,25 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | --- | --- | --- |
 | Phase 0 - Design freeze and contracts | Complete | Merged to `main`. |
 | Phase 1 - CLI foundation | Complete | Merged to `main`, including local CI and GitHub Actions. |
-| Phase 2 - Kubernetes preflight and inventory | In progress | Active branch `feature/kube-preflight`; no live cluster access has been performed. |
+| Phase 2 - Kubernetes preflight and inventory | In progress | Active branch `feature/kube-inventory-collectors`; no live cluster access has been performed. |
 | Phase 3+ | Not started | Blocked on earlier phase outputs and review gates. |
 
 ## Current branch focus
 
-`feature/kube-preflight` contains P2-01 work:
+`feature/kube-preflight` was merged to `main` as the P2-01 preflight foundation.
 
-- kubeconfig/current or explicit context resolution;
-- client-go dependency assessment and module updates;
-- normalized preflight result and limitations;
-- fake-client Kubernetes checker tests;
-- `kua inventory` preflight-only command wiring.
+`feature/kube-inventory-collectors` starts P2-02 work:
 
-Current `kua inventory` behavior is preflight-only and must be treated as an
-early Phase 2 safety check, not full inventory collection.
+- core inventory contract for partial snapshot collection;
+- namespace and node collectors using fake-client tests first;
+- `kua inventory --format=json` partial snapshot wiring after required preflight
+  succeeds;
+- subset validation and command-level golden output coverage;
+- proposed Gate B live smoke-test plan;
+- explicit limitations for intentionally empty future inventory groups.
+
+Current `kua inventory` behavior is still preflight-first. Any P2-02 inventory
+output must be labeled partial/core inventory until later collectors are added.
 
 ## Current quality evidence
 

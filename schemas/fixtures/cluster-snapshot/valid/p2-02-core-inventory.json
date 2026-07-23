@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "kua.cluster-snapshot.v1",
+  "snapshotId": "ctx-golden-20260723T010203Z",
+  "capturedAt": "2026-07-23T01:02:03Z",
+  "cluster": {
+    "identity": {
+      "kind": "Cluster",
+      "name": "ctx-golden"
+    },
+    "provider": {
+      "type": "UNKNOWN",
+      "confidence": "UNKNOWN"
+    },
+    "context": {
+      "name": "ctx-golden",
+      "kubeconfigSource": "DEFAULT"
+    }
+  },
+  "kubernetes": {
+    "serverVersion": "1.30.7"
+  },
+  "inventory": {
+    "namespaces": [
+      {
+        "apiVersion": "v1",
+        "kind": "Namespace",
+        "name": "alpha"
+      },
+      {
+        "apiVersion": "v1",
+        "kind": "Namespace",
+        "name": "zeta"
+      }
+    ],
+    "nodes": [
+      {
+        "ref": {
+          "apiVersion": "v1",
+          "kind": "Node",
+          "name": "node-a"
+        },
+        "kubeletVersion": "1.30.6",
+        "providerIdPresent": false,
+        "conditions": []
+      },
+      {
+        "ref": {
+          "apiVersion": "v1",
+          "kind": "Node",
+          "name": "node-b"
+        },
+        "kubeletVersion": "1.30.7",
+        "providerIdPresent": true,
+        "nodePool": "pool-b",
+        "conditions": [
+          {
+            "type": "MemoryPressure",
+            "status": "FALSE",
+            "reason": "SufficientMemory"
+          },
+          {
+            "type": "Ready",
+            "status": "TRUE",
+            "reason": "KubeletReady"
+          }
+        ]
+      }
+    ],
+    "workloads": [],
+    "storage": [],
+    "networking": [],
+    "crds": [],
+    "events": []
+  },
+  "limitations": [
+    {
+      "code": "PARTIAL_INVENTORY_P2_02",
+      "severity": "WARN",
+      "summary": "P2-02 collects namespaces and nodes only; workloads, storage, networking, CRDs, and events are intentionally not collected yet."
+    }
+  ]
+}

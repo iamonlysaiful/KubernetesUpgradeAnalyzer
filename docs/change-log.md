@@ -2,6 +2,63 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Gate B smoke-test plan
+
+- Added a proposed Gate B smoke-test plan for P2-02 core inventory.
+- Defined required user approval fields, allowed command shapes, approved
+  read-only Kubernetes operations, stop conditions, artifact handling, and
+  success criteria.
+- Reaffirmed that the plan is not approval to access a live cluster.
+
+## 2026-07-23 — Inventory command golden output
+
+- Required a command-level golden test for `kua inventory --format=json`.
+- Clarified that the CLI stdout contract must be protected separately from the
+  collector package fixture.
+
+## 2026-07-23 — Inventory JSON validation gate
+
+- Required `kua inventory --format=json` to validate generated partial/core
+  snapshots before writing them to stdout.
+- Required validation failures to stop snapshot emission and report diagnostics
+  on stderr.
+
+## 2026-07-23 — Core inventory subset validator
+
+- Added the P2-02 contract for a dependency-free generated snapshot validator.
+- Scoped validation to the generated partial/core `ClusterSnapshot` fields
+  needed to prevent schema drift in P2-02.
+- Deferred full JSON Schema draft 2020-12 validation until a focused validator
+  dependency or tooling assessment is approved.
+
+## 2026-07-23 — Core inventory fixture contract
+
+- Added deterministic P2-02 snapshot fixture requirements for fake-client
+  namespace/node collection.
+- Required fixture output to avoid real cluster identifiers and to include the
+  explicit partial-inventory limitation.
+- Established a golden fixture for `kua inventory --format=json` partial/core
+  snapshot output.
+
+## 2026-07-23 — Inventory JSON partial snapshot handoff
+
+- Updated the P2-02 contract so `kua inventory --format=json` may emit a
+  partial/core `ClusterSnapshot` after required preflight checks pass.
+- Kept console rendering conservative and deferred full human inventory
+  rendering to a later output package.
+- Required namespace/node collection failures to stop snapshot emission instead
+  of producing misleading partial data.
+
+## 2026-07-23 — Phase 2 core inventory contract
+
+- Added the P2-02 contract for partial/core snapshot collection.
+- Scoped P2-02 to cluster metadata, server version, namespaces, nodes, and
+  explicit limitations only.
+- Required future inventory groups to remain empty with limitations rather than
+  implying absence of resources.
+- Reaffirmed that live collection remains blocked until Gate B approval names a
+  context and read-only operation.
+
 ## 2026-07-23 — Inventory preflight JSON contract
 
 - Added the P2-01 `kua inventory --format=json` contract for deterministic

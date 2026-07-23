@@ -28,9 +28,11 @@ The documents in this directory are the source of truth for KubeUpgrade Advisor.
 | [`contracts/config-error-contract.md`](contracts/config-error-contract.md) | Phase 1 config, logging, command-error, and exit-code foundation |
 | [`contracts/ci-quality-contract.md`](contracts/ci-quality-contract.md) | Phase 1 CI workflow and local quality gate contract |
 | [`contracts/kube-preflight-contract.md`](contracts/kube-preflight-contract.md) | Phase 2 kubeconfig/context and read-only preflight contract |
+| [`contracts/core-inventory-contract.md`](contracts/core-inventory-contract.md) | Phase 2 core inventory and partial snapshot contract |
 | [`contracts/domain-and-schema-plan.md`](contracts/domain-and-schema-plan.md) | Domain types, schemas, compatibility, and versioning plan |
 | [`contracts/security-rbac-contract.md`](contracts/security-rbac-contract.md) | Phase 0 read-only RBAC, external-command, redaction, and dependency contract |
 | [`plans/security-rbac-plan.md`](plans/security-rbac-plan.md) | Least-privilege Kubernetes/Azure access and security validation |
+| [`plans/gate-b-smoke-test-plan.md`](plans/gate-b-smoke-test-plan.md) | Proposed Gate B live read-only smoke-test approval plan |
 | [`plans/validation-release-plan.md`](plans/validation-release-plan.md) | Staging validation, artifacts, release checks, and rollback |
 
 ## Schema contracts

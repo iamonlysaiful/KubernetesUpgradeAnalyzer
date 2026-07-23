@@ -73,6 +73,12 @@ client-go kubeconfig/context/preflight implementation with fake-client tests.
 Live cluster execution still requires separate approval naming the context and
 read-only operation.
 
+P2-02 is governed by `docs/contracts/core-inventory-contract.md`. It adds the
+first partial/core snapshot path for cluster metadata, server version,
+namespaces, nodes, and explicit limitations. Workloads, storage, networking,
+CRDs, events, health, compatibility, provider evidence, recommendations, and
+reports remain out of scope.
+
 ## 6. Stop conditions
 
 Stop affected work when a schema or accepted document conflicts with implementation, live access would exceed approved read-only permissions, kubent lacks verified target rules, a catalog claim lacks adequate provenance, redaction leaks an identifier, deterministic fixtures disagree, or ExFAT metadata makes Git integrity fail.
