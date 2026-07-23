@@ -15,6 +15,7 @@ The documents in this directory are the source of truth for KubeUpgrade Advisor.
 | [`testing-strategy.md`](testing-strategy.md) | Test levels, fixtures, determinism, and release gates |
 | [`development-process.md`](development-process.md) | Docs-first delivery and review workflow |
 | [`roadmap.md`](roadmap.md) | Approved phases and delivery gates |
+| [`status.md`](status.md) | Current phase, gate, branch, and quality status |
 | [`open-questions.md`](open-questions.md) | Decisions still requiring owner approval |
 | [`change-log.md`](change-log.md) | Material documentation and scope changes |
 

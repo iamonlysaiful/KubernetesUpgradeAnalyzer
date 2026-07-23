@@ -2,6 +2,13 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Project gate status
+
+- Added `docs/status.md` to track current gate status, phase status, active
+  branch focus, and latest quality evidence.
+- Recorded Gate A as complete, Phase 1 as complete, and Gate B as not yet open
+  because live cluster access still requires explicit approval.
+
 ## 2026-07-23 — Phase-close archive cleanup policy
 
 - Added a phase/branch closure checkpoint for reviewing and removing obsolete
