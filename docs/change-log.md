@@ -2,6 +2,13 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Phase 2 CRD inventory contract
+
+- Added the P2-03 CRD inventory contract.
+- Scoped CRD collection to sanitized `CustomResourceDefinition` metadata
+  references only.
+- Reaffirmed that live CRD reads require separate Gate B expansion approval.
+
 ## 2026-07-23 — Workload snapshot fixture path
 
 - Added a fake-client-only workload snapshot path for P2-03 fixtures without
