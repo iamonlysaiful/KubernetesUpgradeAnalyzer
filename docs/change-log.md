@@ -2,6 +2,13 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Inventory JSON validation gate
+
+- Required `kua inventory --format=json` to validate generated partial/core
+  snapshots before writing them to stdout.
+- Required validation failures to stop snapshot emission and report diagnostics
+  on stderr.
+
 ## 2026-07-23 — Core inventory subset validator
 
 - Added the P2-02 contract for a dependency-free generated snapshot validator.

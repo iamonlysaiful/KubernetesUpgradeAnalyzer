@@ -144,3 +144,7 @@ drift from `schemas/cluster-snapshot/v1.json`:
 
 Full draft 2020-12 JSON Schema validation remains deferred until a focused
 dependency/tooling assessment approves a validator.
+
+`kua inventory --format=json` must run this subset validator before writing a
+partial/core snapshot to stdout. Validation failure is an execution error and
+must not emit snapshot JSON. Diagnostics go to stderr.
