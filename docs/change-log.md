@@ -2,6 +2,14 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Core inventory subset validator
+
+- Added the P2-02 contract for a dependency-free generated snapshot validator.
+- Scoped validation to the generated partial/core `ClusterSnapshot` fields
+  needed to prevent schema drift in P2-02.
+- Deferred full JSON Schema draft 2020-12 validation until a focused validator
+  dependency or tooling assessment is approved.
+
 ## 2026-07-23 — Core inventory fixture contract
 
 - Added deterministic P2-02 snapshot fixture requirements for fake-client

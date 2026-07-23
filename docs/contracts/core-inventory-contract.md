@@ -125,3 +125,22 @@ P2-02 snapshot fixtures must be deterministic and safe to commit:
 
 At least one P2-02 golden fixture must cover the generated partial/core snapshot
 shape used by `kua inventory --format=json`.
+
+## 7. Snapshot validation
+
+P2-02 adds a dependency-free validator for the generated partial/core
+`ClusterSnapshot` subset. The validator is not a full JSON Schema implementation
+and must not be described as one. It checks the P2-02 fields most likely to
+drift from `schemas/cluster-snapshot/v1.json`:
+
+- schema version, snapshot ID, and RFC3339 capture timestamp;
+- required cluster identity, provider, and context fields;
+- supported provider type and confidence enums;
+- supported Kubernetes version range;
+- namespace and node required fields;
+- node condition status enums;
+- required future inventory groups are non-nil arrays;
+- limitation code, severity, and summary.
+
+Full draft 2020-12 JSON Schema validation remains deferred until a focused
+dependency/tooling assessment approves a validator.
