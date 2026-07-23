@@ -89,6 +89,11 @@ fake-client/golden coverage for the expanded inventory groups. Expanded live
 workload, CRD, networking, storage, and event reads are deferred until a later
 Gate B expansion is explicitly approved.
 
+Phase 3 is governed by `docs/contracts/health-analysis-contract.md` and
+`docs/plans/phase-3-health-plan.md`. To keep the MVP near 30 PRs, Phase 3 targets
+one planning PR, one foundation PR, one combined node/workload rules PR, and one
+combined storage/event rules plus closeout PR.
+
 ## 6. Stop conditions
 
 Stop affected work when a schema or accepted document conflicts with implementation, live access would exceed approved read-only permissions, kubent lacks verified target rules, a catalog claim lacks adequate provenance, redaction leaks an identifier, deterministic fixtures disagree, or ExFAT metadata makes Git integrity fail.

@@ -38,6 +38,8 @@ live records.
 - Implement current-state node, pod, workload, DaemonSet, PVC, and event rules.
 - Default events to a configurable 30-minute warning window.
 - Support explicitly configured/labeled critical workloads.
+- Initial implementation uses the Phase 2 fake-client inventory foundation;
+  expanded live inventory remains deferred until a separate Gate B expansion.
 
 Exit: every blocker, warning, unknown transition, and time-window boundary has direct tests.
 

@@ -24,6 +24,7 @@ The documents in this directory are the source of truth for KubeUpgrade Advisor.
 | Document | Purpose |
 | --- | --- |
 | [`plans/mvp-implementation-plan.md`](plans/mvp-implementation-plan.md) | Ordered MVP work packages, dependencies, and approval gates |
+| [`plans/phase-3-health-plan.md`](plans/phase-3-health-plan.md) | Phase 3 health analysis plan |
 | [`contracts/foundation-contract.md`](contracts/foundation-contract.md) | Phase 1 module, CLI skeleton, version, and dependency boundary |
 | [`contracts/config-error-contract.md`](contracts/config-error-contract.md) | Phase 1 config, logging, command-error, and exit-code foundation |
 | [`contracts/ci-quality-contract.md`](contracts/ci-quality-contract.md) | Phase 1 CI workflow and local quality gate contract |
@@ -35,6 +36,7 @@ The documents in this directory are the source of truth for KubeUpgrade Advisor.
 | [`contracts/storage-inventory-contract.md`](contracts/storage-inventory-contract.md) | Phase 2 storage inventory contract |
 | [`contracts/events-inventory-contract.md`](contracts/events-inventory-contract.md) | Phase 2 events inventory contract |
 | [`contracts/inventory-snapshot-assembly-contract.md`](contracts/inventory-snapshot-assembly-contract.md) | Phase 2 inventory snapshot assembly consolidation contract |
+| [`contracts/health-analysis-contract.md`](contracts/health-analysis-contract.md) | Phase 3 health analysis contract |
 | [`contracts/domain-and-schema-plan.md`](contracts/domain-and-schema-plan.md) | Domain types, schemas, compatibility, and versioning plan |
 | [`contracts/security-rbac-contract.md`](contracts/security-rbac-contract.md) | Phase 0 read-only RBAC, external-command, redaction, and dependency contract |
 | [`plans/security-rbac-plan.md`](plans/security-rbac-plan.md) | Least-privilege Kubernetes/Azure access and security validation |
