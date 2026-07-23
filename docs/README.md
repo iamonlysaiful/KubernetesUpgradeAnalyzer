@@ -48,6 +48,7 @@ The documents in this directory are the source of truth for KubeUpgrade Advisor.
 | [`validation/gate-b-p2-02-record.md`](validation/gate-b-p2-02-record.md) | Draft Gate B P2-02 validation record |
 | [`validation/phase-2-closeout.md`](validation/phase-2-closeout.md) | Draft Phase 2 closeout record |
 | [`validation/phase-3-closeout.md`](validation/phase-3-closeout.md) | Draft Phase 3 closeout record |
+| [`validation/phase-4-closeout.md`](validation/phase-4-closeout.md) | Draft Phase 4 closeout record |
 
 ## Schema contracts
 
