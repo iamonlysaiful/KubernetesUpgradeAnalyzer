@@ -59,6 +59,10 @@ Exit: known, incompatible, conditional, ambiguous, stale, and missing evidence c
 - Implement controlled kubent `0.7.3` adapter using JSON and `--helm3=false`.
 - Verify target-rule coverage for every assessed stage.
 - Treat missing tool, malformed output, execution failure, or missing rules as inconclusive.
+- Do not run kubent against a live cluster without separate approval naming the
+  context and exact command.
+- End the phase with a go/no-go decision on whether kubent coverage is adequate
+  for MVP or a minimal native analyzer must be added.
 
 Exit: adapter contract and negative-path fixtures pass; a documented go/no-go decision confirms whether kubent covers `1.30`–`1.33` or a minimal native analyzer must enter MVP.
 

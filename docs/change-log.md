@@ -74,6 +74,15 @@ This log records material scope and architecture changes. Git remains the detail
   evidence, kubent, recommendations, runtime internet access, and expanded live
   reads deferred.
 
+## 2026-07-24 — Phase 5 API compatibility plan
+
+- Added the Phase 5 API compatibility and kubent adapter contract.
+- Added the Phase 5 implementation plan with controlled kubent execution,
+  target-rule coverage validation, and a required go/no-go decision.
+- Reaffirmed that missing, malformed, empty, or unverified kubent evidence must
+  produce `UNKNOWN` or `INCONCLUSIVE`, never `PASS`.
+- Reaffirmed that live kubent execution requires separate explicit approval.
+
 ## 2026-07-23 — Phase 2 closeout draft
 
 - Added the Phase 2 closeout record.

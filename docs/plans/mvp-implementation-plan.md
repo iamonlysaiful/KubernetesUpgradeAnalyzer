@@ -102,6 +102,12 @@ one initial detector cohort plus closeout PR. Runtime catalog internet search is
 out of scope; unknown component versions and absent compatibility evidence must
 produce `UNKNOWN`, never `PASS`.
 
+Phase 5 is governed by `docs/contracts/api-compatibility-contract.md` and
+`docs/plans/phase-5-api-compat-plan.md`. To keep the MVP near 30 ±2 PRs, Phase 5
+targets one planning PR, one kubent adapter foundation PR, and one target
+coverage/go-no-go PR plus closeout. Empty, missing, malformed, or unverified
+kubent evidence must be `UNKNOWN` or `INCONCLUSIVE`, never `PASS`.
+
 ## 6. Stop conditions
 
 Stop affected work when a schema or accepted document conflicts with implementation, live access would exceed approved read-only permissions, kubent lacks verified target rules, a catalog claim lacks adequate provenance, redaction leaks an identifier, deterministic fixtures disagree, or ExFAT metadata makes Git integrity fail.

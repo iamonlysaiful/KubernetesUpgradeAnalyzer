@@ -40,6 +40,8 @@ The documents in this directory are the source of truth for KubeUpgrade Advisor.
 | [`plans/phase-4-catalog-plan.md`](plans/phase-4-catalog-plan.md) | Phase 4 catalog and component detection plan |
 | [`contracts/catalog-loader-contract.md`](contracts/catalog-loader-contract.md) | Phase 4 embedded catalog loader contract |
 | [`contracts/component-detection-contract.md`](contracts/component-detection-contract.md) | Phase 4 component detection contract |
+| [`plans/phase-5-api-compat-plan.md`](plans/phase-5-api-compat-plan.md) | Phase 5 API compatibility and kubent adapter plan |
+| [`contracts/api-compatibility-contract.md`](contracts/api-compatibility-contract.md) | Phase 5 API compatibility and kubent adapter contract |
 | [`contracts/domain-and-schema-plan.md`](contracts/domain-and-schema-plan.md) | Domain types, schemas, compatibility, and versioning plan |
 | [`contracts/security-rbac-contract.md`](contracts/security-rbac-contract.md) | Phase 0 read-only RBAC, external-command, redaction, and dependency contract |
 | [`plans/security-rbac-plan.md`](plans/security-rbac-plan.md) | Least-privilege Kubernetes/Azure access and security validation |
