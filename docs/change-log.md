@@ -46,6 +46,15 @@ This log records material scope and architecture changes. Git remains the detail
 - Reaffirmed that unknown component versions and absent compatibility evidence
   must produce `UNKNOWN`, never `PASS`.
 
+## 2026-07-23 — Catalog loader foundation
+
+- Added the internal catalog bundle model, embedded placeholder catalog, explicit
+  file loader, checksum capture, and validation errors.
+- Added validation for schema version, semantic catalog version, timestamps,
+  source references, duplicate component IDs/aliases, and known enum values.
+- Kept runtime internet search, catalog downloads, compatibility decisions, and
+  recommendations out of scope.
+
 ## 2026-07-23 — Phase 2 closeout draft
 
 - Added the Phase 2 closeout record.
