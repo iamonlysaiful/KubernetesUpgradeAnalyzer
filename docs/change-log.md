@@ -2,6 +2,14 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Phase-close archive cleanup policy
+
+- Added a phase/branch closure checkpoint for reviewing and removing obsolete
+  recovery archives and temporary artifacts.
+- Required clean working tree, passing gates, Git integrity validation, and no
+  active recovery need before archive deletion.
+- Kept archive deletion under the same explicit recoverable cleanup discipline.
+
 ## 2026-07-23 — Phase 2 Kubernetes preflight contract
 
 - Added the P2-01 contract for kubeconfig/context resolution, read-only
