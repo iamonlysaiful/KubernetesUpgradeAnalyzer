@@ -23,6 +23,15 @@ type Collector struct {
 	Clock               func() time.Time
 }
 
+type CollectionOptions struct {
+	Workloads  bool
+	Storage    bool
+	Networking bool
+	CRDs       bool
+	Events     bool
+	Limitation Limitation
+}
+
 func NewCollector(client kubernetes.Interface) Collector {
 	return Collector{
 		Client: client,
@@ -37,59 +46,20 @@ func NewCollectorWithAPIExtensions(client kubernetes.Interface, apiExtensionsCli
 }
 
 func (c Collector) CollectCore(ctx context.Context, preflightResult preflight.Result) (Snapshot, error) {
-	if c.Client == nil {
-		return Snapshot{}, fmt.Errorf("kubernetes client is required")
-	}
-
-	namespaces, err := c.collectNamespaces(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect namespaces: %w", err)
-	}
-
-	nodes, err := c.collectNodes(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect nodes: %w", err)
-	}
-
-	return c.buildSnapshot(preflightResult, namespaces, nodes, []Workload{}, Limitation{
-		Code:     "PARTIAL_INVENTORY_P2_02",
-		Severity: "WARN",
-		Summary:  "P2-02 collects namespaces and nodes only; workloads, storage, networking, CRDs, and events are intentionally not collected yet.",
-	}), nil
+	return c.CollectSnapshot(ctx, preflightResult, CollectionOptions{
+		Limitation: Limitation{
+			Code:     "PARTIAL_INVENTORY_P2_02",
+			Severity: "WARN",
+			Summary:  "P2-02 collects namespaces and nodes only; workloads, storage, networking, CRDs, and events are intentionally not collected yet.",
+		},
+	})
 }
 
-func (c Collector) CollectSnapshotWithWorkloads(ctx context.Context, preflightResult preflight.Result) (Snapshot, error) {
+func (c Collector) CollectSnapshot(ctx context.Context, preflightResult preflight.Result, options CollectionOptions) (Snapshot, error) {
 	if c.Client == nil {
 		return Snapshot{}, fmt.Errorf("kubernetes client is required")
 	}
-
-	namespaces, err := c.collectNamespaces(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect namespaces: %w", err)
-	}
-
-	nodes, err := c.collectNodes(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect nodes: %w", err)
-	}
-
-	workloads, err := c.collectWorkloads(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect workloads: %w", err)
-	}
-
-	return c.buildSnapshot(preflightResult, namespaces, nodes, workloads, Limitation{
-		Code:     "PARTIAL_INVENTORY_P2_03",
-		Severity: "WARN",
-		Summary:  "P2-03 collects namespaces, nodes, and supported workload controllers in fake-client fixture paths only; storage, networking, CRDs, and events are intentionally not collected yet.",
-	}), nil
-}
-
-func (c Collector) CollectSnapshotWithWorkloadsAndCRDs(ctx context.Context, preflightResult preflight.Result) (Snapshot, error) {
-	if c.Client == nil {
-		return Snapshot{}, fmt.Errorf("kubernetes client is required")
-	}
-	if c.APIExtensionsClient == nil {
+	if options.CRDs && c.APIExtensionsClient == nil {
 		return Snapshot{}, fmt.Errorf("kubernetes apiextensions client is required")
 	}
 
@@ -103,200 +73,57 @@ func (c Collector) CollectSnapshotWithWorkloadsAndCRDs(ctx context.Context, pref
 		return Snapshot{}, fmt.Errorf("collect nodes: %w", err)
 	}
 
-	workloads, err := c.collectWorkloads(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect workloads: %w", err)
-	}
-
-	crds, err := c.collectCRDs(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect crds: %w", err)
-	}
-
-	return c.buildSnapshotWithInventory(preflightResult, Inventory{
+	inventory := Inventory{
 		Namespaces: namespaces,
 		Nodes:      nodes,
-		Workloads:  workloads,
-		Storage:    []ResourceRef{},
-		Networking: []ResourceRef{},
-		CRDs:       crds,
-		Events:     []Event{},
-	}, Limitation{
-		Code:     "PARTIAL_INVENTORY_P2_03",
-		Severity: "WARN",
-		Summary:  "P2-03 collects namespaces, nodes, supported workload controllers, and CRD definitions in fake-client fixture paths only; storage, networking, and events are intentionally not collected yet.",
-	}), nil
-}
-
-func (c Collector) CollectSnapshotWithWorkloadsCRDsAndNetworking(ctx context.Context, preflightResult preflight.Result) (Snapshot, error) {
-	if c.Client == nil {
-		return Snapshot{}, fmt.Errorf("kubernetes client is required")
-	}
-	if c.APIExtensionsClient == nil {
-		return Snapshot{}, fmt.Errorf("kubernetes apiextensions client is required")
-	}
-
-	namespaces, err := c.collectNamespaces(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect namespaces: %w", err)
-	}
-
-	nodes, err := c.collectNodes(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect nodes: %w", err)
-	}
-
-	workloads, err := c.collectWorkloads(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect workloads: %w", err)
-	}
-
-	networking, err := c.collectNetworking(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect networking: %w", err)
-	}
-
-	crds, err := c.collectCRDs(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect crds: %w", err)
-	}
-
-	return c.buildSnapshotWithInventory(preflightResult, Inventory{
-		Namespaces: namespaces,
-		Nodes:      nodes,
-		Workloads:  workloads,
-		Storage:    []ResourceRef{},
-		Networking: networking,
-		CRDs:       crds,
-		Events:     []Event{},
-	}, Limitation{
-		Code:     "PARTIAL_INVENTORY_P2_03",
-		Severity: "WARN",
-		Summary:  "P2-03 collects namespaces, nodes, supported workload controllers, networking refs, and CRD definitions in fake-client fixture paths only; storage and events are intentionally not collected yet.",
-	}), nil
-}
-
-func (c Collector) CollectSnapshotWithWorkloadsCRDsNetworkingAndStorage(ctx context.Context, preflightResult preflight.Result) (Snapshot, error) {
-	if c.Client == nil {
-		return Snapshot{}, fmt.Errorf("kubernetes client is required")
-	}
-	if c.APIExtensionsClient == nil {
-		return Snapshot{}, fmt.Errorf("kubernetes apiextensions client is required")
-	}
-
-	namespaces, err := c.collectNamespaces(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect namespaces: %w", err)
-	}
-
-	nodes, err := c.collectNodes(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect nodes: %w", err)
-	}
-
-	workloads, err := c.collectWorkloads(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect workloads: %w", err)
-	}
-
-	storage, err := c.collectStorage(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect storage: %w", err)
-	}
-
-	networking, err := c.collectNetworking(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect networking: %w", err)
-	}
-
-	crds, err := c.collectCRDs(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect crds: %w", err)
-	}
-
-	return c.buildSnapshotWithInventory(preflightResult, Inventory{
-		Namespaces: namespaces,
-		Nodes:      nodes,
-		Workloads:  workloads,
-		Storage:    storage,
-		Networking: networking,
-		CRDs:       crds,
-		Events:     []Event{},
-	}, Limitation{
-		Code:     "PARTIAL_INVENTORY_P2_03",
-		Severity: "WARN",
-		Summary:  "P2-03 collects namespaces, nodes, supported workload controllers, storage refs, networking refs, and CRD definitions in fake-client fixture paths only; events are intentionally not collected yet.",
-	}), nil
-}
-
-func (c Collector) CollectSnapshotWithFullFakeInventory(ctx context.Context, preflightResult preflight.Result) (Snapshot, error) {
-	if c.Client == nil {
-		return Snapshot{}, fmt.Errorf("kubernetes client is required")
-	}
-	if c.APIExtensionsClient == nil {
-		return Snapshot{}, fmt.Errorf("kubernetes apiextensions client is required")
-	}
-
-	namespaces, err := c.collectNamespaces(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect namespaces: %w", err)
-	}
-
-	nodes, err := c.collectNodes(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect nodes: %w", err)
-	}
-
-	workloads, err := c.collectWorkloads(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect workloads: %w", err)
-	}
-
-	storage, err := c.collectStorage(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect storage: %w", err)
-	}
-
-	networking, err := c.collectNetworking(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect networking: %w", err)
-	}
-
-	crds, err := c.collectCRDs(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect crds: %w", err)
-	}
-
-	events, err := c.collectEvents(ctx)
-	if err != nil {
-		return Snapshot{}, fmt.Errorf("collect events: %w", err)
-	}
-
-	return c.buildSnapshotWithInventory(preflightResult, Inventory{
-		Namespaces: namespaces,
-		Nodes:      nodes,
-		Workloads:  workloads,
-		Storage:    storage,
-		Networking: networking,
-		CRDs:       crds,
-		Events:     events,
-	}, Limitation{
-		Code:     "PARTIAL_INVENTORY_P2_03",
-		Severity: "WARN",
-		Summary:  "P2-03 fake-client fixture path collects namespace, node, workload, storage, networking, CRD, and event metadata; live expanded inventory remains gated.",
-	}), nil
-}
-
-func (c Collector) buildSnapshot(preflightResult preflight.Result, namespaces []ResourceRef, nodes []Node, workloads []Workload, limitation Limitation) Snapshot {
-	return c.buildSnapshotWithInventory(preflightResult, Inventory{
-		Namespaces: namespaces,
-		Nodes:      nodes,
-		Workloads:  workloads,
+		Workloads:  []Workload{},
 		Storage:    []ResourceRef{},
 		Networking: []ResourceRef{},
 		CRDs:       []ResourceRef{},
 		Events:     []Event{},
-	}, limitation)
+	}
+
+	if options.Workloads {
+		workloads, err := c.collectWorkloads(ctx)
+		if err != nil {
+			return Snapshot{}, fmt.Errorf("collect workloads: %w", err)
+		}
+		inventory.Workloads = workloads
+	}
+
+	if options.Storage {
+		storage, err := c.collectStorage(ctx)
+		if err != nil {
+			return Snapshot{}, fmt.Errorf("collect storage: %w", err)
+		}
+		inventory.Storage = storage
+	}
+
+	if options.Networking {
+		networking, err := c.collectNetworking(ctx)
+		if err != nil {
+			return Snapshot{}, fmt.Errorf("collect networking: %w", err)
+		}
+		inventory.Networking = networking
+	}
+
+	if options.CRDs {
+		crds, err := c.collectCRDs(ctx)
+		if err != nil {
+			return Snapshot{}, fmt.Errorf("collect crds: %w", err)
+		}
+		inventory.CRDs = crds
+	}
+
+	if options.Events {
+		events, err := c.collectEvents(ctx)
+		if err != nil {
+			return Snapshot{}, fmt.Errorf("collect events: %w", err)
+		}
+		inventory.Events = events
+	}
+
+	return c.buildSnapshotWithInventory(preflightResult, inventory, options.Limitation), nil
 }
 
 func (c Collector) buildSnapshotWithInventory(preflightResult preflight.Result, inventory Inventory, limitation Limitation) Snapshot {

@@ -9,6 +9,8 @@ This log records material scope and architecture changes. Git remains the detail
   explicit collection options.
 - Reaffirmed that live `kua inventory --format=json` remains on core inventory
   until Gate B is separately expanded.
+- Replaced long fake-client snapshot assembly methods with a single
+  option-driven `CollectSnapshot` path while preserving golden fixtures.
 
 ## 2026-07-23 — Phase 2 events inventory contract
 

@@ -21,7 +21,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | --- | --- | --- |
 | Phase 0 - Design freeze and contracts | Complete | Merged to `main`. |
 | Phase 1 - CLI foundation | Complete | Merged to `main`, including local CI and GitHub Actions. |
-| Phase 2 - Kubernetes preflight and inventory | In progress | P2-03 fake-client inventory groups are merged; snapshot assembly consolidation is starting on `feature/inventory-snapshot-consolidation`; Gate B passed for namespace/node collection only. |
+| Phase 2 - Kubernetes preflight and inventory | In progress | P2-03 fake-client inventory groups are merged; snapshot assembly consolidation is on `feature/inventory-snapshot-consolidation`; Gate B passed for namespace/node collection only. |
 | Phase 3+ | Not started | Blocked on earlier phase outputs and review gates. |
 
 ## Current branch focus
@@ -76,6 +76,7 @@ P2-03 event inventory is merged:
 
 - inventory snapshot assembly contract;
 - explicit fake-client collection options;
+- preserved golden fixture coverage;
 - no live expanded inventory collection until separate Gate B expansion approval.
 
 Current `kua inventory` behavior remains partial/core inventory only. Workloads,
