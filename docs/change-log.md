@@ -2,6 +2,14 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Gate B P2-02 smoke-test result
+
+- Recorded a sanitized Gate B P2-02 smoke-test result.
+- Marked Gate B as passed for namespace/node core inventory only.
+- Kept raw live output local-only under ignored paths and excluded cluster,
+  namespace, and node identifiers from the public record.
+- Reaffirmed that later collectors require separate Gate B expansion approval.
+
 ## 2026-07-23 — Gate B validation record template
 
 - Added a draft Gate B P2-02 validation record.
