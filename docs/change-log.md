@@ -28,6 +28,15 @@ This log records material scope and architecture changes. Git remains the detail
 - Kept the rules internal and fixture-driven; no CLI command or expanded live
   Kubernetes read was introduced.
 
+## 2026-07-23 — Storage and event health rules
+
+- Added storage evidence unknown, warning event, and unknown event type health
+  rules over normalized inventory snapshots.
+- Added the Phase 3 closeout record confirming health analysis remains internal
+  and fixture-driven, with expanded live inventory still deferred.
+- Kept user-facing health/analyze commands, compatibility checks, kubent,
+  provider evidence, and final recommendations out of Phase 3.
+
 ## 2026-07-23 — Phase 2 closeout draft
 
 - Added the Phase 2 closeout record.
