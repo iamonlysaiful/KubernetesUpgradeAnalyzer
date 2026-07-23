@@ -104,3 +104,24 @@ func TestValidateCoreSnapshotRejectsInvalidNetworking(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateCoreSnapshotRejectsInvalidStorage(t *testing.T) {
+	snapshot := collectStorageGoldenSnapshot(t)
+	snapshot.Inventory.Storage[0].APIVersion = "storage.k8s.io/v1"
+	snapshot.Inventory.Storage[0].Namespace = "team-a"
+	snapshot.Inventory.Storage[1].Kind = "PersistentVolumeClaim"
+
+	err := ValidateCoreSnapshot(snapshot)
+	if err == nil {
+		t.Fatalf("ValidateCoreSnapshot(invalid storage) returned nil error")
+	}
+	message := err.Error()
+	for _, want := range []string{
+		"apiVersion",
+		"namespace",
+	} {
+		if !strings.Contains(message, want) {
+			t.Fatalf("ValidateCoreSnapshot storage error missing %q in: %s", want, message)
+		}
+	}
+}
