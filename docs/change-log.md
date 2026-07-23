@@ -8,6 +8,8 @@ This log records material scope and architecture changes. Git remains the detail
   branch focus, and latest quality evidence.
 - Recorded Gate A as complete, Phase 1 as complete, and Gate B as not yet open
   because live cluster access still requires explicit approval.
+- Clarified that current `kua inventory` behavior is preflight-only during
+  P2-01 and does not represent full inventory collection.
 
 ## 2026-07-23 — Phase-close archive cleanup policy
 

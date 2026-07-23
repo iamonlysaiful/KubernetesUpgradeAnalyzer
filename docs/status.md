@@ -34,6 +34,9 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 - fake-client Kubernetes checker tests;
 - `kua inventory` preflight-only command wiring.
 
+Current `kua inventory` behavior is preflight-only and must be treated as an
+early Phase 2 safety check, not full inventory collection.
+
 ## Current quality evidence
 
 Latest local checks:

@@ -22,6 +22,9 @@ P2-01 does not collect full inventory, read Secrets, invoke kubent, invoke Azure
 CLI, call provider APIs, render final assessment reports, or access a live
 cluster without separate user approval naming the context and operation.
 
+During P2-01, `kua inventory` output is explicitly labeled as preflight-only.
+It must not imply that full inventory collection has started.
+
 ## 2. Kubeconfig and context behavior
 
 Resolution order:
