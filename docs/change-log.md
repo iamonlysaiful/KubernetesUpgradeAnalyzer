@@ -19,6 +19,15 @@ This log records material scope and architecture changes. Git remains the detail
 - Kept Phase 3 health rules, CLI commands, and live Kubernetes reads out of this
   foundation slice.
 
+## 2026-07-23 — Node and workload health rules
+
+- Added node readiness, node pressure, node kubelet minor skew, and workload
+  unavailable health rules over normalized inventory snapshots.
+- Added `UNKNOWN` findings for missing node readiness, kubelet, and server
+  version evidence instead of treating absent evidence as pass.
+- Kept the rules internal and fixture-driven; no CLI command or expanded live
+  Kubernetes read was introduced.
+
 ## 2026-07-23 — Phase 2 closeout draft
 
 - Added the Phase 2 closeout record.
