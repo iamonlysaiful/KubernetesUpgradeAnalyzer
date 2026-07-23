@@ -94,6 +94,9 @@ func validateInventory(inventory Inventory) []string {
 	for i, workload := range inventory.Workloads {
 		problems = append(problems, validateWorkload(i, workload)...)
 	}
+	for i, crd := range inventory.CRDs {
+		problems = append(problems, validateCRD(i, crd)...)
+	}
 	return problems
 }
 
@@ -149,6 +152,22 @@ func validateWorkload(index int, workload Workload) []string {
 		if container.Image == "" {
 			problems = append(problems, containerPrefix+".image is required")
 		}
+	}
+	return problems
+}
+
+func validateCRD(index int, crd ResourceRef) []string {
+	var problems []string
+	prefix := fmt.Sprintf("inventory.crds[%d]", index)
+	problems = append(problems, validateResourceRef(prefix, crd, false)...)
+	if crd.APIVersion != "apiextensions.k8s.io/v1" {
+		problems = append(problems, prefix+".apiVersion must be apiextensions.k8s.io/v1")
+	}
+	if crd.Kind != "CustomResourceDefinition" {
+		problems = append(problems, prefix+".kind must be CustomResourceDefinition")
+	}
+	if crd.Namespace != "" {
+		problems = append(problems, prefix+".namespace must be empty")
 	}
 	return problems
 }

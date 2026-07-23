@@ -10,6 +10,8 @@ This log records material scope and architecture changes. Git remains the detail
 - Reaffirmed that live CRD reads require separate Gate B expansion approval.
 - Expanded the Kubernetes dependency assessment to cover the
   `k8s.io/apiextensions-apiserver` module for CRD fake-client tests.
+- Added fake-client CRD collection, snapshot fixture coverage, and subset
+  validation for CRD refs.
 
 ## 2026-07-23 — Workload snapshot fixture path
 
