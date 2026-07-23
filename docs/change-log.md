@@ -2,6 +2,14 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Gate B smoke-test plan
+
+- Added a proposed Gate B smoke-test plan for P2-02 core inventory.
+- Defined required user approval fields, allowed command shapes, approved
+  read-only Kubernetes operations, stop conditions, artifact handling, and
+  success criteria.
+- Reaffirmed that the plan is not approval to access a live cluster.
+
 ## 2026-07-23 — Inventory command golden output
 
 - Required a command-level golden test for `kua inventory --format=json`.

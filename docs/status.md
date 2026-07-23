@@ -10,7 +10,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Gate | Status | Evidence |
 | --- | --- | --- |
 | Gate A - contracts | Complete | Phase 0 contracts, schemas, fixtures, security/RBAC, and dependency rules are documented and merged. |
-| Gate B - collection safety | Not open | P2-02 core inventory is starting with fake-client tests; live cluster access is still blocked until the user approves a named context and read-only operation. |
+| Gate B - collection safety | Plan drafted; not open | P2-02 core inventory has fake-client/golden coverage; live cluster access is still blocked until the user approves the proposed Gate B smoke test for a named context and operation. |
 | Gate C - compatibility validity | Not started | Catalog source validation and kubent target-rule coverage are future Phase 4/5 work. |
 | Gate D - recommendation calibration | Not started | Recommendation matrix and staging expectations are future Phase 7 work. |
 | Gate E - release | Not started | Release validation, artifacts, SBOM, and publication are Phase 9 work. |
@@ -32,8 +32,10 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 
 - core inventory contract for partial snapshot collection;
 - namespace and node collectors using fake-client tests first;
-- planned `kua inventory --format=json` partial snapshot wiring after required
-  preflight succeeds;
+- `kua inventory --format=json` partial snapshot wiring after required preflight
+  succeeds;
+- subset validation and command-level golden output coverage;
+- proposed Gate B live smoke-test plan;
 - explicit limitations for intentionally empty future inventory groups.
 
 Current `kua inventory` behavior is still preflight-first. Any P2-02 inventory
