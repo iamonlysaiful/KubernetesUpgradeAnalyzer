@@ -2,8 +2,11 @@ package app
 
 import (
 	"bytes"
+	"errors"
 	"strings"
 	"testing"
+
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/preflight"
 )
 
 func TestRunVersion(t *testing.T) {
@@ -61,7 +64,7 @@ func TestRunVersionWithGlobalFlags(t *testing.T) {
 }
 
 func TestRunUnimplementedCommands(t *testing.T) {
-	for _, command := range []string{"analyze", "inventory", "health", "compatibility", "report"} {
+	for _, command := range []string{"analyze", "health", "compatibility", "report"} {
 		t.Run(command, func(t *testing.T) {
 			var stdout bytes.Buffer
 			var stderr bytes.Buffer
@@ -78,6 +81,69 @@ func TestRunUnimplementedCommands(t *testing.T) {
 				t.Fatalf("Run(%s) stderr = %q, want unimplemented message", command, stderr.String())
 			}
 		})
+	}
+}
+
+func TestRunInventoryPreflight(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := RunWithDependencies([]string{
+		"--context", "ctx-001",
+		"--kubeconfig", "/tmp/synthetic-kubeconfig",
+		"inventory",
+	}, &stdout, &stderr, BuildInfo{}, Dependencies{
+		PreflightRunner: fakePreflightRunner{
+			result: preflight.Result{
+				Context: preflight.ContextSelection{
+					Name:             "ctx-001",
+					KubeconfigSource: preflight.KubeconfigSourceExplicit,
+				},
+				ServerVersion:   "v1.30.0",
+				DiscoveryStatus: preflight.StatusPass,
+				PermissionChecks: []preflight.PermissionCheck{
+					{Resource: "pods", Verb: "list", EvidenceClass: preflight.EvidenceRequired, Status: preflight.StatusPass},
+				},
+			},
+		},
+	})
+
+	if code != ExitReady {
+		t.Fatalf("Run(inventory) exit code = %d, want %d", code, ExitReady)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("Run(inventory) stderr = %q, want empty", stderr.String())
+	}
+	for _, want := range []string{
+		"inventory preflight",
+		"context: ctx-001",
+		"kubeconfigSource: EXPLICIT",
+		"serverVersion: v1.30.0",
+		"discovery: PASS",
+		"requiredFailure: false",
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("Run(inventory) output missing %q in:\n%s", want, stdout.String())
+		}
+	}
+}
+
+func TestRunInventoryPreflightFailure(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := RunWithDependencies([]string{"inventory"}, &stdout, &stderr, BuildInfo{}, Dependencies{
+		PreflightRunner: fakePreflightRunner{err: errors.New("missing context")},
+	})
+
+	if code != ExitExecution {
+		t.Fatalf("Run(inventory failure) exit code = %d, want %d", code, ExitExecution)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("Run(inventory failure) stdout = %q, want empty", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "inventory preflight failed") {
+		t.Fatalf("Run(inventory failure) stderr = %q, want preflight failure", stderr.String())
 	}
 }
 
@@ -110,6 +176,18 @@ func TestRunUsageErrors(t *testing.T) {
 			}
 		})
 	}
+}
+
+type fakePreflightRunner struct {
+	result preflight.Result
+	err    error
+}
+
+func (f fakePreflightRunner) Run(preflight.KubeconfigOptions) (preflight.Result, error) {
+	if f.err != nil {
+		return preflight.Result{}, f.err
+	}
+	return f.result, nil
 }
 
 func TestParseArgsStoresConfig(t *testing.T) {
