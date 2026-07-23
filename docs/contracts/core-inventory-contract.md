@@ -148,3 +148,7 @@ dependency/tooling assessment approves a validator.
 `kua inventory --format=json` must run this subset validator before writing a
 partial/core snapshot to stdout. Validation failure is an execution error and
 must not emit snapshot JSON. Diagnostics go to stderr.
+
+The command-level JSON path must have a golden test that compares stdout against
+the approved P2-02 partial/core snapshot fixture. This protects the CLI contract,
+not only the collector package.

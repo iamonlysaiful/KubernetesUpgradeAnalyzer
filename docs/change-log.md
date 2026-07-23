@@ -2,6 +2,12 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Inventory command golden output
+
+- Required a command-level golden test for `kua inventory --format=json`.
+- Clarified that the CLI stdout contract must be protected separately from the
+  collector package fixture.
+
 ## 2026-07-23 — Inventory JSON validation gate
 
 - Required `kua inventory --format=json` to validate generated partial/core
