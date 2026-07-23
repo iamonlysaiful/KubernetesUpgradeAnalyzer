@@ -21,8 +21,8 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | --- | --- | --- |
 | Phase 0 - Design freeze and contracts | Complete | Merged to `main`. |
 | Phase 1 - CLI foundation | Complete | Merged to `main`, including local CI and GitHub Actions. |
-| Phase 2 - Kubernetes preflight and inventory | Closeout draft | Fake-client inventory foundation is merged; live core inventory is verified; expanded live inventory is deferred. |
-| Phase 3 - Health analysis | Ready next | May start after Phase 2 closeout is reviewed and merged. |
+| Phase 2 - Kubernetes preflight and inventory | Complete | Fake-client inventory foundation is merged; live core inventory is verified; expanded live inventory is deferred. |
+| Phase 3 - Health analysis | Planning | Health contract and compressed PR strategy are on `docs/phase-3-health-plan`. |
 | Phase 4+ | Not started | Blocked on earlier phase outputs and review gates. |
 
 ## Current branch focus
@@ -80,11 +80,17 @@ Phase 2 consolidation is merged:
 - preserved golden fixture coverage;
 - no live expanded inventory collection until separate Gate B expansion approval.
 
-`docs/phase-2-closeout` records the closeout decision:
+Phase 2 closeout is merged:
 
 - Phase 2 foundation is complete for MVP continuation;
 - `kua inventory --format=json` remains live core inventory only;
 - expanded live inventory is deferred until a later approved Gate B expansion.
+
+`docs/phase-3-health-plan` starts Phase 3:
+
+- health analysis contract;
+- rule/finding model plan;
+- target of about four Phase 3 PRs to keep the MVP near 30 total PRs.
 
 Current live `kua inventory` behavior remains partial/core inventory only.
 Workloads, storage, networking, CRDs, events, health, compatibility, provider
