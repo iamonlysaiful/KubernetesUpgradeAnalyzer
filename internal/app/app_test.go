@@ -115,7 +115,7 @@ func TestRunInventoryPreflight(t *testing.T) {
 		t.Fatalf("Run(inventory) stderr = %q, want empty", stderr.String())
 	}
 	for _, want := range []string{
-		"inventory preflight",
+		"inventory preflight only",
 		"context: ctx-001",
 		"kubeconfigSource: EXPLICIT",
 		"serverVersion: v1.30.0",

@@ -94,7 +94,7 @@ func runInventoryPreflight(cfg Config, stdout io.Writer, stderr io.Writer, runne
 		return appErr.Code
 	}
 
-	fmt.Fprintln(stdout, "inventory preflight")
+	fmt.Fprintln(stdout, "inventory preflight only")
 	fmt.Fprintf(stdout, "context: %s\n", result.Context.Name)
 	fmt.Fprintf(stdout, "kubeconfigSource: %s\n", result.Context.KubeconfigSource)
 	fmt.Fprintf(stdout, "serverVersion: %s\n", result.ServerVersion)
