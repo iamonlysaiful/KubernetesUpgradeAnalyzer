@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/inventory"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/preflight"
 )
 
@@ -154,6 +155,38 @@ func TestRunInventoryPreflightJSON(t *testing.T) {
 				},
 			},
 		},
+		InventoryCollector: fakeInventoryCollector{
+			snapshot: inventory.Snapshot{
+				SchemaVersion: inventory.SchemaVersion,
+				SnapshotID:    "ctx-json-20260723T010203Z",
+				CapturedAt:    "2026-07-23T01:02:03Z",
+				Cluster: inventory.Cluster{
+					Identity: inventory.ResourceRef{Kind: "Cluster", Name: "ctx-json"},
+					Provider: inventory.Provider{Type: "UNKNOWN", Confidence: "UNKNOWN"},
+					Context:  inventory.Context{Name: "ctx-json", KubeconfigSource: "DEFAULT"},
+				},
+				Kubernetes: inventory.Kubernetes{ServerVersion: "1.31.4"},
+				Inventory: inventory.Inventory{
+					Namespaces: []inventory.ResourceRef{{APIVersion: "v1", Kind: "Namespace", Name: "default"}},
+					Nodes: []inventory.Node{{
+						Ref:               inventory.ResourceRef{APIVersion: "v1", Kind: "Node", Name: "node-001"},
+						KubeletVersion:    "1.31.4",
+						ProviderIDPresent: true,
+						Conditions:        []inventory.Condition{{Type: "Ready", Status: "TRUE"}},
+					}},
+					Workloads:  []inventory.Workload{},
+					Storage:    []inventory.ResourceRef{},
+					Networking: []inventory.ResourceRef{},
+					CRDs:       []inventory.ResourceRef{},
+					Events:     []inventory.Event{},
+				},
+				Limitations: []inventory.Limitation{{
+					Code:     "PARTIAL_INVENTORY_P2_02",
+					Severity: "WARN",
+					Summary:  "partial inventory",
+				}},
+			},
+		},
 	})
 
 	if code != ExitReady {
@@ -166,27 +199,84 @@ func TestRunInventoryPreflightJSON(t *testing.T) {
 		t.Fatalf("Run(inventory json) emitted console text:\n%s", stdout.String())
 	}
 
-	var got inventoryPreflightDocument
+	var got inventory.Snapshot
 	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
 		t.Fatalf("Run(inventory json) output is not JSON: %v\n%s", err, stdout.String())
 	}
-	if !got.PreflightOnly {
-		t.Fatalf("Run(inventory json) preflightOnly = false, want true")
+	if got.SchemaVersion != inventory.SchemaVersion {
+		t.Fatalf("Run(inventory json) schemaVersion = %q, want %q", got.SchemaVersion, inventory.SchemaVersion)
 	}
-	if got.Kind != "InventoryPreflight" {
-		t.Fatalf("Run(inventory json) kind = %q, want InventoryPreflight", got.Kind)
+	if got.Cluster.Context.Name != "ctx-json" {
+		t.Fatalf("Run(inventory json) context = %q, want ctx-json", got.Cluster.Context.Name)
 	}
-	if got.Context != "ctx-json" || got.KubeconfigSource != "DEFAULT" || got.ServerVersion != "v1.31.4" {
-		t.Fatalf("Run(inventory json) context/source/version = %#v", got)
+	if len(got.Inventory.Namespaces) != 1 || got.Inventory.Namespaces[0].Name != "default" {
+		t.Fatalf("Run(inventory json) namespaces = %#v, want default", got.Inventory.Namespaces)
 	}
-	if len(got.PermissionChecks) != 2 {
-		t.Fatalf("Run(inventory json) permissionChecks = %d, want 2", len(got.PermissionChecks))
+	if len(got.Inventory.Nodes) != 1 || got.Inventory.Nodes[0].ProviderIDPresent != true {
+		t.Fatalf("Run(inventory json) nodes = %#v, want one node with provider ID present", got.Inventory.Nodes)
 	}
-	if got.PermissionChecks[1].Status != preflight.StatusUnknown {
-		t.Fatalf("Run(inventory json) optional unknown status = %s, want UNKNOWN", got.PermissionChecks[1].Status)
-	}
-	if len(got.Limitations) != 1 {
+	if len(got.Limitations) != 1 || got.Limitations[0].Code != "PARTIAL_INVENTORY_P2_02" {
 		t.Fatalf("Run(inventory json) limitations = %d, want 1", len(got.Limitations))
+	}
+}
+
+func TestRunInventoryJSONPreflightRequiredFailureDoesNotCollect(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := RunWithDependencies([]string{"--format=json", "inventory"}, &stdout, &stderr, BuildInfo{}, Dependencies{
+		PreflightRunner: fakePreflightRunner{
+			result: preflight.Result{
+				Context:         preflight.ContextSelection{Name: "ctx-fail", KubeconfigSource: preflight.KubeconfigSourceDefault},
+				ServerVersion:   "v1.31.4",
+				DiscoveryStatus: preflight.StatusFail,
+			},
+		},
+		InventoryCollector: fakeInventoryCollector{
+			err: errors.New("collector should not run"),
+		},
+	})
+
+	if code != ExitInconclusive {
+		t.Fatalf("Run(inventory json preflight failure) exit code = %d, want %d", code, ExitInconclusive)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("Run(inventory json preflight failure) stderr = %q, want empty", stderr.String())
+	}
+	var got inventoryPreflightDocument
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("Run(inventory json preflight failure) output is not preflight JSON: %v\n%s", err, stdout.String())
+	}
+	if got.Kind != "InventoryPreflight" || !got.RequiredFailure {
+		t.Fatalf("Run(inventory json preflight failure) document = %#v, want failed preflight document", got)
+	}
+}
+
+func TestRunInventoryJSONCollectionFailure(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := RunWithDependencies([]string{"--format=json", "inventory"}, &stdout, &stderr, BuildInfo{}, Dependencies{
+		PreflightRunner: fakePreflightRunner{
+			result: preflight.Result{
+				Context:         preflight.ContextSelection{Name: "ctx-collect", KubeconfigSource: preflight.KubeconfigSourceDefault},
+				ServerVersion:   "v1.31.4",
+				DiscoveryStatus: preflight.StatusPass,
+			},
+		},
+		InventoryCollector: fakeInventoryCollector{
+			err: errors.New("list nodes failed"),
+		},
+	})
+
+	if code != ExitExecution {
+		t.Fatalf("Run(inventory json collection failure) exit code = %d, want %d", code, ExitExecution)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("Run(inventory json collection failure) stdout = %q, want empty", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "inventory collection failed") {
+		t.Fatalf("Run(inventory json collection failure) stderr = %q, want collection failure", stderr.String())
 	}
 }
 
@@ -250,6 +340,18 @@ func (f fakePreflightRunner) Run(preflight.KubeconfigOptions) (preflight.Result,
 		return preflight.Result{}, f.err
 	}
 	return f.result, nil
+}
+
+type fakeInventoryCollector struct {
+	snapshot inventory.Snapshot
+	err      error
+}
+
+func (f fakeInventoryCollector) CollectCore(preflight.KubeconfigOptions, preflight.Result) (inventory.Snapshot, error) {
+	if f.err != nil {
+		return inventory.Snapshot{}, f.err
+	}
+	return f.snapshot, nil
 }
 
 func TestParseArgsStoresConfig(t *testing.T) {

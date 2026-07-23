@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"runtime"
 
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/inventory"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/preflight"
 )
 
@@ -31,16 +32,22 @@ type BuildInfo struct {
 }
 
 type Dependencies struct {
-	PreflightRunner PreflightRunner
+	PreflightRunner    PreflightRunner
+	InventoryCollector InventoryCollector
 }
 
 type PreflightRunner interface {
 	Run(preflight.KubeconfigOptions) (preflight.Result, error)
 }
 
+type InventoryCollector interface {
+	CollectCore(preflight.KubeconfigOptions, preflight.Result) (inventory.Snapshot, error)
+}
+
 func Run(args []string, stdout io.Writer, stderr io.Writer, build BuildInfo) int {
 	return RunWithDependencies(args, stdout, stderr, build, Dependencies{
-		PreflightRunner: preflight.LiveRunner{},
+		PreflightRunner:    preflight.LiveRunner{},
+		InventoryCollector: inventory.LiveCollector{},
 	})
 }
 
@@ -63,7 +70,7 @@ func RunWithDependencies(args []string, stdout io.Writer, stderr io.Writer, buil
 		printVersion(stdout, build)
 		return ExitReady
 	case "inventory":
-		return runInventoryPreflight(cfg, stdout, stderr, deps.PreflightRunner)
+		return runInventory(cfg, stdout, stderr, deps.PreflightRunner, deps.InventoryCollector)
 	case "analyze", "health", "compatibility", "report":
 		appErr := UnimplementedError(positional[0])
 		fmt.Fprintln(stderr, appErr.Message)
@@ -78,17 +85,18 @@ func RunWithDependencies(args []string, stdout io.Writer, stderr io.Writer, buil
 	}
 }
 
-func runInventoryPreflight(cfg Config, stdout io.Writer, stderr io.Writer, runner PreflightRunner) int {
+func runInventory(cfg Config, stdout io.Writer, stderr io.Writer, runner PreflightRunner, collector InventoryCollector) int {
 	if runner == nil {
 		appErr := ExecutionError("inventory preflight runner is not configured", nil)
 		fmt.Fprintln(stderr, appErr.Message)
 		return appErr.Code
 	}
 
-	result, err := runner.Run(preflight.KubeconfigOptions{
+	options := preflight.KubeconfigOptions{
 		Path:    cfg.Kubeconfig,
 		Context: cfg.Context,
-	})
+	}
+	result, err := runner.Run(options)
 	if err != nil {
 		appErr := ExecutionError("inventory preflight failed: "+err.Error(), err)
 		fmt.Fprintln(stderr, appErr.Message)
@@ -96,15 +104,15 @@ func runInventoryPreflight(cfg Config, stdout io.Writer, stderr io.Writer, runne
 	}
 
 	if cfg.Format == "json" {
-		if err := printInventoryPreflightJSON(stdout, result); err != nil {
-			appErr := ExecutionError("inventory preflight JSON render failed: "+err.Error(), err)
-			fmt.Fprintln(stderr, appErr.Message)
-			return appErr.Code
-		}
 		if result.HasRequiredFailure() {
+			if err := printInventoryPreflightJSON(stdout, result); err != nil {
+				appErr := ExecutionError("inventory preflight JSON render failed: "+err.Error(), err)
+				fmt.Fprintln(stderr, appErr.Message)
+				return appErr.Code
+			}
 			return ExitInconclusive
 		}
-		return ExitReady
+		return runInventorySnapshotJSON(options, result, stdout, stderr, collector)
 	}
 
 	fmt.Fprintln(stdout, "inventory preflight only")
@@ -118,6 +126,30 @@ func runInventoryPreflight(cfg Config, stdout io.Writer, stderr io.Writer, runne
 
 	if result.HasRequiredFailure() {
 		return ExitInconclusive
+	}
+	return ExitReady
+}
+
+func runInventorySnapshotJSON(options preflight.KubeconfigOptions, result preflight.Result, stdout io.Writer, stderr io.Writer, collector InventoryCollector) int {
+	if collector == nil {
+		appErr := ExecutionError("inventory collector is not configured", nil)
+		fmt.Fprintln(stderr, appErr.Message)
+		return appErr.Code
+	}
+
+	snapshot, err := collector.CollectCore(options, result)
+	if err != nil {
+		appErr := ExecutionError("inventory collection failed: "+err.Error(), err)
+		fmt.Fprintln(stderr, appErr.Message)
+		return appErr.Code
+	}
+
+	encoder := json.NewEncoder(stdout)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(snapshot); err != nil {
+		appErr := ExecutionError("inventory snapshot JSON render failed: "+err.Error(), err)
+		fmt.Fprintln(stderr, appErr.Message)
+		return appErr.Code
 	}
 	return ExitReady
 }
