@@ -280,6 +280,38 @@ func TestRunInventoryJSONCollectionFailure(t *testing.T) {
 	}
 }
 
+func TestRunInventoryJSONValidationFailure(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := RunWithDependencies([]string{"--format=json", "inventory"}, &stdout, &stderr, BuildInfo{}, Dependencies{
+		PreflightRunner: fakePreflightRunner{
+			result: preflight.Result{
+				Context:         preflight.ContextSelection{Name: "ctx-invalid", KubeconfigSource: preflight.KubeconfigSourceDefault},
+				ServerVersion:   "v1.31.4",
+				DiscoveryStatus: preflight.StatusPass,
+			},
+		},
+		InventoryCollector: fakeInventoryCollector{
+			snapshot: inventory.Snapshot{
+				SchemaVersion: "kua.cluster-snapshot.v2",
+				SnapshotID:    "bad",
+				CapturedAt:    "not-a-time",
+			},
+		},
+	})
+
+	if code != ExitExecution {
+		t.Fatalf("Run(inventory json validation failure) exit code = %d, want %d", code, ExitExecution)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("Run(inventory json validation failure) stdout = %q, want empty", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "inventory snapshot validation failed") {
+		t.Fatalf("Run(inventory json validation failure) stderr = %q, want validation failure", stderr.String())
+	}
+}
+
 func TestRunInventoryPreflightFailure(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer

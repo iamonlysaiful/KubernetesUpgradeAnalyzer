@@ -143,6 +143,11 @@ func runInventorySnapshotJSON(options preflight.KubeconfigOptions, result prefli
 		fmt.Fprintln(stderr, appErr.Message)
 		return appErr.Code
 	}
+	if err := inventory.ValidateCoreSnapshot(snapshot); err != nil {
+		appErr := ExecutionError("inventory snapshot validation failed: "+err.Error(), err)
+		fmt.Fprintln(stderr, appErr.Message)
+		return appErr.Code
+	}
 
 	encoder := json.NewEncoder(stdout)
 	encoder.SetIndent("", "  ")
