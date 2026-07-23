@@ -37,3 +37,12 @@ func UnimplementedError(command string) *AppError {
 		Code:     ExitExecution,
 	}
 }
+
+func ExecutionError(message string, cause error) *AppError {
+	return &AppError{
+		Category: ErrorExecution,
+		Message:  message,
+		Code:     ExitExecution,
+		Cause:    cause,
+	}
+}

@@ -24,6 +24,8 @@
 .azure/
 kubeconfig
 kubeconfig.*
+!kubeconfig.go
+!**/kubeconfig.go
 *.kubeconfig
 *.pem
 *.key

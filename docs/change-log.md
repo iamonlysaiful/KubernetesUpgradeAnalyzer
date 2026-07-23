@@ -2,6 +2,42 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Inventory preflight JSON contract
+
+- Added the P2-01 `kua inventory --format=json` contract for deterministic
+  machine-readable preflight output.
+- Required both console and JSON formats to explicitly identify P2-01 output as
+  preflight-only.
+- Reaffirmed that unknown, denied, or incomplete preflight evidence must not be
+  rendered as `PASS`.
+
+## 2026-07-23 — Project gate status
+
+- Added `docs/status.md` to track current gate status, phase status, active
+  branch focus, and latest quality evidence.
+- Recorded Gate A as complete, Phase 1 as complete, and Gate B as not yet open
+  because live cluster access still requires explicit approval.
+- Clarified that current `kua inventory` behavior is preflight-only during
+  P2-01 and does not represent full inventory collection.
+
+## 2026-07-23 — Phase-close archive cleanup policy
+
+- Added a phase/branch closure checkpoint for reviewing and removing obsolete
+  recovery archives and temporary artifacts.
+- Required clean working tree, passing gates, Git integrity validation, and no
+  active recovery need before archive deletion.
+- Kept archive deletion under the same explicit recoverable cleanup discipline.
+
+## 2026-07-23 — Phase 2 Kubernetes preflight contract
+
+- Added the P2-01 contract for kubeconfig/context resolution, read-only
+  discovery/RBAC preflight, limitations, and fake-client test boundaries.
+- Added the Kubernetes client-go dependency assessment for P2-01 only.
+- Reaffirmed that live cluster execution requires separate approval naming the
+  context and read-only operation.
+- Narrowed the kubeconfig ignore policy so source files named `kubeconfig.go`
+  can be tracked while local kubeconfig credential files remain ignored.
+
 ## 2026-07-23 — Phase 1 CI quality contract
 
 - Added the P1-03 contract for GitHub Actions, local quality gates, formatting,

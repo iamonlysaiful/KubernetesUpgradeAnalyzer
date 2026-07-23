@@ -74,3 +74,25 @@ All cleanup, deletion, overwrite, repository repair, and other destructive opera
 8. Retain the recovery artifact until the user gives separate explicit approval to remove it.
 
 Successful validation does not authorize backup deletion. If validation fails, stop, preserve evidence and the recovery artifact, and request direction before attempting additional repair or restoration.
+
+## 10. Phase-close archive cleanup
+
+Recovery archives are temporary safety assets, not permanent project records. At
+phase closure, branch closure, or another user-approved cleanup checkpoint,
+review retained archives and temporary artifacts for removal.
+
+Before deleting prior archives, confirm:
+
+1. the relevant phase or branch has been merged, published, or otherwise safely
+   preserved;
+2. the working tree is clean;
+3. required tests and quality gates pass;
+4. `git fsck` reports no corruption beyond any explicitly accepted known
+   dangling objects;
+5. the archive is not needed for an active investigation, rollback, or user
+   review.
+
+Archive deletion itself remains a cleanup operation: inventory exact targets,
+record the validation evidence, use an approved deletion scope, and report what
+was removed. Do not delete archives created for the current active task until the
+task has closed or the user explicitly confirms they are no longer needed.

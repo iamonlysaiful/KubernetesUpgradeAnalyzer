@@ -2,8 +2,12 @@ package app
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
+
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/preflight"
 )
 
 func TestRunVersion(t *testing.T) {
@@ -61,7 +65,7 @@ func TestRunVersionWithGlobalFlags(t *testing.T) {
 }
 
 func TestRunUnimplementedCommands(t *testing.T) {
-	for _, command := range []string{"analyze", "inventory", "health", "compatibility", "report"} {
+	for _, command := range []string{"analyze", "health", "compatibility", "report"} {
 		t.Run(command, func(t *testing.T) {
 			var stdout bytes.Buffer
 			var stderr bytes.Buffer
@@ -78,6 +82,130 @@ func TestRunUnimplementedCommands(t *testing.T) {
 				t.Fatalf("Run(%s) stderr = %q, want unimplemented message", command, stderr.String())
 			}
 		})
+	}
+}
+
+func TestRunInventoryPreflight(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := RunWithDependencies([]string{
+		"--context", "ctx-001",
+		"--kubeconfig", "/tmp/synthetic-kubeconfig",
+		"inventory",
+	}, &stdout, &stderr, BuildInfo{}, Dependencies{
+		PreflightRunner: fakePreflightRunner{
+			result: preflight.Result{
+				Context: preflight.ContextSelection{
+					Name:             "ctx-001",
+					KubeconfigSource: preflight.KubeconfigSourceExplicit,
+				},
+				ServerVersion:   "v1.30.0",
+				DiscoveryStatus: preflight.StatusPass,
+				PermissionChecks: []preflight.PermissionCheck{
+					{Resource: "pods", Verb: "list", EvidenceClass: preflight.EvidenceRequired, Status: preflight.StatusPass},
+				},
+			},
+		},
+	})
+
+	if code != ExitReady {
+		t.Fatalf("Run(inventory) exit code = %d, want %d", code, ExitReady)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("Run(inventory) stderr = %q, want empty", stderr.String())
+	}
+	for _, want := range []string{
+		"inventory preflight only",
+		"context: ctx-001",
+		"kubeconfigSource: EXPLICIT",
+		"serverVersion: v1.30.0",
+		"discovery: PASS",
+		"requiredFailure: false",
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("Run(inventory) output missing %q in:\n%s", want, stdout.String())
+		}
+	}
+}
+
+func TestRunInventoryPreflightJSON(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := RunWithDependencies([]string{
+		"--format=json",
+		"inventory",
+	}, &stdout, &stderr, BuildInfo{}, Dependencies{
+		PreflightRunner: fakePreflightRunner{
+			result: preflight.Result{
+				Context: preflight.ContextSelection{
+					Name:             "ctx-json",
+					KubeconfigSource: preflight.KubeconfigSourceDefault,
+				},
+				ServerVersion:   "v1.31.4",
+				DiscoveryStatus: preflight.StatusPass,
+				PermissionChecks: []preflight.PermissionCheck{
+					{Resource: "pods", Verb: "list", EvidenceClass: preflight.EvidenceRequired, Status: preflight.StatusPass},
+					{Resource: "events", Verb: "list", EvidenceClass: preflight.EvidenceOptional, Status: preflight.StatusUnknown, Reason: "not checked"},
+				},
+				Limitations: []preflight.Limitation{
+					{Code: "OPTIONAL_UNKNOWN", Severity: "warning", Summary: "events permission was not checked"},
+				},
+			},
+		},
+	})
+
+	if code != ExitReady {
+		t.Fatalf("Run(inventory json) exit code = %d, want %d", code, ExitReady)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("Run(inventory json) stderr = %q, want empty", stderr.String())
+	}
+	if strings.Contains(stdout.String(), "inventory preflight only") {
+		t.Fatalf("Run(inventory json) emitted console text:\n%s", stdout.String())
+	}
+
+	var got inventoryPreflightDocument
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("Run(inventory json) output is not JSON: %v\n%s", err, stdout.String())
+	}
+	if !got.PreflightOnly {
+		t.Fatalf("Run(inventory json) preflightOnly = false, want true")
+	}
+	if got.Kind != "InventoryPreflight" {
+		t.Fatalf("Run(inventory json) kind = %q, want InventoryPreflight", got.Kind)
+	}
+	if got.Context != "ctx-json" || got.KubeconfigSource != "DEFAULT" || got.ServerVersion != "v1.31.4" {
+		t.Fatalf("Run(inventory json) context/source/version = %#v", got)
+	}
+	if len(got.PermissionChecks) != 2 {
+		t.Fatalf("Run(inventory json) permissionChecks = %d, want 2", len(got.PermissionChecks))
+	}
+	if got.PermissionChecks[1].Status != preflight.StatusUnknown {
+		t.Fatalf("Run(inventory json) optional unknown status = %s, want UNKNOWN", got.PermissionChecks[1].Status)
+	}
+	if len(got.Limitations) != 1 {
+		t.Fatalf("Run(inventory json) limitations = %d, want 1", len(got.Limitations))
+	}
+}
+
+func TestRunInventoryPreflightFailure(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := RunWithDependencies([]string{"inventory"}, &stdout, &stderr, BuildInfo{}, Dependencies{
+		PreflightRunner: fakePreflightRunner{err: errors.New("missing context")},
+	})
+
+	if code != ExitExecution {
+		t.Fatalf("Run(inventory failure) exit code = %d, want %d", code, ExitExecution)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("Run(inventory failure) stdout = %q, want empty", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "inventory preflight failed") {
+		t.Fatalf("Run(inventory failure) stderr = %q, want preflight failure", stderr.String())
 	}
 }
 
@@ -110,6 +238,18 @@ func TestRunUsageErrors(t *testing.T) {
 			}
 		})
 	}
+}
+
+type fakePreflightRunner struct {
+	result preflight.Result
+	err    error
+}
+
+func (f fakePreflightRunner) Run(preflight.KubeconfigOptions) (preflight.Result, error) {
+	if f.err != nil {
+		return preflight.Result{}, f.err
+	}
+	return f.result, nil
 }
 
 func TestParseArgsStoresConfig(t *testing.T) {

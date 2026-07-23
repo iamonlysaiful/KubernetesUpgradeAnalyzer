@@ -68,6 +68,11 @@ P1-03 is governed by `docs/contracts/ci-quality-contract.md`. It introduces
 GitHub Actions and local quality gates only; release automation, dependency
 scanning, schema semantic validation, and live-system checks remain deferred.
 
+P2-01 is governed by `docs/contracts/kube-preflight-contract.md`. It adds
+client-go kubeconfig/context/preflight implementation with fake-client tests.
+Live cluster execution still requires separate approval naming the context and
+read-only operation.
+
 ## 6. Stop conditions
 
 Stop affected work when a schema or accepted document conflicts with implementation, live access would exceed approved read-only permissions, kubent lacks verified target rules, a catalog claim lacks adequate provenance, redaction leaks an identifier, deterministic fixtures disagree, or ExFAT metadata makes Git integrity fail.

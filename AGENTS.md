@@ -55,6 +55,7 @@ Do not combine the governing documentation change and its implementation into on
 
 - Every cleanup, deletion, overwrite, history repair, or other destructive operation must be recoverable. Resolve and inventory exact targets first; create and verify a backup, reversible copy, or trash operation; record the recovery location and validation evidence; then change only the approved targets.
 - Validate the system and affected data after cleanup before declaring success. Keep recovery artifacts until the user separately approves their deletion, even when validation passes. Never treat approval for cleanup as approval to delete its backup.
+- At phase closure, branch closure, or another user-approved cleanup checkpoint, review retained recovery archives and other temporary artifacts. After confirming the phase is merged or otherwise safely preserved, the working tree is clean, required tests pass, `git fsck` shows no corruption beyond accepted known dangling objects, and no recovery need remains, remove obsolete archives and unnecessary temporary files through the same recoverable cleanup workflow.
 - KUA itself must remain read-only against Kubernetes and provider APIs unless a future, separately approved design explicitly changes that boundary.
 - Prefer least-privilege access and document every required permission.
 - Never collect Kubernetes Secrets or secret payloads. Redact tokens, certificates, registry credentials, environment values, and sensitive annotations from logs, fixtures, and reports.
