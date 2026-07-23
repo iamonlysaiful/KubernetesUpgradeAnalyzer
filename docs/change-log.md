@@ -2,6 +2,16 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Phase 2 networking inventory contract
+
+- Added the P2-03 networking inventory contract.
+- Scoped networking collection to sanitized Service and Ingress metadata
+  references only.
+- Reaffirmed that live networking reads require separate Gate B expansion
+  approval.
+- Added fake-client networking collection, snapshot fixture coverage, and subset
+  validation for Service and Ingress refs.
+
 ## 2026-07-23 — Phase 2 CRD inventory contract
 
 - Added the P2-03 CRD inventory contract.

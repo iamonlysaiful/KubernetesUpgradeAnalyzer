@@ -94,6 +94,9 @@ func validateInventory(inventory Inventory) []string {
 	for i, workload := range inventory.Workloads {
 		problems = append(problems, validateWorkload(i, workload)...)
 	}
+	for i, networking := range inventory.Networking {
+		problems = append(problems, validateNetworking(i, networking)...)
+	}
 	for i, crd := range inventory.CRDs {
 		problems = append(problems, validateCRD(i, crd)...)
 	}
@@ -152,6 +155,25 @@ func validateWorkload(index int, workload Workload) []string {
 		if container.Image == "" {
 			problems = append(problems, containerPrefix+".image is required")
 		}
+	}
+	return problems
+}
+
+func validateNetworking(index int, ref ResourceRef) []string {
+	var problems []string
+	prefix := fmt.Sprintf("inventory.networking[%d]", index)
+	problems = append(problems, validateResourceRef(prefix, ref, true)...)
+	switch ref.Kind {
+	case "Service":
+		if ref.APIVersion != "v1" {
+			problems = append(problems, prefix+".apiVersion must be v1 for Service")
+		}
+	case "Ingress":
+		if ref.APIVersion != "networking.k8s.io/v1" {
+			problems = append(problems, prefix+".apiVersion must be networking.k8s.io/v1 for Ingress")
+		}
+	default:
+		problems = append(problems, prefix+".kind is invalid")
 	}
 	return problems
 }

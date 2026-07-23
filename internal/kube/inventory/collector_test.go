@@ -10,9 +10,11 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/preflight"
@@ -130,6 +132,27 @@ func TestCollectSnapshotWithWorkloadsAndCRDsMatchesGoldenFixture(t *testing.T) {
 	}
 	if string(got) != string(want) {
 		t.Fatalf("Generated CRD snapshot does not match golden fixture.\nGot:\n%s\nWant:\n%s", string(got), string(want))
+	}
+}
+
+func TestCollectSnapshotWithWorkloadsCRDsAndNetworkingMatchesGoldenFixture(t *testing.T) {
+	snapshot := collectNetworkingGoldenSnapshot(t)
+	if err := ValidateCoreSnapshot(snapshot); err != nil {
+		t.Fatalf("ValidateCoreSnapshot returned error: %v", err)
+	}
+
+	got, err := json.MarshalIndent(snapshot, "", "  ")
+	if err != nil {
+		t.Fatalf("MarshalIndent returned error: %v", err)
+	}
+	got = append(got, '\n')
+
+	want, err := os.ReadFile("../../../schemas/fixtures/cluster-snapshot/valid/p2-03-networking-inventory.json")
+	if err != nil {
+		t.Fatalf("ReadFile golden fixture returned error: %v", err)
+	}
+	if string(got) != string(want) {
+		t.Fatalf("Generated networking snapshot does not match golden fixture.\nGot:\n%s\nWant:\n%s", string(got), string(want))
 	}
 }
 
@@ -271,14 +294,7 @@ func collectCRDGoldenSnapshot(t *testing.T) Snapshot {
 
 	collector := NewCollectorWithAPIExtensions(
 		workloadGoldenClient(),
-		apiextensionsfake.NewSimpleClientset(
-			&apiextensionsv1.CustomResourceDefinition{
-				ObjectMeta: metav1.ObjectMeta{Name: "alerts.example.test"},
-			},
-			&apiextensionsv1.CustomResourceDefinition{
-				ObjectMeta: metav1.ObjectMeta{Name: "widgets.example.test"},
-			},
-		),
+		crdGoldenClient(),
 	)
 	collector.Clock = func() time.Time {
 		return time.Date(2026, 7, 23, 5, 6, 7, 0, time.UTC)
@@ -297,12 +313,59 @@ func collectCRDGoldenSnapshot(t *testing.T) Snapshot {
 	return snapshot
 }
 
+func collectNetworkingGoldenSnapshot(t *testing.T) Snapshot {
+	t.Helper()
+
+	collector := NewCollectorWithAPIExtensions(
+		workloadNetworkingGoldenClient(),
+		crdGoldenClient(),
+	)
+	collector.Clock = func() time.Time {
+		return time.Date(2026, 7, 23, 6, 7, 8, 0, time.UTC)
+	}
+
+	snapshot, err := collector.CollectSnapshotWithWorkloadsCRDsAndNetworking(context.Background(), preflight.Result{
+		Context: preflight.ContextSelection{
+			Name:             "ctx-networking-golden",
+			KubeconfigSource: preflight.KubeconfigSourceDefault,
+		},
+		ServerVersion: "v1.30.7",
+	})
+	if err != nil {
+		t.Fatalf("CollectSnapshotWithWorkloadsCRDsAndNetworking returned error: %v", err)
+	}
+	return snapshot
+}
+
+func crdGoldenClient() *apiextensionsfake.Clientset {
+	return apiextensionsfake.NewSimpleClientset(
+		&apiextensionsv1.CustomResourceDefinition{
+			ObjectMeta: metav1.ObjectMeta{Name: "alerts.example.test"},
+		},
+		&apiextensionsv1.CustomResourceDefinition{
+			ObjectMeta: metav1.ObjectMeta{Name: "widgets.example.test"},
+		},
+	)
+}
+
+func workloadNetworkingGoldenClient() *fake.Clientset {
+	return fake.NewSimpleClientset(append(workloadGoldenObjects(),
+		&corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: "api", Namespace: "team-b"}},
+		&corev1.Service{ObjectMeta: metav1.ObjectMeta{Name: "db", Namespace: "team-a"}},
+		&networkingv1.Ingress{ObjectMeta: metav1.ObjectMeta{Name: "edge", Namespace: "team-a"}},
+	)...)
+}
+
 func workloadGoldenClient() *fake.Clientset {
+	return fake.NewSimpleClientset(workloadGoldenObjects()...)
+}
+
+func workloadGoldenObjects() []runtime.Object {
 	replicas := int32(3)
 	parallelism := int32(2)
 	suspended := true
 
-	return fake.NewSimpleClientset(
+	return []runtime.Object{
 		&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "team-a"}},
 		&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "team-b"}},
 		&corev1.Node{
@@ -360,7 +423,7 @@ func workloadGoldenClient() *fake.Clientset {
 				JobTemplate: batchv1.JobTemplateSpec{Spec: batchv1.JobSpec{Template: podTemplate(container("nightly", "registry-001/nightly:1.0.0"))}},
 			},
 		},
-	)
+	}
 }
 
 func TestCollectCoreRequiresClient(t *testing.T) {
