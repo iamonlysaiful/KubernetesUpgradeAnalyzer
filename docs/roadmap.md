@@ -1,7 +1,7 @@
 # Roadmap
 
 Status: Approved sequencing; implementation requires approval per phase
-Last updated: 2026-07-22
+Last updated: 2026-07-23
 
 ## Phase 0 — Design freeze and contracts
 
@@ -48,6 +48,9 @@ Exit: every blocker, warning, unknown transition, and time-window boundary has d
 - Implement embedded catalog/schema/checksum and validated local overrides.
 - Implement detector/version/confidence contracts.
 - Start with NGINX Ingress, CoreDNS, Metrics Server, Azure Disk/File CSI, Fluent Bit, and EMQX; expand only after framework validation.
+- Runtime assessment must not search the internet or auto-download catalog data.
+- Unknown component versions and absent catalog records must produce `UNKNOWN`,
+  never `PASS`.
 
 Exit: known, incompatible, conditional, ambiguous, stale, and missing evidence cases pass regression tests; unknown never passes.
 

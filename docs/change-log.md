@@ -37,6 +37,15 @@ This log records material scope and architecture changes. Git remains the detail
 - Kept user-facing health/analyze commands, compatibility checks, kubent,
   provider evidence, and final recommendations out of Phase 3.
 
+## 2026-07-23 — Phase 4 catalog and detection plan
+
+- Added the Phase 4 embedded catalog loader contract.
+- Added the Phase 4 component detection contract.
+- Added the Phase 4 implementation plan with a compressed PR strategy and
+  explicit no-runtime-internet catalog boundary.
+- Reaffirmed that unknown component versions and absent compatibility evidence
+  must produce `UNKNOWN`, never `PASS`.
+
 ## 2026-07-23 — Phase 2 closeout draft
 
 - Added the Phase 2 closeout record.
