@@ -94,7 +94,7 @@ func TestCollectCoreMatchesGoldenFixture(t *testing.T) {
 	}
 }
 
-func TestCollectSnapshotWithWorkloadsMatchesGoldenFixture(t *testing.T) {
+func TestCollectSnapshotWorkloadOptionsMatchGoldenFixture(t *testing.T) {
 	snapshot := collectWorkloadGoldenSnapshot(t)
 	if err := ValidateCoreSnapshot(snapshot); err != nil {
 		t.Fatalf("ValidateCoreSnapshot returned error: %v", err)
@@ -115,7 +115,7 @@ func TestCollectSnapshotWithWorkloadsMatchesGoldenFixture(t *testing.T) {
 	}
 }
 
-func TestCollectSnapshotWithWorkloadsAndCRDsMatchesGoldenFixture(t *testing.T) {
+func TestCollectSnapshotCRDOptionsMatchGoldenFixture(t *testing.T) {
 	snapshot := collectCRDGoldenSnapshot(t)
 	if err := ValidateCoreSnapshot(snapshot); err != nil {
 		t.Fatalf("ValidateCoreSnapshot returned error: %v", err)
@@ -136,7 +136,7 @@ func TestCollectSnapshotWithWorkloadsAndCRDsMatchesGoldenFixture(t *testing.T) {
 	}
 }
 
-func TestCollectSnapshotWithWorkloadsCRDsAndNetworkingMatchesGoldenFixture(t *testing.T) {
+func TestCollectSnapshotNetworkingOptionsMatchGoldenFixture(t *testing.T) {
 	snapshot := collectNetworkingGoldenSnapshot(t)
 	if err := ValidateCoreSnapshot(snapshot); err != nil {
 		t.Fatalf("ValidateCoreSnapshot returned error: %v", err)
@@ -157,7 +157,7 @@ func TestCollectSnapshotWithWorkloadsCRDsAndNetworkingMatchesGoldenFixture(t *te
 	}
 }
 
-func TestCollectSnapshotWithWorkloadsCRDsNetworkingAndStorageMatchesGoldenFixture(t *testing.T) {
+func TestCollectSnapshotStorageOptionsMatchGoldenFixture(t *testing.T) {
 	snapshot := collectStorageGoldenSnapshot(t)
 	if err := ValidateCoreSnapshot(snapshot); err != nil {
 		t.Fatalf("ValidateCoreSnapshot returned error: %v", err)
@@ -178,7 +178,7 @@ func TestCollectSnapshotWithWorkloadsCRDsNetworkingAndStorageMatchesGoldenFixtur
 	}
 }
 
-func TestCollectSnapshotWithFullFakeInventoryMatchesGoldenFixture(t *testing.T) {
+func TestCollectSnapshotFullFakeOptionsMatchGoldenFixture(t *testing.T) {
 	snapshot := collectEventsGoldenSnapshot(t)
 	if err := ValidateCoreSnapshot(snapshot); err != nil {
 		t.Fatalf("ValidateCoreSnapshot returned error: %v", err)
@@ -319,15 +319,15 @@ func collectWorkloadGoldenSnapshot(t *testing.T) Snapshot {
 		return time.Date(2026, 7, 23, 4, 5, 6, 0, time.UTC)
 	}
 
-	snapshot, err := collector.CollectSnapshotWithWorkloads(context.Background(), preflight.Result{
+	snapshot, err := collector.CollectSnapshot(context.Background(), preflight.Result{
 		Context: preflight.ContextSelection{
 			Name:             "ctx-workload-golden",
 			KubeconfigSource: preflight.KubeconfigSourceDefault,
 		},
 		ServerVersion: "v1.30.7",
-	})
+	}, workloadCollectionOptions())
 	if err != nil {
-		t.Fatalf("CollectSnapshotWithWorkloads returned error: %v", err)
+		t.Fatalf("CollectSnapshot(workloads) returned error: %v", err)
 	}
 	return snapshot
 }
@@ -343,15 +343,15 @@ func collectCRDGoldenSnapshot(t *testing.T) Snapshot {
 		return time.Date(2026, 7, 23, 5, 6, 7, 0, time.UTC)
 	}
 
-	snapshot, err := collector.CollectSnapshotWithWorkloadsAndCRDs(context.Background(), preflight.Result{
+	snapshot, err := collector.CollectSnapshot(context.Background(), preflight.Result{
 		Context: preflight.ContextSelection{
 			Name:             "ctx-crd-golden",
 			KubeconfigSource: preflight.KubeconfigSourceDefault,
 		},
 		ServerVersion: "v1.30.7",
-	})
+	}, crdCollectionOptions())
 	if err != nil {
-		t.Fatalf("CollectSnapshotWithWorkloadsAndCRDs returned error: %v", err)
+		t.Fatalf("CollectSnapshot(workloads+crds) returned error: %v", err)
 	}
 	return snapshot
 }
@@ -367,15 +367,15 @@ func collectNetworkingGoldenSnapshot(t *testing.T) Snapshot {
 		return time.Date(2026, 7, 23, 6, 7, 8, 0, time.UTC)
 	}
 
-	snapshot, err := collector.CollectSnapshotWithWorkloadsCRDsAndNetworking(context.Background(), preflight.Result{
+	snapshot, err := collector.CollectSnapshot(context.Background(), preflight.Result{
 		Context: preflight.ContextSelection{
 			Name:             "ctx-networking-golden",
 			KubeconfigSource: preflight.KubeconfigSourceDefault,
 		},
 		ServerVersion: "v1.30.7",
-	})
+	}, networkingCollectionOptions())
 	if err != nil {
-		t.Fatalf("CollectSnapshotWithWorkloadsCRDsAndNetworking returned error: %v", err)
+		t.Fatalf("CollectSnapshot(workloads+crds+networking) returned error: %v", err)
 	}
 	return snapshot
 }
@@ -391,15 +391,15 @@ func collectStorageGoldenSnapshot(t *testing.T) Snapshot {
 		return time.Date(2026, 7, 23, 7, 8, 9, 0, time.UTC)
 	}
 
-	snapshot, err := collector.CollectSnapshotWithWorkloadsCRDsNetworkingAndStorage(context.Background(), preflight.Result{
+	snapshot, err := collector.CollectSnapshot(context.Background(), preflight.Result{
 		Context: preflight.ContextSelection{
 			Name:             "ctx-storage-golden",
 			KubeconfigSource: preflight.KubeconfigSourceDefault,
 		},
 		ServerVersion: "v1.30.7",
-	})
+	}, storageCollectionOptions())
 	if err != nil {
-		t.Fatalf("CollectSnapshotWithWorkloadsCRDsNetworkingAndStorage returned error: %v", err)
+		t.Fatalf("CollectSnapshot(workloads+crds+networking+storage) returned error: %v", err)
 	}
 	return snapshot
 }
@@ -415,17 +415,56 @@ func collectEventsGoldenSnapshot(t *testing.T) Snapshot {
 		return time.Date(2026, 7, 23, 8, 9, 10, 0, time.UTC)
 	}
 
-	snapshot, err := collector.CollectSnapshotWithFullFakeInventory(context.Background(), preflight.Result{
+	snapshot, err := collector.CollectSnapshot(context.Background(), preflight.Result{
 		Context: preflight.ContextSelection{
 			Name:             "ctx-events-golden",
 			KubeconfigSource: preflight.KubeconfigSourceDefault,
 		},
 		ServerVersion: "v1.30.7",
-	})
+	}, fullFakeCollectionOptions())
 	if err != nil {
-		t.Fatalf("CollectSnapshotWithFullFakeInventory returned error: %v", err)
+		t.Fatalf("CollectSnapshot(full fake inventory) returned error: %v", err)
 	}
 	return snapshot
+}
+
+func workloadCollectionOptions() CollectionOptions {
+	return CollectionOptions{
+		Workloads: true,
+		Limitation: Limitation{
+			Code:     "PARTIAL_INVENTORY_P2_03",
+			Severity: "WARN",
+			Summary:  "P2-03 collects namespaces, nodes, and supported workload controllers in fake-client fixture paths only; storage, networking, CRDs, and events are intentionally not collected yet.",
+		},
+	}
+}
+
+func crdCollectionOptions() CollectionOptions {
+	options := workloadCollectionOptions()
+	options.CRDs = true
+	options.Limitation.Summary = "P2-03 collects namespaces, nodes, supported workload controllers, and CRD definitions in fake-client fixture paths only; storage, networking, and events are intentionally not collected yet."
+	return options
+}
+
+func networkingCollectionOptions() CollectionOptions {
+	options := crdCollectionOptions()
+	options.Networking = true
+	options.Limitation.Summary = "P2-03 collects namespaces, nodes, supported workload controllers, networking refs, and CRD definitions in fake-client fixture paths only; storage and events are intentionally not collected yet."
+	return options
+}
+
+func storageCollectionOptions() CollectionOptions {
+	options := networkingCollectionOptions()
+	options.Storage = true
+	options.Limitation.Summary = "P2-03 collects namespaces, nodes, supported workload controllers, storage refs, networking refs, and CRD definitions in fake-client fixture paths only; events are intentionally not collected yet."
+	return options
+}
+
+func fullFakeCollectionOptions() CollectionOptions {
+	options := storageCollectionOptions()
+	options.Events = true
+	options.Limitation.Summary = "P2-03 fake-client fixture path collects namespace, node, workload, storage, networking, CRD, and event metadata; live expanded inventory remains gated."
+	return options
 }
 
 func crdGoldenClient() *apiextensionsfake.Clientset {

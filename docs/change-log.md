@@ -2,6 +2,16 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-23 — Inventory snapshot assembly consolidation contract
+
+- Added the Phase 2 inventory snapshot assembly consolidation contract.
+- Scoped consolidation to replacing long fake-client snapshot method names with
+  explicit collection options.
+- Reaffirmed that live `kua inventory --format=json` remains on core inventory
+  until Gate B is separately expanded.
+- Replaced long fake-client snapshot assembly methods with a single
+  option-driven `CollectSnapshot` path while preserving golden fixtures.
+
 ## 2026-07-23 — Phase 2 events inventory contract
 
 - Added the P2-03 events inventory contract.
