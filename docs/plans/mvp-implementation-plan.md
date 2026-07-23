@@ -1,7 +1,7 @@
 # MVP implementation plan
 
-Status: Approved plan; implementation not yet authorized
-Last updated: 2026-07-22
+Status: Approved plan; implementation in progress
+Last updated: 2026-07-23
 
 ## 1. Delivery model
 
@@ -78,6 +78,11 @@ first partial/core snapshot path for cluster metadata, server version,
 namespaces, nodes, and explicit limitations. Workloads, storage, networking,
 CRDs, events, health, compatibility, provider evidence, recommendations, and
 reports remain out of scope.
+
+P2-03 workload inventory is governed by
+`docs/contracts/workload-inventory-contract.md`. It starts with fake-client-only
+workload collection for Kubernetes controller resources and does not approve live
+workload reads until Gate B is separately expanded.
 
 ## 6. Stop conditions
 

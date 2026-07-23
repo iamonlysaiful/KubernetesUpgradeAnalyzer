@@ -91,6 +91,9 @@ func validateInventory(inventory Inventory) []string {
 	for i, node := range inventory.Nodes {
 		problems = append(problems, validateNode(i, node)...)
 	}
+	for i, workload := range inventory.Workloads {
+		problems = append(problems, validateWorkload(i, workload)...)
+	}
 	return problems
 }
 
@@ -111,6 +114,40 @@ func validateNode(index int, node Node) []string {
 		}
 		if !oneOf(condition.Status, "TRUE", "FALSE", "UNKNOWN") {
 			problems = append(problems, conditionPrefix+".status is invalid")
+		}
+	}
+	return problems
+}
+
+func validateWorkload(index int, workload Workload) []string {
+	var problems []string
+	prefix := fmt.Sprintf("inventory.workloads[%d]", index)
+	problems = append(problems, validateResourceRef(prefix+".ref", workload.Ref, true)...)
+	if workload.Ref.APIVersion == "" {
+		problems = append(problems, prefix+".ref.apiVersion is required")
+	}
+	if !oneOf(workload.Ref.Kind, "Deployment", "DaemonSet", "StatefulSet", "ReplicaSet", "Job", "CronJob") {
+		problems = append(problems, prefix+".ref.kind is invalid")
+	}
+	if workload.DesiredReplicas < 0 {
+		problems = append(problems, prefix+".desiredReplicas must be non-negative")
+	}
+	if workload.ReadyReplicas < 0 {
+		problems = append(problems, prefix+".readyReplicas must be non-negative")
+	}
+	if !oneOf(workload.Critical, "CONFIGURED", "LABELED", "NO", "UNKNOWN") {
+		problems = append(problems, prefix+".critical is invalid")
+	}
+	if workload.Containers == nil {
+		problems = append(problems, prefix+".containers must be an array")
+	}
+	for containerIndex, container := range workload.Containers {
+		containerPrefix := fmt.Sprintf("%s.containers[%d]", prefix, containerIndex)
+		if container.Name == "" {
+			problems = append(problems, containerPrefix+".name is required")
+		}
+		if container.Image == "" {
+			problems = append(problems, containerPrefix+".image is required")
 		}
 	}
 	return problems

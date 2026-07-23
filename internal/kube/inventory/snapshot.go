@@ -66,6 +66,7 @@ type Workload struct {
 	Ref             ResourceRef `json:"ref"`
 	DesiredReplicas int         `json:"desiredReplicas"`
 	ReadyReplicas   int         `json:"readyReplicas"`
+	Critical        string      `json:"critical,omitempty"`
 	Containers      []Container `json:"containers"`
 }
 

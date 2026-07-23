@@ -36,3 +36,27 @@ func TestValidateCoreSnapshotRejectsInvalidSnapshot(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateCoreSnapshotRejectsInvalidWorkload(t *testing.T) {
+	snapshot := collectWorkloadGoldenSnapshot(t)
+	snapshot.Inventory.Workloads[0].Ref.APIVersion = ""
+	snapshot.Inventory.Workloads[0].Critical = "PASS"
+	snapshot.Inventory.Workloads[0].DesiredReplicas = -1
+	snapshot.Inventory.Workloads[0].Containers[0].Image = ""
+
+	err := ValidateCoreSnapshot(snapshot)
+	if err == nil {
+		t.Fatalf("ValidateCoreSnapshot(invalid workload) returned nil error")
+	}
+	message := err.Error()
+	for _, want := range []string{
+		"apiVersion",
+		"critical",
+		"desiredReplicas",
+		"image",
+	} {
+		if !strings.Contains(message, want) {
+			t.Fatalf("ValidateCoreSnapshot workload error missing %q in: %s", want, message)
+		}
+	}
+}
