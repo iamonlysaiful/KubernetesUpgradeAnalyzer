@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: 2026-07-23
+Last updated: 2026-07-24
 
 This page summarizes the current implementation phase, review gates, and
 publication state. Detailed history remains in Git and `docs/change-log.md`.
@@ -11,7 +11,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | --- | --- | --- |
 | Gate A - contracts | Complete | Phase 0 contracts, schemas, fixtures, security/RBAC, and dependency rules are documented and merged. |
 | Gate B - collection safety | Passed for P2-02 | P2-02 core inventory has fake-client/golden coverage and a locally approved live smoke-test record. Expanded live inventory is deferred and still requires separate Gate B expansion approval. |
-| Gate C - compatibility validity | Not started | Catalog source validation and kubent target-rule coverage are future Phase 4/5 work. |
+| Gate C - compatibility validity | In progress | Catalog foundation is merged; kubent target-rule coverage is Phase 5 work. |
 | Gate D - recommendation calibration | Not started | Recommendation matrix and staging expectations are future Phase 7 work. |
 | Gate E - release | Not started | Release validation, artifacts, SBOM, and publication are Phase 9 work. |
 
@@ -23,8 +23,9 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Phase 1 - CLI foundation | Complete | Merged to `main`, including local CI and GitHub Actions. |
 | Phase 2 - Kubernetes preflight and inventory | Complete | Fake-client inventory foundation is merged; live core inventory is verified; expanded live inventory is deferred. |
 | Phase 3 - Health analysis | Complete | Health foundation and internal rules are merged; no expanded live collection was introduced. |
-| Phase 4 - Component detection and catalog | In progress | Initial detector cohort and Phase 4 closeout are being completed without compatibility decisions or runtime internet access. |
-| Phase 5+ | Not started | Blocked on earlier phase outputs and review gates. |
+| Phase 4 - Component detection and catalog | Complete | Catalog loader, detector framework, initial cohort, and closeout are merged; compatibility decisions remain deferred. |
+| Phase 5 - API compatibility | Planning | Kubent adapter contract and target-coverage plan are being prepared. |
+| Phase 6+ | Not started | Blocked on earlier phase outputs and review gates. |
 
 ## Current branch focus
 
@@ -95,35 +96,32 @@ Phase 3 health analysis is merged:
 - Phase 3 closeout record;
 - no expanded live inventory collection.
 
-`docs/phase-4-catalog-plan` starts Phase 4:
+Phase 4 catalog and component detection is merged:
 
 - embedded catalog loader contract;
 - component detection contract;
 - compressed PR strategy to keep MVP delivery near 30 ±2 PRs.
-
-P4-02 catalog loader foundation is in progress:
-
 - embedded placeholder catalog;
 - explicit local file loader;
 - source-reference and duplicate-alias validation;
 - checksum capture for loaded catalog bytes;
-- no runtime internet access or catalog download behavior.
-
-P4-03 component detection foundation is in progress:
-
 - detection result model;
 - detector runner;
 - deterministic ordering;
 - version normalization that preserves `UNKNOWN` for ambiguous evidence;
-- no detector cohort logic or compatibility decisions.
-
-P4-04 initial detector cohort is in progress:
-
 - NGINX Ingress, CoreDNS, Metrics Server, Azure Disk CSI, Azure File CSI,
   Fluent Bit, and EMQX workload-backed detectors;
 - Phase 4 closeout record;
 - no compatibility decisions, provider evidence, kubent, recommendations,
   runtime internet access, or expanded live reads.
+
+`docs/phase-5-api-compat-plan` starts Phase 5:
+
+- API compatibility and kubent adapter contract;
+- target-rule coverage validation plan;
+- go/no-go decision requirement for kubent coverage across `1.30` through
+  `1.33`;
+- no live kubent execution without separate explicit approval.
 
 Current live `kua inventory` behavior remains partial/core inventory only.
 Workloads, storage, networking, CRDs, events, health, compatibility, provider
