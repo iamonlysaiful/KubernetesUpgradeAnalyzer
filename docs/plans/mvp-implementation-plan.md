@@ -94,6 +94,14 @@ Phase 3 is governed by `docs/contracts/health-analysis-contract.md` and
 one planning PR, one foundation PR, one combined node/workload rules PR, and one
 combined storage/event rules plus closeout PR.
 
+Phase 4 is governed by `docs/contracts/catalog-loader-contract.md`,
+`docs/contracts/component-detection-contract.md`, and
+`docs/plans/phase-4-catalog-plan.md`. To keep the MVP near 30 ±2 PRs, Phase 4
+targets one planning PR, one catalog loader PR, one detector framework PR, and
+one initial detector cohort plus closeout PR. Runtime catalog internet search is
+out of scope; unknown component versions and absent compatibility evidence must
+produce `UNKNOWN`, never `PASS`.
+
 ## 6. Stop conditions
 
 Stop affected work when a schema or accepted document conflicts with implementation, live access would exceed approved read-only permissions, kubent lacks verified target rules, a catalog claim lacks adequate provenance, redaction leaks an identifier, deterministic fixtures disagree, or ExFAT metadata makes Git integrity fail.

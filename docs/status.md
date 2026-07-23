@@ -22,8 +22,9 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Phase 0 - Design freeze and contracts | Complete | Merged to `main`. |
 | Phase 1 - CLI foundation | Complete | Merged to `main`, including local CI and GitHub Actions. |
 | Phase 2 - Kubernetes preflight and inventory | Complete | Fake-client inventory foundation is merged; live core inventory is verified; expanded live inventory is deferred. |
-| Phase 3 - Health analysis | In progress | Health foundation and node/workload rules are merged; final storage/event rules are in review without expanding live collection. |
-| Phase 4+ | Not started | Blocked on earlier phase outputs and review gates. |
+| Phase 3 - Health analysis | Complete | Health foundation and internal rules are merged; no expanded live collection was introduced. |
+| Phase 4 - Component detection and catalog | Planning | Catalog loader and component detection contracts are being prepared. |
+| Phase 5+ | Not started | Blocked on earlier phase outputs and review gates. |
 
 ## Current branch focus
 
@@ -86,13 +87,19 @@ Phase 2 closeout is merged:
 - `kua inventory --format=json` remains live core inventory only;
 - expanded live inventory is deferred until a later approved Gate B expansion.
 
-Phase 3 health analysis is in progress:
+Phase 3 health analysis is merged:
 
 - health analysis contract;
-- rule/finding model plan;
-- target of about four Phase 3 PRs to keep the MVP near 30 total PRs.
-- internal finding runner and node/workload rules are merged;
-- storage/event rules and closeout are in the final Phase 3 slice.
+- internal finding runner;
+- node, workload, storage, and event health rules;
+- Phase 3 closeout record;
+- no expanded live inventory collection.
+
+`docs/phase-4-catalog-plan` starts Phase 4:
+
+- embedded catalog loader contract;
+- component detection contract;
+- compressed PR strategy to keep MVP delivery near 30 ±2 PRs.
 
 Current live `kua inventory` behavior remains partial/core inventory only.
 Workloads, storage, networking, CRDs, events, health, compatibility, provider

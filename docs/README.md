@@ -37,6 +37,9 @@ The documents in this directory are the source of truth for KubeUpgrade Advisor.
 | [`contracts/events-inventory-contract.md`](contracts/events-inventory-contract.md) | Phase 2 events inventory contract |
 | [`contracts/inventory-snapshot-assembly-contract.md`](contracts/inventory-snapshot-assembly-contract.md) | Phase 2 inventory snapshot assembly consolidation contract |
 | [`contracts/health-analysis-contract.md`](contracts/health-analysis-contract.md) | Phase 3 health analysis contract |
+| [`plans/phase-4-catalog-plan.md`](plans/phase-4-catalog-plan.md) | Phase 4 catalog and component detection plan |
+| [`contracts/catalog-loader-contract.md`](contracts/catalog-loader-contract.md) | Phase 4 embedded catalog loader contract |
+| [`contracts/component-detection-contract.md`](contracts/component-detection-contract.md) | Phase 4 component detection contract |
 | [`contracts/domain-and-schema-plan.md`](contracts/domain-and-schema-plan.md) | Domain types, schemas, compatibility, and versioning plan |
 | [`contracts/security-rbac-contract.md`](contracts/security-rbac-contract.md) | Phase 0 read-only RBAC, external-command, redaction, and dependency contract |
 | [`plans/security-rbac-plan.md`](plans/security-rbac-plan.md) | Least-privilege Kubernetes/Azure access and security validation |
