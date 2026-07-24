@@ -93,6 +93,15 @@ This log records material scope and architecture changes. Git remains the detail
 - Kept target-rule coverage validation, normalized API findings, live kubent
   execution, and go/no-go decisions out of this foundation slice.
 
+## 2026-07-24 — Kubent coverage decision
+
+- Added target-rule coverage validation for Kubernetes `1.30` through `1.33`
+  fixture policy.
+- Added normalized API compatibility findings that only return `PASS` when
+  target coverage is verified and kubent reports no deprecated APIs.
+- Added the Phase 5 closeout and kubent go/no-go record while keeping live
+  kubent execution deferred.
+
 ## 2026-07-23 — Phase 2 closeout draft
 
 - Added the Phase 2 closeout record.

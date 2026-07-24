@@ -24,7 +24,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Phase 2 - Kubernetes preflight and inventory | Complete | Fake-client inventory foundation is merged; live core inventory is verified; expanded live inventory is deferred. |
 | Phase 3 - Health analysis | Complete | Health foundation and internal rules are merged; no expanded live collection was introduced. |
 | Phase 4 - Component detection and catalog | Complete | Catalog loader, detector framework, initial cohort, and closeout are merged; compatibility decisions remain deferred. |
-| Phase 5 - API compatibility | In progress | Kubent adapter foundation is being implemented with process fakes only. |
+| Phase 5 - API compatibility | In progress | Target coverage validation, normalized API findings, and closeout are being completed with fixtures only. |
 | Phase 6+ | Not started | Blocked on earlier phase outputs and review gates. |
 
 ## Current branch focus
@@ -131,6 +131,14 @@ P5-02 kubent adapter foundation is in progress:
 - bounded stdout/stderr handling;
 - JSON parsing fixtures;
 - no live kubent execution or target-rule coverage decision yet.
+
+P5-03 kubent coverage decision is in progress:
+
+- target-rule coverage validation for `1.30` through `1.33`;
+- normalized API findings;
+- go/no-go helper;
+- Phase 5 closeout record;
+- no live kubent execution.
 
 Current live `kua inventory` behavior remains partial/core inventory only.
 Workloads, storage, networking, CRDs, events, health, compatibility, provider
