@@ -53,6 +53,7 @@ The documents in this directory are the source of truth for KubeUpgrade Advisor.
 | [`validation/phase-3-closeout.md`](validation/phase-3-closeout.md) | Draft Phase 3 closeout record |
 | [`validation/phase-4-closeout.md`](validation/phase-4-closeout.md) | Draft Phase 4 closeout record |
 | [`validation/phase-5-closeout.md`](validation/phase-5-closeout.md) | Draft Phase 5 closeout and kubent go/no-go record |
+| [`validation/phase-6-closeout.md`](validation/phase-6-closeout.md) | Draft Phase 6 closeout and provider foundation record |
 
 ## Schema contracts
 

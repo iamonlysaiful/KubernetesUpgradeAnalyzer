@@ -25,7 +25,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Phase 3 - Health analysis | Complete | Health foundation and internal rules are merged; no expanded live collection was introduced. |
 | Phase 4 - Component detection and catalog | Complete | Catalog loader, detector framework, initial cohort, and closeout are merged; compatibility decisions remain deferred. |
 | Phase 5 - API compatibility | Complete | Kubent adapter foundation, target-rule coverage for 1.30-1.33, go/no-go decision GO, and closeout are merged. |
-| Phase 6 - AKS provider evidence | In progress | Provider plan proposed; implementation pending. |
+| Phase 6 - AKS provider evidence | Complete | Provider interface, AKS identity/CLI/file adapters, candidate/path construction, and closeout are merged; no live CLI execution. |
 | Phase 7+ | Not started | Blocked on earlier phase outputs and review gates. |
 
 ## Current branch focus
@@ -141,13 +141,23 @@ P5-03 kubent coverage decision is merged:
 - Phase 5 closeout record;
 - no live kubent execution.
 
-`docs/plans/phase-6-provider-plan` starts Phase 6:
+`docs/plans/phase-6-provider-plan` started Phase 6:
 
 - provider interface and AKS identity detection;
 - Azure CLI adapter for allowlisted `az aks get-upgrades`;
 - file evidence adapter;
 - candidate and sequential path construction;
 - no live Azure CLI execution without separate explicit approval.
+
+P6 provider foundation is merged:
+
+- provider-neutral interface with Identity and Evidence methods;
+- AKS identity detection with HIGH/MEDIUM/LOW/UNKNOWN confidence;
+- Azure CLI adapter with mutating command rejection;
+- file evidence adapter for exported JSON;
+- candidate set and sequential path construction;
+- Phase 6 closeout record;
+- no live Azure CLI execution.
 
 Current live `kua inventory` behavior remains partial/core inventory only.
 Workloads, storage, networking, CRDs, events, health, compatibility, provider

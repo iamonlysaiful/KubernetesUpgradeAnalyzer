@@ -1,0 +1,13 @@
+{
+  "controlPlaneProfile": {
+    "kubernetesVersion": "1.33.12",
+    "upgrades": null
+  },
+  "agentPoolProfiles": [
+    {
+      "name": "systempool",
+      "kubernetesVersion": "1.33.12",
+      "upgrades": null
+    }
+  ]
+}

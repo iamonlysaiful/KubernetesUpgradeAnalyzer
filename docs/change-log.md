@@ -2,6 +2,18 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-24 — Phase 6 AKS provider evidence implementation
+
+- Implemented the provider-neutral interface with Identity and Evidence methods.
+- Added AKS identity detection with HIGH/MEDIUM/LOW/UNKNOWN confidence signals
+  from explicit flags, node providerID, API hostname, and context name patterns.
+- Implemented Azure CLI adapter with allowlisted `az aks get-upgrades` only and
+  mutating command rejection.
+- Added file evidence adapter for exported Azure CLI JSON.
+- Implemented candidate set construction and sequential upgrade path builder.
+- Added Phase 6 closeout record.
+- Confirmed no live Azure CLI execution occurred.
+
 ## 2026-07-24 — Phase 6 AKS provider evidence plan
 
 - Added the Phase 6 provider evidence plan consolidating P6-01, P6-02, and P6-03
