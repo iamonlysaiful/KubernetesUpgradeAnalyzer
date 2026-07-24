@@ -1,0 +1,37 @@
+{
+  "controlPlaneProfile": {
+    "kubernetesVersion": "1.30.4",
+    "upgrades": [
+      { "kubernetesVersion": "1.30.5", "isPreview": false },
+      { "kubernetesVersion": "1.30.6", "isPreview": false },
+      { "kubernetesVersion": "1.31.0", "isPreview": false },
+      { "kubernetesVersion": "1.31.1", "isPreview": false },
+      { "kubernetesVersion": "1.31.2", "isPreview": false },
+      { "kubernetesVersion": "1.32.0", "isPreview": false },
+      { "kubernetesVersion": "1.32.1", "isPreview": false },
+      { "kubernetesVersion": "1.33.0", "isPreview": true }
+    ]
+  },
+  "agentPoolProfiles": [
+    {
+      "name": "systempool",
+      "kubernetesVersion": "1.30.4",
+      "upgrades": [
+        { "kubernetesVersion": "1.30.5", "isPreview": false },
+        { "kubernetesVersion": "1.30.6", "isPreview": false },
+        { "kubernetesVersion": "1.31.0", "isPreview": false },
+        { "kubernetesVersion": "1.31.1", "isPreview": false }
+      ]
+    },
+    {
+      "name": "userpool",
+      "kubernetesVersion": "1.30.4",
+      "upgrades": [
+        { "kubernetesVersion": "1.30.5", "isPreview": false },
+        { "kubernetesVersion": "1.30.6", "isPreview": false },
+        { "kubernetesVersion": "1.31.0", "isPreview": false },
+        { "kubernetesVersion": "1.31.1", "isPreview": false }
+      ]
+    }
+  ]
+}
