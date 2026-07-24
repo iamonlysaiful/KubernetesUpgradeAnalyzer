@@ -11,7 +11,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | --- | --- | --- |
 | Gate A - contracts | Complete | Phase 0 contracts, schemas, fixtures, security/RBAC, and dependency rules are documented and merged. |
 | Gate B - collection safety | Passed for P2-02 | P2-02 core inventory has fake-client/golden coverage and a locally approved live smoke-test record. Expanded live inventory is deferred and still requires separate Gate B expansion approval. |
-| Gate C - compatibility validity | In progress | Catalog foundation is merged; kubent target-rule coverage is Phase 5 work. |
+| Gate C - compatibility validity | Complete for Phase 5 | Catalog foundation is merged; kubent target-rule coverage validated for 1.30-1.33; go/no-go decision is GO for MVP. |
 | Gate D - recommendation calibration | Not started | Recommendation matrix and staging expectations are future Phase 7 work. |
 | Gate E - release | Not started | Release validation, artifacts, SBOM, and publication are Phase 9 work. |
 
@@ -24,8 +24,9 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Phase 2 - Kubernetes preflight and inventory | Complete | Fake-client inventory foundation is merged; live core inventory is verified; expanded live inventory is deferred. |
 | Phase 3 - Health analysis | Complete | Health foundation and internal rules are merged; no expanded live collection was introduced. |
 | Phase 4 - Component detection and catalog | Complete | Catalog loader, detector framework, initial cohort, and closeout are merged; compatibility decisions remain deferred. |
-| Phase 5 - API compatibility | In progress | Target coverage validation, normalized API findings, and closeout are being completed with fixtures only. |
-| Phase 6+ | Not started | Blocked on earlier phase outputs and review gates. |
+| Phase 5 - API compatibility | Complete | Kubent adapter foundation, target-rule coverage for 1.30-1.33, go/no-go decision GO, and closeout are merged. |
+| Phase 6 - AKS provider evidence | In progress | Provider plan proposed; implementation pending. |
+| Phase 7+ | Not started | Blocked on earlier phase outputs and review gates. |
 
 ## Current branch focus
 
@@ -115,7 +116,7 @@ Phase 4 catalog and component detection is merged:
 - no compatibility decisions, provider evidence, kubent, recommendations,
   runtime internet access, or expanded live reads.
 
-`docs/phase-5-api-compat-plan` starts Phase 5:
+`docs/phase-5-api-compat-plan` started Phase 5:
 
 - API compatibility and kubent adapter contract;
 - target-rule coverage validation plan;
@@ -123,22 +124,30 @@ Phase 4 catalog and component detection is merged:
   `1.33`;
 - no live kubent execution without separate explicit approval.
 
-P5-02 kubent adapter foundation is in progress:
+P5-02 kubent adapter foundation is merged:
 
 - process runner abstraction;
 - kubent `0.7.3` version validation;
 - shell-free argument construction;
 - bounded stdout/stderr handling;
 - JSON parsing fixtures;
-- no live kubent execution or target-rule coverage decision yet.
+- no live kubent execution.
 
-P5-03 kubent coverage decision is in progress:
+P5-03 kubent coverage decision is merged:
 
 - target-rule coverage validation for `1.30` through `1.33`;
 - normalized API findings;
-- go/no-go helper;
+- go/no-go helper returns GO for MVP;
 - Phase 5 closeout record;
 - no live kubent execution.
+
+`docs/plans/phase-6-provider-plan` starts Phase 6:
+
+- provider interface and AKS identity detection;
+- Azure CLI adapter for allowlisted `az aks get-upgrades`;
+- file evidence adapter;
+- candidate and sequential path construction;
+- no live Azure CLI execution without separate explicit approval.
 
 Current live `kua inventory` behavior remains partial/core inventory only.
 Workloads, storage, networking, CRDs, events, health, compatibility, provider

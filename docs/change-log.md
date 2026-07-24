@@ -2,6 +2,15 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-24 — Phase 6 AKS provider evidence plan
+
+- Added the Phase 6 provider evidence plan consolidating P6-01, P6-02, and P6-03
+  into a single implementation PR to stay within the 30 ±2 MVP PR target.
+- Documented provider interface contract, AKS identity detection signals with
+  confidence levels, evidence source modes, Azure CLI adapter boundaries, file
+  evidence adapter, and candidate/path construction rules.
+- Confirmed no live Azure CLI execution without separate explicit approval.
+
 ## 2026-07-23 — Phase 3 health analysis plan
 
 - Added the Phase 3 health analysis contract.
