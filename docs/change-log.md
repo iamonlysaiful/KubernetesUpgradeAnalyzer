@@ -2,6 +2,14 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-25 — Phase 7 recommendation engine plan
+
+- Added the Phase 7 recommendation engine plan consolidating P7-01 and P7-02
+  into a single implementation PR to stay within the 30 ±2 MVP PR target.
+- Documented recommendation engine contract, finding aggregation, blocker policy,
+  risk determination, stage evaluation, and destination selection.
+- Defined AKS 1.30 → 1.33 validation case expected outputs.
+
 ## 2026-07-24 — Phase 6 AKS provider evidence implementation
 
 - Implemented the provider-neutral interface with Identity and Evidence methods.
