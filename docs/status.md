@@ -26,7 +26,8 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Phase 4 - Component detection and catalog | Complete | Catalog loader, detector framework, initial cohort, and closeout are merged; compatibility decisions remain deferred. |
 | Phase 5 - API compatibility | Complete | Kubent adapter foundation, target-rule coverage for 1.30-1.33, go/no-go decision GO, and closeout are merged. |
 | Phase 6 - AKS provider evidence | Complete | Provider interface, AKS identity/CLI/file adapters, candidate/path construction, and closeout are merged; no live CLI execution. |
-| Phase 7+ | Not started | Blocked on earlier phase outputs and review gates. |
+| Phase 7 - Recommendation engine | In progress | Plan proposed; implementation pending. |
+| Phase 8+ | Not started | Blocked on earlier phase outputs and review gates. |
 
 ## Current branch focus
 
