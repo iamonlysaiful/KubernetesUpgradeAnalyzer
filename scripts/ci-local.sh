@@ -26,6 +26,7 @@ fi
 go test ./...
 go vet ./...
 go build -o /tmp/kua ./cmd/kua
+go test -race ./internal/recommendation ./internal/report
 
 git ls-files -z 'schemas/**/*.json' 'schemas/*.json' > "$json_files"
 if [[ ! -s "$json_files" ]]; then
