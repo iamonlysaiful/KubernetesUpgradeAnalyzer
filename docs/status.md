@@ -28,7 +28,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Phase 6 - AKS provider evidence | Complete | Provider interface, AKS identity/CLI/file adapters, candidate/path construction, and closeout are merged; no live CLI execution. |
 | Phase 7 - Recommendation engine | Complete | Recommendation engine, finding aggregation, policy evaluation, AKS 1.30 validation case, and closeout are merged. |
 | Phase 8 - Reports and hardening | Complete | Multi-format report rendering, redaction mode, hardening checks, and closeout are merged. |
-| Phase 9 - Controlled staging validation and MVP release | In progress | Approval records and release tooling in progress; live validation/publication pending explicit approval. |
+| Phase 9 - Controlled staging validation and MVP release | In progress | Approval records and release-candidate artifact tooling added; live validation/publication pending explicit approval. |
 
 ## Current branch focus
 
