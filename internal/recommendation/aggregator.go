@@ -68,13 +68,13 @@ func (a *Aggregator) healthSeverityToRecommendation(sev health.Severity, status 
 // healthRemediation returns remediation guidance for health rules.
 func (a *Aggregator) healthRemediation(ruleID string) string {
 	remediations := map[string]string{
-		"NODE_NOT_READY":        "Investigate and resolve node conditions before upgrade",
-		"NODE_MEMORY_PRESSURE":  "Address memory pressure on nodes before upgrade",
-		"NODE_DISK_PRESSURE":    "Address disk pressure on nodes before upgrade",
-		"NODE_PID_PRESSURE":     "Address PID pressure on nodes before upgrade",
-		"WORKLOAD_UNAVAILABLE":  "Ensure workload replicas are available before upgrade",
-		"PVC_UNBOUND":           "Resolve unbound PVCs before upgrade",
-		"EVENTS_WARNING":        "Review warning events and address underlying issues",
+		"NODE_NOT_READY":       "Investigate and resolve node conditions before upgrade",
+		"NODE_MEMORY_PRESSURE": "Address memory pressure on nodes before upgrade",
+		"NODE_DISK_PRESSURE":   "Address disk pressure on nodes before upgrade",
+		"NODE_PID_PRESSURE":    "Address PID pressure on nodes before upgrade",
+		"WORKLOAD_UNAVAILABLE": "Ensure workload replicas are available before upgrade",
+		"PVC_UNBOUND":          "Resolve unbound PVCs before upgrade",
+		"EVENTS_WARNING":       "Review warning events and address underlying issues",
 	}
 
 	if r, ok := remediations[ruleID]; ok {
