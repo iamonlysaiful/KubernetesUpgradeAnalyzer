@@ -1,0 +1,44 @@
+name: Release Candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release candidate version (for example 0.1.0-rc.1)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build-artifacts:
+    name: Build release candidate artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build release candidate artifacts
+        run: |
+          chmod +x scripts/release-candidate.sh
+          if [[ -n "${{ inputs.version }}" ]]; then
+            scripts/release-candidate.sh "${{ inputs.version }}"
+          else
+            scripts/release-candidate.sh
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-candidate-artifacts
+          path: artifacts/release-candidate/
+          if-no-files-found: error

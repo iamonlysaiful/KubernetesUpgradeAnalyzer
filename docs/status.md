@@ -13,7 +13,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Gate B - collection safety | Passed for P2-02 | P2-02 core inventory has fake-client/golden coverage and a locally approved live smoke-test record. Expanded live inventory is deferred and still requires separate Gate B expansion approval. |
 | Gate C - compatibility validity | Complete for Phase 5 | Catalog foundation is merged; kubent target-rule coverage validated for 1.30-1.33; go/no-go decision is GO for MVP. |
 | Gate D - recommendation calibration | Complete for Phase 8 | Recommendation matrix outputs, deterministic path evaluation, and report rendering/redaction foundation are merged. |
-| Gate E - release | Not started | Release validation, artifacts, SBOM, and publication are Phase 9 work. |
+| Gate E - release | In progress | Phase 9 release records/tooling started; live staging validation and publication still require explicit approval. |
 
 ## Phase status
 
@@ -28,7 +28,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Phase 6 - AKS provider evidence | Complete | Provider interface, AKS identity/CLI/file adapters, candidate/path construction, and closeout are merged; no live CLI execution. |
 | Phase 7 - Recommendation engine | Complete | Recommendation engine, finding aggregation, policy evaluation, AKS 1.30 validation case, and closeout are merged. |
 | Phase 8 - Reports and hardening | Complete | Multi-format report rendering, redaction mode, hardening checks, and closeout are merged. |
-| Phase 9+ | Not started | Blocked on earlier phase outputs and review gates. |
+| Phase 9 - Controlled staging validation and MVP release | In progress | Approval records and release-candidate artifact tooling added; live validation/publication pending explicit approval. |
 
 ## Current branch focus
 

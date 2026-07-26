@@ -6,7 +6,7 @@ import (
 )
 
 var reportTemplate = template.Must(template.New("report").Funcs(template.FuncMap{
-  "add": func(a, b int) int { return a + b },
+	"add": func(a, b int) int { return a + b },
 }).Parse(`<!doctype html>
 <html lang="en">
 <head>

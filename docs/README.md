@@ -58,6 +58,8 @@ The documents in this directory are the source of truth for KubeUpgrade Advisor.
 | [`validation/phase-6-closeout.md`](validation/phase-6-closeout.md) | Draft Phase 6 closeout and provider foundation record |
 | [`validation/phase-7-closeout.md`](validation/phase-7-closeout.md) | Draft Phase 7 closeout and recommendation engine record |
 | [`validation/phase-8-closeout.md`](validation/phase-8-closeout.md) | Draft Phase 8 closeout and report/hardening foundation record |
+| [`validation/phase-9-approval-record.md`](validation/phase-9-approval-record.md) | Draft Phase 9 live staging approval/command record |
+| [`validation/phase-9-release-record.md`](validation/phase-9-release-record.md) | Draft Phase 9 release-candidate and publication gate record |
 
 ## Schema contracts
 
