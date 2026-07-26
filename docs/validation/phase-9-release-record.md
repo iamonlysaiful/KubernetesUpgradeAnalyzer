@@ -21,6 +21,7 @@ This record tracks MVP release-candidate artifacts and final publication gates.
 - SHA256SUMS:
 - SBOM file:
 - Provenance file:
+- Release notes file:
 
 ## 3. Validation gates
 
@@ -30,6 +31,25 @@ This record tracks MVP release-candidate artifacts and final publication gates.
 - `git fsck --full --strict` pass:
 - No AppleDouble files in `.git`:
 - Deterministic render checks pass:
+- Workflow artifact upload pass:
+
+## 3.1 Release-candidate command checklist
+
+1. `scripts/release-candidate.sh <candidate-version>`
+2. `scripts/ci-local.sh`
+3. `go test -race ./internal/recommendation ./internal/report`
+4. `git diff --check`
+5. `git fsck --full --strict`
+6. AppleDouble cleanup verification
+
+Record results:
+
+- Command 1 result:
+- Command 2 result:
+- Command 3 result:
+- Command 4 result:
+- Command 5 result:
+- Command 6 result:
 
 ## 4. Publication controls
 
@@ -43,3 +63,8 @@ This record tracks MVP release-candidate artifacts and final publication gates.
 - Known limitations:
 - Deferred work:
 - Follow-up actions:
+
+## 6. Publication hold point
+
+Do not create tags, releases, or publish artifacts until owner explicitly
+approves publication for the recorded candidate version.

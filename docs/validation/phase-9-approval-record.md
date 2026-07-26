@@ -17,13 +17,27 @@ any live AKS staging validation commands are run.
 
 ## 2. Approved live commands (read-only)
 
-List each command exactly as approved:
+Approve these exact commands before execution (fill values first):
 
-1.
-2.
-3.
+1. `kubectl config current-context`
+2. `./bin/kua inventory --format json --context <approved-context> --kubeconfig <approved-kubeconfig> > <raw-output-dir>/inventory-core.raw.json`
+3. `az aks get-upgrades --subscription <approved-subscription> --resource-group <approved-resource-group> --name <approved-cluster-name> -o json > <raw-output-dir>/aks-upgrades.raw.json`
+4. `./scripts/release-candidate.sh <approved-rc-version>`
+5. `scripts/ci-local.sh`
+6. `go test -race ./internal/recommendation ./internal/report`
 
 No additional live commands are permitted without separate explicit approval.
+
+## 2.1 Command approval table
+
+| Command # | Approved (yes/no) | Notes |
+| --- | --- | --- |
+| 1 |  |  |
+| 2 |  |  |
+| 3 |  |  |
+| 4 |  |  |
+| 5 |  |  |
+| 6 |  |  |
 
 ## 3. Output handling and recovery
 
@@ -50,3 +64,10 @@ Stop immediately if any of the following occur:
 - Raw output retained locally (yes/no):
 - Sanitized outputs reviewed (yes/no):
 - Follow-up decisions required:
+
+## 6. Sanitization checklist before any commit
+
+- Remove cluster names, node names, namespace names, workload names, registry hosts.
+- Remove subscription IDs, resource group names, cluster names.
+- Remove tokens, kubeconfig content, authentication traces.
+- Keep only approved sanitized derivatives and provenance metadata.
