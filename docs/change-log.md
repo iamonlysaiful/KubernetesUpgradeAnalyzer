@@ -2,6 +2,14 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-27 — Phase 9 validation/release records kickoff
+
+- Added Phase 9 live staging approval record template with explicit command
+  allowlist and recovery/redaction controls.
+- Added Phase 9 release-candidate record template for artifact and publication
+  gates.
+- Updated status and docs index to reflect Phase 9 start.
+
 ## 2026-07-27 — Phase 8 reports and hardening implementation
 
 - Added `internal/report` with deterministic JSON, console, Markdown, and
