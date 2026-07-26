@@ -2,6 +2,18 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-27 — Phase 8 reports and hardening implementation
+
+- Added `internal/report` with deterministic JSON, console, Markdown, and
+  self-contained HTML renderers.
+- Added report redaction mode with stable assessment-local aliases for
+  sensitive identifiers.
+- Added hostile-input escaping coverage for Markdown and HTML renderers.
+- Added atomic writer with no-overwrite behavior for report file output.
+- Added targeted race checks to local CI and GitHub Actions quality workflow
+  for `internal/recommendation` and `internal/report`.
+- Added Phase 8 closeout record.
+
 ## 2026-07-27 — Phase 8 reports and hardening plan
 
 - Added the Phase 8 reports/hardening plan with a compressed PR strategy.

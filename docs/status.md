@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: 2026-07-24
+Last updated: 2026-07-27
 
 This page summarizes the current implementation phase, review gates, and
 publication state. Detailed history remains in Git and `docs/change-log.md`.
@@ -12,7 +12,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Gate A - contracts | Complete | Phase 0 contracts, schemas, fixtures, security/RBAC, and dependency rules are documented and merged. |
 | Gate B - collection safety | Passed for P2-02 | P2-02 core inventory has fake-client/golden coverage and a locally approved live smoke-test record. Expanded live inventory is deferred and still requires separate Gate B expansion approval. |
 | Gate C - compatibility validity | Complete for Phase 5 | Catalog foundation is merged; kubent target-rule coverage validated for 1.30-1.33; go/no-go decision is GO for MVP. |
-| Gate D - recommendation calibration | Not started | Recommendation matrix and staging expectations are future Phase 7 work. |
+| Gate D - recommendation calibration | Complete for Phase 8 | Recommendation matrix outputs, deterministic path evaluation, and report rendering/redaction foundation are merged. |
 | Gate E - release | Not started | Release validation, artifacts, SBOM, and publication are Phase 9 work. |
 
 ## Phase status
@@ -27,7 +27,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Phase 5 - API compatibility | Complete | Kubent adapter foundation, target-rule coverage for 1.30-1.33, go/no-go decision GO, and closeout are merged. |
 | Phase 6 - AKS provider evidence | Complete | Provider interface, AKS identity/CLI/file adapters, candidate/path construction, and closeout are merged; no live CLI execution. |
 | Phase 7 - Recommendation engine | Complete | Recommendation engine, finding aggregation, policy evaluation, AKS 1.30 validation case, and closeout are merged. |
-| Phase 8 - Reports and hardening | In progress | Plan proposed; implementation pending. |
+| Phase 8 - Reports and hardening | Complete | Multi-format report rendering, redaction mode, hardening checks, and closeout are merged. |
 | Phase 9+ | Not started | Blocked on earlier phase outputs and review gates. |
 
 ## Current branch focus
@@ -160,6 +160,37 @@ P6 provider foundation is merged:
 - candidate set and sequential path construction;
 - Phase 6 closeout record;
 - no live Azure CLI execution.
+
+`docs/plans/phase-7-recommendation-plan` started Phase 7:
+
+- recommendation engine contract and policy;
+- finding aggregation across health, API, component, and provider evidence;
+- deterministic readiness/risk outputs;
+- AKS 1.30 -> 1.33 validation case;
+- no live cluster access.
+
+P7 recommendation engine is merged:
+
+- recommendation engine implementation;
+- readiness/risk policy evaluator;
+- sequential destination/path construction;
+- Phase 7 closeout record;
+- no live cluster access.
+
+`docs/plans/phase-8-reports-hardening-plan` started Phase 8:
+
+- JSON/console/Markdown/HTML renderer scope;
+- redacted mode requirements;
+- hostile-input and determinism hardening checks.
+
+P8 reports and hardening foundation is merged:
+
+- `internal/report` package with deterministic multi-format renderers;
+- self-contained HTML output and hostile-input escaping checks;
+- redaction aliases for sensitive identifiers;
+- atomic no-overwrite file writer;
+- targeted race checks in CI/local quality gates;
+- Phase 8 closeout record.
 
 Current live `kua inventory` behavior remains partial/core inventory only.
 Workloads, storage, networking, CRDs, events, health, compatibility, provider
