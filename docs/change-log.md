@@ -2,6 +2,14 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-27 — Phase 8 reports and hardening plan
+
+- Added the Phase 8 reports/hardening plan with a compressed PR strategy.
+- Documented renderer scope for JSON, console, Markdown, and self-contained HTML outputs.
+- Documented MVP redacted mode requirements with stable assessment-local aliases.
+- Captured hardening gates for golden fixtures, hostile-input escaping, determinism,
+  race checks, and safe file output behavior.
+
 ## 2026-07-25 — Phase 7 recommendation engine implementation
 
 - Implemented the recommendation engine with deterministic output.
