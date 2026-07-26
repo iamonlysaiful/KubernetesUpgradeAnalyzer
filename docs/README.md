@@ -2,6 +2,9 @@
 
 The documents in this directory are the source of truth for KubeUpgrade Advisor.
 
+For operator setup and controlled staging execution steps, see the runbook in
+[`../README.md`](../README.md).
+
 ## Governing documents
 
 | Document | Purpose |
