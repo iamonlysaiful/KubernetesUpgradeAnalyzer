@@ -65,12 +65,18 @@ Return:
 
 - current version;
 - recommended destination version;
-- sequential, provider-valid upgrade stages;
+- provider-valid upgrade path, including either sequential stages or an
+  explicit provider-direct stage when AKS advertises only a higher target;
 - overall readiness: `READY`, `READY_WITH_WARNINGS`, `NOT_READY`, or `INCONCLUSIVE`;
 - risk: `LOW`, `MEDIUM`, `HIGH`, or `UNKNOWN`;
 - blockers, warnings, assumptions, evidence age, and remediation.
 
-KUA may recommend destination `1.33.12` for a cluster at `1.30.x` when evidence supports it, but it must not describe `1.30 → 1.33.12` as one supported AKS operation. It must display intervening minor stages.
+KUA may recommend destination `1.33.12` for a cluster at `1.30.x` when evidence
+supports it, but it must not describe `1.30 → 1.33.12` as one supported AKS
+operation unless provider evidence advertises that exact edge. When AKS no
+longer exposes lower intermediate minors and advertises only a higher direct
+target, KUA may report that provider-direct target but must flag the missing
+intermediate evidence as a warning and at least `MEDIUM` risk.
 
 ### 3.7 Output
 
@@ -98,7 +104,12 @@ MVP outputs: console, JSON, Markdown, and self-contained HTML. Local reports sho
 
 ## 6. MVP acceptance criteria
 
-1. A sanitized AKS fixture representing Kubernetes `1.30.0` can produce destination `1.33.12`, sequential stages, `READY`, and `LOW` risk when all stated evidence passes.
+1. A sanitized AKS fixture representing Kubernetes `1.30.0` can produce
+   destination `1.33.12`, sequential stages, `READY`, and `LOW` risk when all
+   stated evidence passes.
+1. A sanitized AKS fixture representing Kubernetes `1.30.0` where AKS advertises
+   only `1.34.x` can produce a provider-direct destination with a warning and
+   at least `MEDIUM` risk when all other evidence passes.
 2. A removed API blocks every candidate where it is unavailable and identifies the responsible object.
 3. A component with unknown version or missing compatibility evidence cannot produce an unconditional compatibility pass.
 4. A serious health condition produces a blocker according to the approved recommendation rules.
@@ -116,5 +127,5 @@ MVP outputs: console, JSON, Markdown, and self-contained HTML. Local reports sho
 - CLI binary name: `kua`.
 - Initial release platforms: Linux and macOS on amd64 and arm64.
 - Windows support is best-effort after MVP.
-- Initial validated Kubernetes range: `1.30` through `1.33`; additional versions require catalog evidence and regression fixtures.
+- Initial validated Kubernetes range: `1.30` through `1.34`; additional versions require catalog evidence and regression fixtures.
 - `READY_WITH_WARNINGS` exits successfully (`0`); a future strict automation mode may treat warnings as nonzero.

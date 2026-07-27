@@ -118,7 +118,13 @@ From provider evidence, build:
    path is `1.30 → 1.31 → 1.32 → 1.33`, selecting the highest available patch
    in each minor that the provider reports as available.
 
-3. **Validation**: each edge in the path must be provider-valid (the target
+3. **Provider-direct path**: when AKS advertises only a higher target and does
+   not expose intermediate minors, use the advertised target as a direct
+   provider edge. Mark this path as provider-valid but add a warning that lower
+   intermediate provider evidence is unavailable. A provider-direct multi-minor
+   path must not be reported as `LOW` risk.
+
+4. **Validation**: each edge in the path must be provider-valid (the target
    version appears in `availableUpgrades` from the source version's perspective,
    or the catalog defines AKS sequential policy).
 

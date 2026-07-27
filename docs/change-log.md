@@ -52,6 +52,14 @@ This log records material scope and architecture changes. Git remains the detail
   passing evidence may produce `READY`/`LOW`, while missing evidence remains
   `INCONCLUSIVE`/`UNKNOWN`.
 
+## 2026-07-27 — Phase 8.5 AKS advertised-edge policy
+
+- Approved hybrid AKS path handling: KUA follows provider-advertised upgrade
+  edges and does not invent unavailable lower intermediate minors.
+- Expanded the MVP validated target range through Kubernetes `1.34`.
+- Required provider-direct multi-minor AKS paths to carry a warning and at
+  least `MEDIUM` risk unless future evidence proves lower-risk behavior.
+
 ## 2026-07-27 — Phase 9 release candidate tooling
 
 - Added `scripts/release-candidate.sh` to build Linux/macOS amd64/arm64 release

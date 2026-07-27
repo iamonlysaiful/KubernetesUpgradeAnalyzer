@@ -38,7 +38,8 @@ the end-to-end CLI remains incomplete.
 - run kubent API compatibility when permitted and available;
 - collect AKS provider upgrade evidence through `auto`, `azure`, `file`,
   `offline`, or `none` source modes;
-- build provider-valid candidate versions and sequential upgrade stages;
+- build provider-valid candidate versions and upgrade stages, including
+  provider-direct AKS stages when AKS no longer exposes intermediate minors;
 - produce readiness, risk, destination, blockers, warnings, limitations,
   assumptions, and remediation;
 - render console, JSON, Markdown, and HTML outputs through the approved report
@@ -77,19 +78,22 @@ release.
    over a sanitized AKS fixture validates against the assessment schema.
 2. `kua analyze` can evaluate a Kubernetes `1.30.x` AKS cluster and recommend a
    provider-valid staged path toward `1.33.x` when evidence supports it.
-3. If Azure CLI authentication is unavailable in `auto` mode, provider evidence
+3. `kua analyze` can evaluate a Kubernetes `1.30.x` AKS cluster where AKS
+   advertises only `1.34.x` and return a provider-direct warning with at least
+   `MEDIUM` risk when all other evidence passes.
+4. If Azure CLI authentication is unavailable in `auto` mode, provider evidence
    becomes `UNKNOWN` and the command reports the corrective action without
    running `az login`.
-4. Kubent is invoked only through the controlled adapter, with Helm collection
+5. Kubent is invoked only through the controlled adapter, with Helm collection
    disabled, and absent kubent evidence yields `INCONCLUSIVE` API findings.
-5. Live expanded Kubernetes reads are limited to the documented read-only fields
+6. Live expanded Kubernetes reads are limited to the documented read-only fields
    and require explicit Gate B expansion approval before staging execution.
-6. Console, JSON, Markdown, and HTML outputs render deterministically from the
+7. Console, JSON, Markdown, and HTML outputs render deterministically from the
    same canonical assessment.
-7. Redacted output removes cluster, subscription, resource group, namespace,
+8. Redacted output removes cluster, subscription, resource group, namespace,
    workload, node, registry, and event identifiers while preserving versions,
    counts, decisions, and remediation.
-8. `scripts/ci-local.sh`, targeted race checks, schema/golden validation,
+9. `scripts/ci-local.sh`, targeted race checks, schema/golden validation,
    `git diff --check`, and `git fsck --full --strict` pass before release
    publication is reconsidered.
 

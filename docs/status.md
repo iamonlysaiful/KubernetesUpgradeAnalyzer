@@ -226,6 +226,11 @@ malformed output, or unverified target coverage keeps API compatibility
 After provider and API evidence are present, `kua analyze` should use the
 recommendation policy directly instead of forcing `INCONCLUSIVE`.
 
+Approved hybrid AKS behavior follows provider-advertised upgrade edges. When AKS
+offers only a direct higher target such as `1.34.x` and no lower intermediate
+minors, KUA reports a provider-direct warning and at least `MEDIUM` risk instead
+of inventing unavailable sequential stages.
+
 ## Current quality evidence
 
 Latest local checks:
