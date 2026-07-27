@@ -2,6 +2,73 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-27 — Phase 8.5 component multi-version verdicts
+
+- Required component detection to preserve each confidently extracted observed
+  version instead of collapsing conflicting versions to one `UNKNOWN`.
+- Required recommendation output to emit deterministic per-version component
+  verdicts when multiple known versions are present.
+- Kept unknown or missing component compatibility evidence conservative: it
+  remains `UNKNOWN` and never becomes `PASS`.
+
+## 2026-07-27 — Phase 8.5 end-to-end CLI recovery plan
+
+- Added a strict corrective plan to block MVP publication until the accepted
+  `kua analyze` user journey is wired end to end.
+- Clarified that release-candidate artifacts alone do not satisfy the MVP
+  release gate.
+- Required live expanded inventory, health, component, kubent, provider,
+  recommendation, and report integration before returning to Phase 9.
+- Reaffirmed that public release records must not include staging context names,
+  subscription IDs, resource groups, cluster names, node names, namespaces,
+  workload names, registry hosts, trace IDs, or authentication details.
+
+## 2026-07-27 — Phase 8.5 first CLI recovery slice
+
+- Documented temporary Phase 8.5 command behavior for `kua analyze`, `kua health`,
+  `kua compatibility`, and `kua report`.
+- Required `kua analyze` to return `INCONCLUSIVE` with explicit limitations
+  while expanded live inventory and kubent API compatibility remain unwired.
+- Documented `--input`, `--provider-evidence`, `--subscription`,
+  `--resource-group`, `--cluster-name`, `--target-version`, and `--redacted`
+  as implemented flags for the recovery slice.
+- Kept MVP release publication blocked until the full end-to-end AKS upgrade
+  analysis exits Phase 8.5.
+
+## 2026-07-27 — Phase 8.5 live analysis inventory expansion
+
+- Approved wiring `kua analyze` to collect the MVP read-only metadata groups
+  already covered by fake-client collectors: workloads, storage, networking,
+  CRDs, and events.
+- Kept `kua inventory` core-only until its output contract is separately
+  updated.
+- Confirmed this is not approval for unsupervised live staging execution; real
+  context runs still require the Phase 9 command record.
+
+## 2026-07-27 — Phase 8.5 kubent CLI wiring
+
+- Approved wiring kubent API compatibility into `kua analyze` through the
+  existing controlled adapter.
+- Required JSON output, `--helm3=false`, target-rule coverage validation, and
+  sanitized limitations for missing or failed kubent evidence.
+- Kept raw kubent stderr and live staging evidence out of committed records.
+
+## 2026-07-27 — Phase 8.5 recommendation readiness handoff
+
+- Approved removing the temporary forced `INCONCLUSIVE` state once provider
+  evidence and kubent API compatibility are wired into `kua analyze`.
+- Required the command to use the recommendation policy directly: sufficient
+  passing evidence may produce `READY`/`LOW`, while missing evidence remains
+  `INCONCLUSIVE`/`UNKNOWN`.
+
+## 2026-07-27 — Phase 8.5 AKS advertised-edge policy
+
+- Approved hybrid AKS path handling: KUA follows provider-advertised upgrade
+  edges and does not invent unavailable lower intermediate minors.
+- Expanded the MVP validated target range through Kubernetes `1.34`.
+- Required provider-direct multi-minor AKS paths to carry a warning and at
+  least `MEDIUM` risk unless future evidence proves lower-risk behavior.
+
 ## 2026-07-27 — Phase 9 release candidate tooling
 
 - Added `scripts/release-candidate.sh` to build Linux/macOS amd64/arm64 release

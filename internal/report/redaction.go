@@ -29,12 +29,17 @@ func (r *Redactor) RedactDocument(doc Document) Document {
 	for i := range redacted.Findings {
 		f := &redacted.Findings[i]
 		if f.Resource != nil {
+			originalNamespace := f.Resource.Namespace
+			originalName := f.Resource.Name
 			if f.Resource.Namespace != "" {
 				f.Resource.Namespace = r.alias("ns", f.Resource.Namespace)
 			}
 			if f.Resource.Name != "" {
 				f.Resource.Name = r.alias("res", f.Resource.Name)
 			}
+			f.Summary = r.redactResourceText(f.Summary, originalNamespace, originalName, f.Resource.Namespace, f.Resource.Name)
+			f.Detail = r.redactResourceText(f.Detail, originalNamespace, originalName, f.Resource.Namespace, f.Resource.Name)
+			f.Remediation = r.redactResourceText(f.Remediation, originalNamespace, originalName, f.Resource.Namespace, f.Resource.Name)
 		}
 
 		// Redact common provider identity tokens that can appear in free text.
@@ -49,6 +54,17 @@ func (r *Redactor) RedactDocument(doc Document) Document {
 	}
 
 	return redacted
+}
+
+func (r *Redactor) redactResourceText(in string, originalNamespace string, originalName string, namespaceAlias string, nameAlias string) string {
+	out := in
+	if originalNamespace != "" {
+		out = strings.ReplaceAll(out, originalNamespace, namespaceAlias)
+	}
+	if originalName != "" {
+		out = strings.ReplaceAll(out, originalName, nameAlias)
+	}
+	return out
 }
 
 func (r *Redactor) alias(prefix, value string) string {

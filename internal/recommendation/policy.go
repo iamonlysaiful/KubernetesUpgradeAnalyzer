@@ -89,7 +89,13 @@ func (p *Policy) EvaluateRisk(findings []Finding, limitations []Limitation) Risk
 func (p *Policy) isCriticalLimitation(lim Limitation) bool {
 	criticalCodes := map[string]bool{
 		"TARGET_COVERAGE_UNVERIFIED": true,
+		"TARGET_COVERAGE_MISSING":    true,
+		"TARGET_VERSION_INVALID":     true,
+		"API_TARGET_UNAVAILABLE":     true,
+		"KUBENT_UNAVAILABLE":         true,
+		"KUBENT_EXECUTION_FAILED":    true,
 		"PROVIDER_UNAVAILABLE":       true,
+		"PROVIDER_EVIDENCE_ERROR":    true,
 		"CATALOG_CORRUPT":            true,
 		"ANALYZER_FAILED":            true,
 	}

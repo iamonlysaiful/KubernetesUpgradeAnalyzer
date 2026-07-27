@@ -107,8 +107,8 @@ func (e *Engine) Generate(input Input, opts RecommendationOptions) (*Recommendat
 		}
 	}
 
-	// Build upgrade path if provider evidence is available
-	if input.ProviderEvidence != nil {
+	// Build upgrade path only when provider evidence includes candidate versions.
+	if input.ProviderEvidence != nil && input.ProviderEvidence.CurrentVersion != "" && len(input.ProviderEvidence.AvailableUpgrades) > 0 {
 		path, pathLimitations, err := e.buildPath(input, opts)
 		if err != nil {
 			rec.Limitations = append(rec.Limitations, Limitation{
@@ -119,6 +119,9 @@ func (e *Engine) Generate(input Input, opts RecommendationOptions) (*Recommendat
 		} else {
 			rec.Path = path
 			rec.Limitations = append(rec.Limitations, pathLimitations...)
+			for _, stage := range path {
+				rec.Findings = append(rec.Findings, stage.Findings...)
+			}
 
 			// Set destination from path
 			if len(path) > 0 {
@@ -158,7 +161,17 @@ func (e *Engine) buildPath(input Input, opts RecommendationOptions) ([]UpgradeSt
 	// Build sequential path
 	path, err := provider.BuildSequentialPath(candidates, destination)
 	if err != nil {
-		return nil, nil, fmt.Errorf("build sequential path: %w", err)
+		directPath, ok := e.providerDirectPath(candidates, destination)
+		if !ok {
+			return nil, nil, fmt.Errorf("build sequential path: %w", err)
+		}
+		return directPath, providerDirectLimitations(candidates.Current, destination), nil
+	}
+	if !path.IsValid {
+		directPath, ok := e.providerDirectPath(candidates, destination)
+		if ok {
+			return directPath, providerDirectLimitations(candidates.Current, destination), nil
+		}
 	}
 
 	// Convert to UpgradeStages
@@ -196,6 +209,40 @@ func (e *Engine) buildPath(input Input, opts RecommendationOptions) ([]UpgradeSt
 	}
 
 	return stages, limitations, nil
+}
+
+func providerDirectLimitations(current provider.SemanticVersion, destination provider.SemanticVersion) []Limitation {
+	return []Limitation{{
+		Code:    "PROVIDER_DIRECT_MULTI_MINOR",
+		Summary: fmt.Sprintf("Provider advertises direct upgrade from %s to %s without lower intermediate minors", current.String(), destination.String()),
+		Impact:  "Review provider release notes and maintenance window before upgrade",
+	}}
+}
+
+func (e *Engine) providerDirectPath(candidates *provider.CandidateSet, destination provider.SemanticVersion) ([]UpgradeStage, bool) {
+	for _, opt := range candidates.AllVersions {
+		version, err := provider.ParseVersion(opt.Version)
+		if err != nil {
+			continue
+		}
+		if version.Compare(destination) != 0 {
+			continue
+		}
+		return []UpgradeStage{{
+			From:            candidates.Current.String(),
+			To:              destination.String(),
+			IsProviderValid: true,
+			Findings: []Finding{{
+				ID:          "PROVIDER_DIRECT_MULTI_MINOR",
+				Category:    CategoryProvider,
+				Severity:    SeverityWarning,
+				Summary:     fmt.Sprintf("Provider advertises direct upgrade from %s to %s without lower intermediate minors", candidates.Current.String(), destination.String()),
+				Stage:       destination.String(),
+				Remediation: "Review AKS release notes, backup, and maintenance window before using provider-direct multi-minor upgrade",
+			}},
+		}}, true
+	}
+	return nil, false
 }
 
 // selectDestination chooses the highest suitable candidate.

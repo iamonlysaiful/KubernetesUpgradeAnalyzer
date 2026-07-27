@@ -1,11 +1,15 @@
 # CLI and report contracts
 
-Status: Proposed for implementation  
-Last updated: 2026-07-22
+Status: Accepted with Phase 8.5 recovery updates
+Last updated: 2026-07-27
 
 ## 1. Common flags
 
-Proposed common flags include `--context`, `--kubeconfig`, `--namespace`, `--timeout`, `--config`, `--output`, `--format`, `--catalog`, `--provider-source=auto`, `--provider-evidence`, `--subscription`, `--resource-group`, `--cluster-name`, and `--log-level`.
+Common flags include `--context`, `--kubeconfig`, `--config`, `--input`,
+`--output`, `--format`, `--provider-source=auto`, `--provider-evidence`,
+`--subscription`, `--resource-group`, `--cluster-name`, `--target-version`,
+`--redacted`, and `--log-level`. `--namespace`, `--timeout`, and `--catalog`
+remain planned flags and must not be documented as complete until wired.
 
 Provider source values are `auto`, `azure`, `file`, `offline`, and `none`. No command mutates the cluster or Azure resources.
 
@@ -19,6 +23,34 @@ Standard kubeconfig resolution applies: explicit `--kubeconfig`, then normal cli
 - `kua compatibility`: run component and API compatibility; kubent is required in MVP.
 - `kua report --input assessment.json`: render canonical JSON without cluster access.
 - `kua version`: show build, Go, schema, and embedded catalog versions.
+
+During Phase 8.5, `kua analyze` is the recovery command. It must be usable and
+must not fail as unimplemented. Until kubent wiring lands, it returns
+`INCONCLUSIVE` with explicit limitations for missing API compatibility evidence.
+That temporary behavior is valid only inside Phase 8.5 and must not be used to
+claim MVP release readiness.
+
+Phase 8.5 expands the `kua analyze` live inventory path to the accepted MVP
+read-only metadata groups: workloads, storage, networking, CRDs, and events.
+This expansion does not approve unsupervised live staging execution. Any run
+against a real context still requires explicit command approval under the
+staging record. `kua inventory` may remain core-only until its own output
+contract is updated.
+
+Phase 8.5 wires kubent API compatibility through the existing adapter. KUA may
+invoke only the approved kubent command shape: JSON output, `--helm3=false`,
+explicit target version, optional kubeconfig, and optional context. If no target
+version can be determined, or kubent is missing, wrong-versioned, malformed, or
+fails, API compatibility becomes `INCONCLUSIVE` with sanitized limitations.
+Stderr and raw kubent diagnostics must not be copied into committed records.
+When provider evidence and kubent API compatibility both pass and no health or
+component blockers are present, `kua analyze` may return `READY` or
+`READY_WITH_WARNINGS` according to the recommendation policy.
+
+`kua health` and `kua compatibility` may initially render filtered views of the
+same assessment pipeline, as long as omitted evidence is reported as a
+limitation. `kua report --input <assessment.json>` renders a saved report
+document without Kubernetes or provider access.
 
 `auto` provider behavior for detected AKS clusters is: use the local authenticated Azure CLI, fall back to supplied JSON evidence, then continue with exact provider availability `UNKNOWN`. `azure` and `file` require their named source. `offline` prohibits provider network access but may consume a local evidence file. `none` skips provider-specific analysis.
 
@@ -57,7 +89,10 @@ Schema version changes follow compatibility policy: additive optional fields are
 | `4` | Usage or configuration error |
 | `5` | Collection, dependency, catalog, or internal execution error |
 
-Exact automation semantics must be locked with CLI contract tests before implementation is considered stable.
+Exact automation semantics must be locked with CLI contract tests before
+implementation is considered stable. During Phase 8.5, `INCONCLUSIVE` is the
+expected exit for end-to-end analysis when required MVP evidence is still
+unwired or unavailable.
 
 `READY_WITH_WARNINGS` returns `0`. A future explicit strict mode may assign a nonzero result without changing the default contract.
 

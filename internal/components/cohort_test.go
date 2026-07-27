@@ -63,7 +63,7 @@ func TestDetectorReportsUnknownVersionForLatestTag(t *testing.T) {
 	}
 }
 
-func TestDetectorReportsUnknownVersionForConflictingImages(t *testing.T) {
+func TestDetectorReportsEachKnownVersionForConflictingImages(t *testing.T) {
 	detector := WorkloadDetector{componentID: "emqx", name: "EMQX", imageHints: []string{"emqx"}, nameHints: []string{"emqx"}}
 	snapshot := inventory.Snapshot{
 		Inventory: inventory.Inventory{
@@ -80,11 +80,47 @@ func TestDetectorReportsUnknownVersionForConflictingImages(t *testing.T) {
 	}
 
 	detections := detector.Detect(snapshot)
+	SortDetections(detections)
+	if len(detections) != 2 {
+		t.Fatalf("detections = %d, want 2", len(detections))
+	}
+	got := []string{detections[0].Version, detections[1].Version}
+	want := []string{"5.8.1", "5.8.2"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("versions = %#v, want %#v", got, want)
+	}
+	for _, detection := range detections {
+		if detection.Status != StatusFound || detection.Confidence != ConfidenceHigh {
+			t.Fatalf("detection = %#v, want FOUND/HIGH", detection)
+		}
+	}
+}
+
+func TestDetectorReportsKnownVersionWithPartialLimitation(t *testing.T) {
+	detector := WorkloadDetector{componentID: "coredns", name: "CoreDNS", imageHints: []string{"coredns"}, nameHints: []string{"coredns"}}
+	snapshot := inventory.Snapshot{
+		Inventory: inventory.Inventory{
+			Workloads: []inventory.Workload{
+				{
+					Ref: inventory.ResourceRef{APIVersion: "apps/v1", Kind: "Deployment", Namespace: "kube-system", Name: "coredns"},
+					Containers: []inventory.Container{
+						{Name: "coredns-a", Image: "registry.k8s.io/coredns/coredns:v1.11.3"},
+						{Name: "coredns-b", Image: "registry.k8s.io/coredns/coredns:latest"},
+					},
+				},
+			},
+		},
+	}
+
+	detections := detector.Detect(snapshot)
 	if len(detections) != 1 {
 		t.Fatalf("detections = %d, want 1", len(detections))
 	}
-	if detections[0].Status != StatusUnknown || detections[0].Confidence != ConfidenceUnknown {
-		t.Fatalf("detection = %#v, want UNKNOWN", detections[0])
+	if detections[0].Status != StatusFound || detections[0].Version != "1.11.3" {
+		t.Fatalf("detection = %#v, want known version", detections[0])
+	}
+	if len(detections[0].Limitations) != 1 || detections[0].Limitations[0].Code != "VERSION_PARTIAL" {
+		t.Fatalf("limitations = %#v, want VERSION_PARTIAL", detections[0].Limitations)
 	}
 }
 

@@ -76,11 +76,24 @@ func (adapter Adapter) RunJSON(ctx context.Context, targetVersion string, kubeco
 	if err != nil {
 		return Report{}, err
 	}
-	var report Report
-	if err := json.Unmarshal(result.Stdout, &report); err != nil {
+	report, err := parseReport(result.Stdout)
+	if err != nil {
 		return Report{}, fmt.Errorf("%w: %v", ErrMalformedOutput, err)
 	}
 	return report, nil
+}
+
+func parseReport(data []byte) (Report, error) {
+	var report Report
+	if err := json.Unmarshal(data, &report); err == nil {
+		return report, nil
+	}
+
+	var deprecatedAPIs []DeprecatedAPI
+	if err := json.Unmarshal(data, &deprecatedAPIs); err != nil {
+		return Report{}, err
+	}
+	return Report{DeprecatedAPIs: deprecatedAPIs}, nil
 }
 
 func (adapter Adapter) BuildCommand(args []string) Command {

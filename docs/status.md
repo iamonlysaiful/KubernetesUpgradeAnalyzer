@@ -13,7 +13,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Gate B - collection safety | Passed for P2-02 | P2-02 core inventory has fake-client/golden coverage and a locally approved live smoke-test record. Expanded live inventory is deferred and still requires separate Gate B expansion approval. |
 | Gate C - compatibility validity | Complete for Phase 5 | Catalog foundation is merged; kubent target-rule coverage validated for 1.30-1.33; go/no-go decision is GO for MVP. |
 | Gate D - recommendation calibration | Complete for Phase 8 | Recommendation matrix outputs, deterministic path evaluation, and report rendering/redaction foundation are merged. |
-| Gate E - release | In progress | Phase 9 release records/tooling started; live staging validation and publication still require explicit approval. |
+| Gate E - release | Blocked pending Phase 8.5 | Release-candidate tooling exists, but publication is blocked until end-to-end `kua analyze` wiring and sanitized AKS validation pass. |
 
 ## Phase status
 
@@ -28,7 +28,8 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Phase 6 - AKS provider evidence | Complete | Provider interface, AKS identity/CLI/file adapters, candidate/path construction, and closeout are merged; no live CLI execution. |
 | Phase 7 - Recommendation engine | Complete | Recommendation engine, finding aggregation, policy evaluation, AKS 1.30 validation case, and closeout are merged. |
 | Phase 8 - Reports and hardening | Complete | Multi-format report rendering, redaction mode, hardening checks, and closeout are merged. |
-| Phase 9 - Controlled staging validation and MVP release | In progress | Approval records and release-candidate artifact tooling added; live validation/publication pending explicit approval. |
+| Phase 8.5 - End-to-end CLI recovery | In progress | Corrective plan added; first implementation slice wires `kua analyze`, `health`, `compatibility`, and `report` away from unimplemented command failures while preserving `INCONCLUSIVE` for missing MVP evidence. |
+| Phase 9 - Controlled staging validation and MVP release | Blocked | Release-candidate artifact generation may be used locally, but publication waits for Phase 8.5 exit and separate owner approval. |
 
 ## Current branch focus
 
@@ -195,6 +196,40 @@ P8 reports and hardening foundation is merged:
 Current live `kua inventory` behavior remains partial/core inventory only.
 Workloads, storage, networking, CRDs, events, health, compatibility, provider
 evidence, recommendations, and reports are not emitted from live collection yet.
+
+Phase 8.5 corrects this before MVP publication. The release goal is not only to
+produce binaries; it is to produce a CLI that can scan an AKS staging cluster and
+return a proper upgrade analysis through `kua analyze`.
+
+First Phase 8.5 implementation slice:
+
+- `kua analyze` renders a canonical assessment document and exits
+  `INCONCLUSIVE` when API compatibility or expanded live inventory evidence is
+  absent;
+- `kua health` and `kua compatibility` expose filtered views of the same
+  assessment document;
+- `kua report --input <assessment.json>` renders saved assessment documents
+  without cluster/provider access;
+- provider auto-detection still needs safe live AKS identity wiring when no
+  explicit provider flags or provider evidence file are supplied.
+
+Next Phase 8.5 slice expands `kua analyze` live collection to the MVP read-only
+metadata groups already covered by fake-client collectors: workloads, storage,
+networking, CRDs, and events. This is CLI wiring approval only; it is not
+approval to run live staging commands without the Phase 9 command record.
+
+Following slice wires kubent API compatibility into `kua analyze` through the
+approved adapter. Missing target version, missing kubent, execution failure,
+malformed output, or unverified target coverage keeps API compatibility
+`INCONCLUSIVE` with sanitized limitations.
+
+After provider and API evidence are present, `kua analyze` should use the
+recommendation policy directly instead of forcing `INCONCLUSIVE`.
+
+Approved hybrid AKS behavior follows provider-advertised upgrade edges. When AKS
+offers only a direct higher target such as `1.34.x` and no lower intermediate
+minors, KUA reports a provider-direct warning and at least `MEDIUM` risk instead
+of inventing unavailable sequential stages.
 
 ## Current quality evidence
 

@@ -3,13 +3,20 @@ package app
 import "fmt"
 
 type Config struct {
-	LogLevel       string
-	Format         string
-	ProviderSource string
-	Context        string
-	Kubeconfig     string
-	ConfigPath     string
-	OutputPath     string
+	LogLevel         string
+	Format           string
+	ProviderSource   string
+	Context          string
+	Kubeconfig       string
+	ConfigPath       string
+	OutputPath       string
+	InputPath        string
+	ProviderEvidence string
+	Subscription     string
+	ResourceGroup    string
+	ClusterName      string
+	TargetVersion    string
+	Redacted         bool
 }
 
 func DefaultConfig() Config {
@@ -42,7 +49,9 @@ func parseArgs(args []string) (Config, []string, *AppError) {
 		if !isKnownFlag(name) {
 			return cfg, nil, UsageError(fmt.Sprintf("unknown flag %q", name))
 		}
-		if !hasInlineValue {
+		if isBoolFlag(name) && !hasInlineValue {
+			value = "true"
+		} else if !hasInlineValue {
 			if i+1 >= len(args) || args[i+1] == "" || isFlag(args[i+1]) {
 				return cfg, nil, UsageError(fmt.Sprintf("missing value for %s", name))
 			}
@@ -72,11 +81,15 @@ func isFlag(value string) bool {
 
 func isKnownFlag(name string) bool {
 	switch name {
-	case "--log-level", "--format", "--provider-source", "--context", "--kubeconfig", "--config", "--output":
+	case "--log-level", "--format", "--provider-source", "--context", "--kubeconfig", "--config", "--output", "--input", "--provider-evidence", "--subscription", "--resource-group", "--cluster-name", "--target-version", "--redacted":
 		return true
 	default:
 		return false
 	}
+}
+
+func isBoolFlag(name string) bool {
+	return name == "--redacted"
 }
 
 func applyFlag(cfg *Config, name string, value string) *AppError {
@@ -108,6 +121,23 @@ func applyFlag(cfg *Config, name string, value string) *AppError {
 		cfg.ConfigPath = value
 	case "--output":
 		cfg.OutputPath = value
+	case "--input":
+		cfg.InputPath = value
+	case "--provider-evidence":
+		cfg.ProviderEvidence = value
+	case "--subscription":
+		cfg.Subscription = value
+	case "--resource-group":
+		cfg.ResourceGroup = value
+	case "--cluster-name":
+		cfg.ClusterName = value
+	case "--target-version":
+		cfg.TargetVersion = value
+	case "--redacted":
+		if !oneOf(value, "true", "false") {
+			return UsageError("invalid --redacted; expected true or false")
+		}
+		cfg.Redacted = value == "true"
 	}
 
 	return nil

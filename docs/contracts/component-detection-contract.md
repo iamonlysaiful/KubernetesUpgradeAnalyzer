@@ -14,7 +14,7 @@ Phase 4 component detection covers:
 - deterministic detectors that consume `inventory.Snapshot`;
 - normalized detected component IDs, names, versions, and confidence;
 - evidence references that avoid secrets and raw cluster identifiers;
-- `UNKNOWN` outcomes for absent, ambiguous, or unsupported evidence;
+- `UNKNOWN` outcomes for absent or unsupported evidence;
 - an initial detector cohort after the framework is validated.
 
 Detectors must not call Kubernetes clients, provider CLIs, vendor websites, or
@@ -33,7 +33,10 @@ Each detection result must include:
 - sanitized resource references used as evidence;
 - limitations when evidence is partial or ambiguous.
 
-Unknown component versions must produce `UNKNOWN`, never `PASS`.
+Unknown component versions must produce `UNKNOWN`, never `PASS`. Multiple
+confidently extracted versions for the same component must remain separate
+version findings instead of collapsing the component to one ambiguous
+`UNKNOWN` result.
 
 ## 3. Initial detector cohort
 
@@ -54,13 +57,17 @@ and compatibility policy remain separate.
 ## 4. Version extraction rules
 
 Version extraction may use sanitized workload image tags, known component labels,
-or catalog detector hints. If a version cannot be extracted confidently, the
+or catalog detector hints. If no version can be extracted confidently, the
 detector must report the component with `UNKNOWN` version or `UNKNOWN` status as
-appropriate.
+appropriate. If one or more versions can be extracted confidently and other
+matching evidence remains ambiguous, the detector must preserve each known
+version as `FOUND` and attach a limitation for the ambiguous evidence.
 
 Unbounded tags such as `latest`, mutable digests without tag context, missing
-container images, or conflicting versions across replicas must not become a
-confident supported result.
+container images, or unsupported version formats must not become a confident
+supported result. Conflicting known versions across containers, replicas, or
+workloads must produce deterministic per-version detections and verdicts for
+each observed version.
 
 ## 5. Determinism
 

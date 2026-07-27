@@ -6,7 +6,7 @@ import (
 )
 
 func TestVerifyCoverageAcceptsDefaultTargetMinors(t *testing.T) {
-	for _, target := range []string{"1.30", "1.31.4", "v1.32.0", "1.33.12"} {
+	for _, target := range []string{"1.30", "1.31.4", "v1.32.0", "1.33.12", "1.34.9"} {
 		result := VerifyCoverage(target, DefaultCoveragePolicy())
 		if result.Status != CoverageVerified {
 			t.Fatalf("VerifyCoverage(%q) = %#v, want VERIFIED", target, result)
@@ -18,7 +18,7 @@ func TestVerifyCoverageAcceptsDefaultTargetMinors(t *testing.T) {
 }
 
 func TestVerifyCoverageRejectsMissingTargetMinor(t *testing.T) {
-	result := VerifyCoverage("1.34.0", DefaultCoveragePolicy())
+	result := VerifyCoverage("1.35.0", DefaultCoveragePolicy())
 
 	if result.Status != CoverageUnverified {
 		t.Fatalf("Status = %q, want %q", result.Status, CoverageUnverified)
@@ -40,7 +40,7 @@ func TestVerifyCoverageRejectsInvalidTarget(t *testing.T) {
 }
 
 func TestNormalizeFindingsRequiresVerifiedCoverage(t *testing.T) {
-	findings := NormalizeFindings(Report{}, SupportedVersion, "1.34.0", VerifyCoverage("1.34.0", DefaultCoveragePolicy()))
+	findings := NormalizeFindings(Report{}, SupportedVersion, "1.35.0", VerifyCoverage("1.35.0", DefaultCoveragePolicy()))
 
 	if len(findings) != 1 {
 		t.Fatalf("findings = %d, want 1", len(findings))
@@ -88,7 +88,7 @@ func TestDecideKubentMVP(t *testing.T) {
 		t.Fatalf("goDecision = %#v, want GO", goDecision)
 	}
 
-	noGoDecision := DecideKubentMVP(VerifyAllTargets([]string{"1.30", "1.34"}, DefaultCoveragePolicy()))
+	noGoDecision := DecideKubentMVP(VerifyAllTargets([]string{"1.30", "1.35"}, DefaultCoveragePolicy()))
 	if noGoDecision.Status != DecisionNoGo {
 		t.Fatalf("noGoDecision = %#v, want NO_GO", noGoDecision)
 	}
