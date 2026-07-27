@@ -211,6 +211,11 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 
 	healthFindings := health.NewRunner(health.DefaultRules()...).Evaluate(snapshot, health.Options{Now: clock})
 	detections := components.NewRunner(components.InitialDetectorCohort()...).Detect(snapshot)
+	overrides, err := loadComponentOverrides(cfg.ComponentOverrides)
+	if err != nil {
+		return report.Document{}, ExecutionError("read component overrides failed: "+err.Error(), err)
+	}
+	detections = applyComponentOverrides(detections, overrides)
 
 	providerEvidence, providerLimit := collectProviderEvidence(context.Background(), cfg, deps.ProviderFactory.NewProvider(snapshot, cfg))
 	targetVersion := cfg.TargetVersion
@@ -240,7 +245,11 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 		rec.Limitations = append(rec.Limitations, providerLimit)
 	}
 
-	return documentFromRecommendation(rec, clock()), nil
+	doc := documentFromRecommendation(rec, clock())
+	if cfg.ComponentOverrides == "" {
+		doc.ComponentVersionOverrides = buildComponentOverrideTemplate(detections, cfg)
+	}
+	return doc, nil
 }
 
 type kubentAnalyzer struct{}

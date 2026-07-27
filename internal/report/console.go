@@ -38,6 +38,16 @@ func RenderConsole(doc Document) ([]byte, error) {
 		fmt.Fprintf(&b, "  %d. %s: %s\n", i+1, l.Code, l.Summary)
 	}
 
+	if doc.ComponentVersionOverrides != nil && len(doc.ComponentVersionOverrides.Components) > 0 {
+		fmt.Fprintln(&b)
+		fmt.Fprintln(&b, "Component version input needed:")
+		fmt.Fprintf(&b, "  Write template to: %s\n", doc.ComponentVersionOverrides.OutputPath)
+		fmt.Fprintf(&b, "  Rerun: %s\n", doc.ComponentVersionOverrides.RerunCommand)
+		for _, component := range doc.ComponentVersionOverrides.Components {
+			fmt.Fprintf(&b, "  - %s (%s): %s\n", component.Name, component.ID, component.Reason)
+		}
+	}
+
 	return []byte(b.String()), nil
 }
 
