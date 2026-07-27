@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -262,10 +263,13 @@ func (processRunner) Run(ctx context.Context, command kubent.Command) (kubent.Re
 	defer cancel()
 
 	cmd := exec.CommandContext(runCtx, command.Path, command.Args...)
-	stdout, err := cmd.Output()
-	result := kubent.Result{Stdout: stdout}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	result := kubent.Result{Stdout: stdout.Bytes(), Stderr: stderr.Bytes()}
 	if exitErr, ok := err.(*exec.ExitError); ok {
-		result.Stderr = exitErr.Stderr
 		result.ExitCode = exitErr.ExitCode()
 		return result, nil
 	}

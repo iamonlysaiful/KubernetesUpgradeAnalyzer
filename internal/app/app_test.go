@@ -218,6 +218,38 @@ func TestRunReportRendersInputDocument(t *testing.T) {
 	}
 }
 
+func TestProcessRunnerCapturesSuccessfulStderr(t *testing.T) {
+	result, err := processRunner{}.Run(context.Background(), kubent.Command{
+		Path:      "sh",
+		Args:      []string{"-c", "printf 'version 0.7.3' >&2"},
+		Timeout:   time.Second,
+		MaxStdout: 1024,
+		MaxStderr: 1024,
+	})
+	if err != nil {
+		t.Fatalf("processRunner.Run returned error: %v", err)
+	}
+	if string(result.Stderr) != "version 0.7.3" {
+		t.Fatalf("stderr = %q, want version text", string(result.Stderr))
+	}
+}
+
+func TestProcessRunnerCapturesFailedStderr(t *testing.T) {
+	result, err := processRunner{}.Run(context.Background(), kubent.Command{
+		Path:      "sh",
+		Args:      []string{"-c", "printf boom >&2; exit 2"},
+		Timeout:   time.Second,
+		MaxStdout: 1024,
+		MaxStderr: 1024,
+	})
+	if err != nil {
+		t.Fatalf("processRunner.Run returned error: %v", err)
+	}
+	if result.ExitCode != 2 || string(result.Stderr) != "boom" {
+		t.Fatalf("result = %#v, want exit 2 and stderr boom", result)
+	}
+}
+
 func TestRunAnalyzeAggregatesAPIFindings(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
