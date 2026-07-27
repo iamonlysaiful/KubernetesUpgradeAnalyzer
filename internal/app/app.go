@@ -117,6 +117,8 @@ func RunWithDependencies(args []string, stdout io.Writer, stderr io.Writer, buil
 		return runAnalyzeSubset(cfg, stdout, stderr, deps, "COMPATIBILITY")
 	case "report":
 		return runReport(cfg, stdout, stderr)
+	case "component-overrides":
+		return runComponentOverrides(cfg, stdout, stderr)
 	case "help", "-h", "--help":
 		printUsage(stdout)
 		return ExitReady

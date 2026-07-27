@@ -1,27 +1,27 @@
 # Phase 9 release candidate record
 
-Status: Prior release candidate superseded; provider validation incomplete
+Status: RC.2 generated locally; superseded by component override helper branch
 Last updated: 2026-07-27
 
 This record tracks MVP release-candidate artifacts and final publication gates.
 
 ## 1. Release candidate metadata
 
-- Candidate version: `0.1.0-rc.1` (superseded by merged Phase 8.5 recovery work)
-- Git commit: `7528a7e2d5d5`
-- Build date/time (UTC): 2026-07-27T03:27:18Z
+- Candidate version: `0.1.0-rc.2` (local artifact only; superseded for publication by unmerged component override helper)
+- Git commit: `492894c`
+- Build date/time (UTC): 2026-07-27 after Phase 8.5 validation merge
 - Operator: local maintainer through Codex-assisted run
 
 ## 2. Artifact set
 
-- Linux amd64 binary: `artifacts/release-candidate/0.1.0-rc.1/bin/kua_0.1.0-rc.1_linux_amd64`
-- Linux arm64 binary: `artifacts/release-candidate/0.1.0-rc.1/bin/kua_0.1.0-rc.1_linux_arm64`
-- macOS amd64 binary: `artifacts/release-candidate/0.1.0-rc.1/bin/kua_0.1.0-rc.1_darwin_amd64`
-- macOS arm64 binary: `artifacts/release-candidate/0.1.0-rc.1/bin/kua_0.1.0-rc.1_darwin_arm64`
-- SHA256SUMS: `artifacts/release-candidate/0.1.0-rc.1/SHA256SUMS`
-- SBOM file: `artifacts/release-candidate/0.1.0-rc.1/SBOM-go-modules.json`
-- Provenance file: `artifacts/release-candidate/0.1.0-rc.1/provenance.json`
-- Release notes file: `artifacts/release-candidate/0.1.0-rc.1/RELEASE_NOTES.md`
+- Linux amd64 binary: `artifacts/release-candidate/0.1.0-rc.2/bin/kua_0.1.0-rc.2_linux_amd64`
+- Linux arm64 binary: `artifacts/release-candidate/0.1.0-rc.2/bin/kua_0.1.0-rc.2_linux_arm64`
+- macOS amd64 binary: `artifacts/release-candidate/0.1.0-rc.2/bin/kua_0.1.0-rc.2_darwin_amd64`
+- macOS arm64 binary: `artifacts/release-candidate/0.1.0-rc.2/bin/kua_0.1.0-rc.2_darwin_arm64`
+- SHA256SUMS: `artifacts/release-candidate/0.1.0-rc.2/SHA256SUMS`
+- SBOM file: `artifacts/release-candidate/0.1.0-rc.2/SBOM-go-modules.json`
+- Provenance file: `artifacts/release-candidate/0.1.0-rc.2/provenance.json`
+- Release notes file: `artifacts/release-candidate/0.1.0-rc.2/RELEASE_NOTES.md`
 
 ## 3. Validation gates
 
@@ -60,14 +60,14 @@ Record results:
 
 ## 5. Notes and limitations
 
-- Known limitations: the recorded candidate was built before merged Phase 8.5
-  recovery work for end-to-end `kua analyze`, expanded live analysis inventory,
-  kubent wiring, AKS advertised-edge handling, and component multi-version
-  verdicts.
-- Deferred work: rerun read-only AKS staging validation with the merged CLI,
-  review redacted output, then generate a fresh release candidate.
-- Follow-up actions: complete the Phase 8.5 validation gate with sanitized
-  evidence policy before requesting explicit publication approval.
+- Known limitations: `0.1.0-rc.2` was generated before the
+  `feature/component-overrides-helper` branch. It is suitable as a local
+  verification artifact but should not be published as the final MVP candidate.
+- Deferred work: merge the helper branch, generate a fresh release candidate
+  (`0.1.0-rc.3` unless the owner chooses another version), rerun release gates,
+  then request explicit publication approval.
+- Follow-up actions: no tag, GitHub release, or artifact publication is approved
+  yet.
 
 ## 6. Publication hold point
 

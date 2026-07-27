@@ -23,6 +23,7 @@ Standard kubeconfig resolution applies: explicit `--kubeconfig`, then normal cli
 - `kua health`: collect health inputs and render findings; kubent is not required.
 - `kua compatibility`: run component and API compatibility; kubent is required in MVP.
 - `kua report --input assessment.json`: render canonical JSON without cluster access.
+- `kua component-overrides --input assessment.json --output component-overrides.json`: generate a local operator-fillable component override file from an assessment's `componentVersionOverrides` helper without cluster or provider access.
 - `kua version`: show build, Go, schema, and embedded catalog versions.
 
 During Phase 8.5, `kua analyze` is the recovery command. It must be usable and
@@ -83,6 +84,12 @@ Overrides may add or confirm component versions for the current assessment. They
 must not suppress explicit incompatibility findings or provider/API/health
 findings. Unknown component-version findings may be downgraded only when the
 file supplies one or more non-placeholder versions for the matching component.
+
+To avoid long manual JSON editing, `kua component-overrides --input
+assessment.json --output component-overrides.json` writes an override file using
+observed versions when present and placeholders only when no version was
+observed. The command must refuse to overwrite an existing file and must not
+contact Kubernetes or Azure.
 
 ## 3. Output discipline
 

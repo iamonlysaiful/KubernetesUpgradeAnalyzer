@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"sort"
 	"strings"
@@ -16,6 +17,77 @@ const componentOverridesSchemaVersion = "kua.component-overrides.v1"
 type componentOverridesFile struct {
 	SchemaVersion string                   `json:"schemaVersion"`
 	Components    []componentOverrideEntry `json:"components"`
+}
+
+func runComponentOverrides(cfg Config, stdout io.Writer, stderr io.Writer) int {
+	if cfg.InputPath == "" {
+		appErr := UsageError("missing --input for component-overrides")
+		fmt.Fprintln(stderr, appErr.Message)
+		return appErr.Code
+	}
+	if cfg.OutputPath == "" {
+		appErr := UsageError("missing --output for component-overrides")
+		fmt.Fprintln(stderr, appErr.Message)
+		return appErr.Code
+	}
+	data, err := os.ReadFile(cfg.InputPath)
+	if err != nil {
+		appErr := ExecutionError("read assessment input failed: "+err.Error(), err)
+		fmt.Fprintln(stderr, appErr.Message)
+		return appErr.Code
+	}
+	var doc report.Document
+	if err := json.Unmarshal(data, &doc); err != nil {
+		appErr := ExecutionError("parse assessment input failed: "+err.Error(), err)
+		fmt.Fprintln(stderr, appErr.Message)
+		return appErr.Code
+	}
+	if doc.ComponentVersionOverrides == nil || len(doc.ComponentVersionOverrides.Components) == 0 {
+		appErr := ExecutionError("assessment does not contain componentVersionOverrides", nil)
+		fmt.Fprintln(stderr, appErr.Message)
+		return appErr.Code
+	}
+	override := componentOverridesFile{
+		SchemaVersion: componentOverridesSchemaVersion,
+	}
+	for _, request := range doc.ComponentVersionOverrides.Components {
+		versions := uniqueSorted(request.ObservedVersions)
+		if len(versions) == 0 {
+			versions = []string{"<fill-version>"}
+		}
+		override.Components = append(override.Components, componentOverrideEntry{
+			ID:       request.ID,
+			Versions: versions,
+			Evidence: "user-confirmed",
+		})
+	}
+	sort.SliceStable(override.Components, func(i, j int) bool {
+		return override.Components[i].ID < override.Components[j].ID
+	})
+	content, err := json.MarshalIndent(override, "", "  ")
+	if err != nil {
+		appErr := ExecutionError("render component overrides failed: "+err.Error(), err)
+		fmt.Fprintln(stderr, appErr.Message)
+		return appErr.Code
+	}
+	content = append(content, '\n')
+	if err := writeNewFile(cfg.OutputPath, content); err != nil {
+		appErr := ExecutionError("write component overrides failed: "+err.Error(), err)
+		fmt.Fprintln(stderr, appErr.Message)
+		return appErr.Code
+	}
+	fmt.Fprintf(stdout, "component overrides written to %s\n", cfg.OutputPath)
+	return ExitReady
+}
+
+func writeNewFile(path string, content []byte) error {
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	_, err = file.Write(content)
+	return err
 }
 
 type componentOverrideEntry struct {
