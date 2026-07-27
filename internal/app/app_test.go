@@ -199,7 +199,7 @@ func TestRunAnalyzeRedactsResourceNames(t *testing.T) {
 func TestRunAnalyzeRedactsPreflightErrorHost(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	privateHost := "private-cluster-dns-1234.hcp.southeastasia.azmk8s.io"
+	privateHost := "private-cluster-dns-1234.hcp.eastus.azmk8s.io"
 
 	code := RunWithDependencies([]string{
 		"--format=json",
@@ -218,7 +218,7 @@ func TestRunAnalyzeRedactsPreflightErrorHost(t *testing.T) {
 	if stdout.Len() != 0 {
 		t.Fatalf("Run(analyze redacted preflight failure) stdout = %q, want empty", stdout.String())
 	}
-	if strings.Contains(stderr.String(), privateHost) || strings.Contains(stderr.String(), "southeastasia.azmk8s.io") {
+	if strings.Contains(stderr.String(), privateHost) || strings.Contains(stderr.String(), "eastus.azmk8s.io") {
 		t.Fatalf("redacted preflight error leaked private host:\n%s", stderr.String())
 	}
 	if !strings.Contains(stderr.String(), "redacted-host") {
@@ -229,7 +229,7 @@ func TestRunAnalyzeRedactsPreflightErrorHost(t *testing.T) {
 func TestRunAnalyzePlainPreflightErrorKeepsHost(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	privateHost := "private-cluster-dns-1234.hcp.southeastasia.azmk8s.io"
+	privateHost := "private-cluster-dns-1234.hcp.eastus.azmk8s.io"
 
 	code := RunWithDependencies([]string{
 		"--format=json",
