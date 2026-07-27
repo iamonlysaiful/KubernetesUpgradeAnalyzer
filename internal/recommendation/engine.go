@@ -107,8 +107,8 @@ func (e *Engine) Generate(input Input, opts RecommendationOptions) (*Recommendat
 		}
 	}
 
-	// Build upgrade path if provider evidence is available
-	if input.ProviderEvidence != nil {
+	// Build upgrade path only when provider evidence includes candidate versions.
+	if input.ProviderEvidence != nil && input.ProviderEvidence.CurrentVersion != "" && len(input.ProviderEvidence.AvailableUpgrades) > 0 {
 		path, pathLimitations, err := e.buildPath(input, opts)
 		if err != nil {
 			rec.Limitations = append(rec.Limitations, Limitation{

@@ -317,16 +317,14 @@ func TestEngine_Generate_NoUpgradesAvailable(t *testing.T) {
 		t.Fatalf("Generate: %v", err)
 	}
 
-	// Should have limitation about no upgrades
-	hasLimitation := false
+	// Empty provider candidates should not produce an internal path-build error.
 	for _, lim := range rec.Limitations {
 		if lim.Code == "PATH_BUILD_FAILED" {
-			hasLimitation = true
-			break
+			t.Fatalf("unexpected PATH_BUILD_FAILED limitation: %#v", rec.Limitations)
 		}
 	}
-	if !hasLimitation {
-		t.Error("expected PATH_BUILD_FAILED limitation")
+	if len(rec.Path) != 0 {
+		t.Fatalf("Path length = %d, want 0", len(rec.Path))
 	}
 }
 
