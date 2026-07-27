@@ -7,10 +7,12 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"os/exec"
 	"runtime"
 	"time"
 
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/components"
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/external/kubent"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/health"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/inventory"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/preflight"
@@ -44,6 +46,7 @@ type Dependencies struct {
 	PreflightRunner    PreflightRunner
 	InventoryCollector InventoryCollector
 	ProviderFactory    ProviderFactory
+	APIAnalyzer        APIAnalyzer
 	Clock              func() time.Time
 }
 
@@ -58,6 +61,10 @@ type InventoryCollector interface {
 
 type ProviderFactory interface {
 	NewProvider(inventory.Snapshot, Config) provider.Provider
+}
+
+type APIAnalyzer interface {
+	Analyze(context.Context, Config, string) ([]kubent.Finding, recommendation.Limitation)
 }
 
 type defaultProviderFactory struct{}
@@ -76,6 +83,7 @@ func Run(args []string, stdout io.Writer, stderr io.Writer, build BuildInfo) int
 		PreflightRunner:    preflight.LiveRunner{},
 		InventoryCollector: inventory.LiveCollector{},
 		ProviderFactory:    defaultProviderFactory{},
+		APIAnalyzer:        kubentAnalyzer{},
 	})
 }
 
@@ -151,6 +159,9 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 	if deps.ProviderFactory == nil {
 		deps.ProviderFactory = defaultProviderFactory{}
 	}
+	if deps.APIAnalyzer == nil {
+		deps.APIAnalyzer = kubentAnalyzer{}
+	}
 	clock := deps.Clock
 	if clock == nil {
 		clock = time.Now
@@ -178,11 +189,17 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 	detections := components.NewRunner(components.InitialDetectorCohort()...).Detect(snapshot)
 
 	providerEvidence, providerLimit := collectProviderEvidence(context.Background(), cfg, deps.ProviderFactory.NewProvider(snapshot, cfg))
+	targetVersion := cfg.TargetVersion
+	if targetVersion == "" && providerEvidence != nil && len(providerEvidence.AvailableUpgrades) > 0 {
+		targetVersion = highestProviderVersion(providerEvidence.AvailableUpgrades)
+	}
+	apiFindings, apiLimit := deps.APIAnalyzer.Analyze(context.Background(), cfg, targetVersion)
 
 	engine := recommendation.NewEngine().WithClock(clock)
 	rec, err := engine.Generate(recommendation.Input{
 		CurrentVersion:      trimVersionPrefix(snapshot.Kubernetes.ServerVersion),
 		HealthFindings:      healthFindings,
+		APIFindings:         apiFindings,
 		ComponentDetections: detections,
 		ProviderEvidence:    providerEvidence,
 	}, recommendation.RecommendationOptions{
@@ -192,11 +209,9 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 	if err != nil {
 		return report.Document{}, ExecutionError("generate recommendation failed: "+err.Error(), err)
 	}
-	rec.Limitations = append(rec.Limitations, recommendation.Limitation{
-		Code:    "API_COMPATIBILITY_NOT_COLLECTED",
-		Summary: "kubent API compatibility is not yet wired into the end-to-end CLI pipeline",
-		Impact:  "API compatibility remains inconclusive",
-	})
+	if apiLimit.Code != "" {
+		rec.Limitations = append(rec.Limitations, apiLimit)
+	}
 	if providerLimit.Code != "" {
 		rec.Limitations = append(rec.Limitations, providerLimit)
 	}
@@ -204,6 +219,62 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 	rec.Risk = recommendation.RiskUnknown
 
 	return documentFromRecommendation(rec, clock()), nil
+}
+
+type kubentAnalyzer struct{}
+
+func (kubentAnalyzer) Analyze(ctx context.Context, cfg Config, targetVersion string) ([]kubent.Finding, recommendation.Limitation) {
+	if targetVersion == "" {
+		return nil, recommendation.Limitation{
+			Code:    "API_TARGET_UNAVAILABLE",
+			Summary: "API compatibility target version is unavailable",
+			Impact:  "API compatibility remains inconclusive",
+		}
+	}
+	adapter := kubent.Adapter{Runner: processRunner{}}
+	version, err := adapter.ValidateVersion(ctx)
+	if err != nil {
+		return nil, recommendation.Limitation{
+			Code:    "KUBENT_UNAVAILABLE",
+			Summary: "kubent API compatibility evidence is unavailable",
+			Impact:  "API compatibility remains inconclusive",
+		}
+	}
+	report, err := adapter.RunJSON(ctx, targetVersion, cfg.Kubeconfig, cfg.Context)
+	if err != nil {
+		return nil, recommendation.Limitation{
+			Code:    "KUBENT_EXECUTION_FAILED",
+			Summary: "kubent API compatibility execution failed",
+			Impact:  "API compatibility remains inconclusive",
+		}
+	}
+	coverage := kubent.VerifyCoverage(targetVersion, kubent.DefaultCoveragePolicy())
+	findings := kubent.NormalizeFindings(report, version, targetVersion, coverage)
+	return findings, recommendation.Limitation{}
+}
+
+type processRunner struct{}
+
+func (processRunner) Run(ctx context.Context, command kubent.Command) (kubent.Result, error) {
+	timeout := command.Timeout
+	if timeout == 0 {
+		timeout = 30 * time.Second
+	}
+	runCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(runCtx, command.Path, command.Args...)
+	stdout, err := cmd.Output()
+	result := kubent.Result{Stdout: stdout}
+	if exitErr, ok := err.(*exec.ExitError); ok {
+		result.Stderr = exitErr.Stderr
+		result.ExitCode = exitErr.ExitCode()
+		return result, nil
+	}
+	if err != nil {
+		return result, err
+	}
+	return result, nil
 }
 
 func collectProviderEvidence(ctx context.Context, cfg Config, p provider.Provider) (*provider.ProviderEvidence, recommendation.Limitation) {
@@ -229,6 +300,20 @@ func sanitizeProviderError(message string) string {
 		return "provider evidence unavailable"
 	}
 	return "provider evidence unavailable; verify Azure CLI authentication or provide --provider-evidence"
+}
+
+func highestProviderVersion(upgrades []provider.UpgradeOption) string {
+	var highest provider.SemanticVersion
+	for _, upgrade := range upgrades {
+		version, err := provider.ParseVersion(upgrade.Version)
+		if err != nil {
+			continue
+		}
+		if highest.Raw == "" || version.Compare(highest) > 0 {
+			highest = version
+		}
+	}
+	return highest.String()
 }
 
 func inconclusiveRecommendation(current string, now time.Time, code string, summary string) *recommendation.Recommendation {

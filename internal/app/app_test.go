@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/external/kubent"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/inventory"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/preflight"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/provider"
@@ -132,6 +133,7 @@ func TestRunAnalyzeJSONProducesInconclusiveAssessment(t *testing.T) {
 		}},
 		InventoryCollector: fakeInventoryCollector{snapshot: validCoreSnapshot("ctx-analyze", "1.30.0")},
 		ProviderFactory:    fakeProviderFactory{provider: fakeProvider{}},
+		APIAnalyzer:        fakeAPIAnalyzer{limitation: recommendation.Limitation{Code: "API_TARGET_UNAVAILABLE", Summary: "target missing"}},
 		Clock:              func() time.Time { return now },
 	})
 
@@ -155,8 +157,8 @@ func TestRunAnalyzeJSONProducesInconclusiveAssessment(t *testing.T) {
 	if got.Readiness != "INCONCLUSIVE" || got.Risk != "UNKNOWN" {
 		t.Fatalf("readiness/risk = %s/%s, want INCONCLUSIVE/UNKNOWN", got.Readiness, got.Risk)
 	}
-	if !hasLimitation(got.Limitations, "API_COMPATIBILITY_NOT_COLLECTED") {
-		t.Fatalf("limitations = %#v, want API_COMPATIBILITY_NOT_COLLECTED", got.Limitations)
+	if !hasLimitation(got.Limitations, "API_TARGET_UNAVAILABLE") {
+		t.Fatalf("limitations = %#v, want API_TARGET_UNAVAILABLE", got.Limitations)
 	}
 	if strings.Contains(stdout.String(), "ctx-analyze") {
 		t.Fatalf("analyze JSON leaked context name:\n%s", stdout.String())
@@ -179,6 +181,7 @@ func TestRunAnalyzeRedactsResourceNames(t *testing.T) {
 		PreflightRunner:    fakePreflightRunner{result: validPreflight("ctx-redact", "v1.30.0")},
 		InventoryCollector: fakeInventoryCollector{snapshot: snapshot},
 		ProviderFactory:    fakeProviderFactory{provider: fakeProvider{}},
+		APIAnalyzer:        fakeAPIAnalyzer{limitation: recommendation.Limitation{Code: "API_TARGET_UNAVAILABLE", Summary: "target missing"}},
 		Clock:              func() time.Time { return time.Date(2026, 7, 27, 4, 1, 0, 0, time.UTC) },
 	})
 
@@ -212,6 +215,44 @@ func TestRunReportRendersInputDocument(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "Assessment: assessment-test") {
 		t.Fatalf("Run(report) output = %q, want rendered assessment", stdout.String())
+	}
+}
+
+func TestRunAnalyzeAggregatesAPIFindings(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := RunWithDependencies([]string{
+		"--format=json",
+		"--provider-source=none",
+		"--target-version", "1.33.0",
+		"analyze",
+	}, &stdout, &stderr, BuildInfo{}, Dependencies{
+		PreflightRunner:    fakePreflightRunner{result: validPreflight("ctx-api", "v1.30.0")},
+		InventoryCollector: fakeInventoryCollector{snapshot: validCoreSnapshot("ctx-api", "1.30.0")},
+		ProviderFactory:    fakeProviderFactory{provider: fakeProvider{}},
+		APIAnalyzer: fakeAPIAnalyzer{findings: []kubent.Finding{{
+			AnalyzerVersion: "0.7.3",
+			TargetVersion:   "1.33.0",
+			Status:          kubent.FindingFail,
+			Resource:        kubent.ResourceRef{Kind: "Ingress", Namespace: "default", Name: "legacy"},
+			APIVersion:      "extensions/v1beta1",
+			Kind:            "Ingress",
+			RemovedIn:       "1.22",
+			Replacement:     "networking.k8s.io/v1",
+		}}},
+		Clock: func() time.Time { return time.Date(2026, 7, 27, 4, 3, 0, 0, time.UTC) },
+	})
+
+	if code != ExitInconclusive {
+		t.Fatalf("Run(analyze API) exit code = %d, want %d", code, ExitInconclusive)
+	}
+	var got report.Document
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("Run(analyze API) output is not JSON: %v\n%s", err, stdout.String())
+	}
+	if len(got.Findings) == 0 || got.Findings[0].Category != recommendation.CategoryAPI {
+		t.Fatalf("findings = %#v, want API finding", got.Findings)
 	}
 }
 
@@ -497,6 +538,15 @@ func (f fakeProviderFactory) NewProvider(inventory.Snapshot, Config) provider.Pr
 type fakeProvider struct {
 	evidence *provider.ProviderEvidence
 	err      error
+}
+
+type fakeAPIAnalyzer struct {
+	findings   []kubent.Finding
+	limitation recommendation.Limitation
+}
+
+func (f fakeAPIAnalyzer) Analyze(context.Context, Config, string) ([]kubent.Finding, recommendation.Limitation) {
+	return f.findings, f.limitation
 }
 
 func (f fakeProvider) Identity() (provider.ProviderType, provider.Confidence) {
