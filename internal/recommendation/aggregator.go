@@ -163,6 +163,7 @@ func (a *Aggregator) apiRemediation(af kubent.Finding) string {
 func (a *Aggregator) AggregateComponents(detections []components.Detection, targetMinor int) []Finding {
 	findings := make([]Finding, 0)
 	seenUnknown := map[string]bool{}
+	seenKnown := map[string]bool{}
 
 	for _, d := range detections {
 		// Skip not found components
@@ -185,6 +186,18 @@ func (a *Aggregator) AggregateComponents(detections []components.Detection, targ
 				Remediation: fmt.Sprintf("Verify %s version and compatibility", d.Name),
 			})
 			continue
+		}
+
+		key := d.ComponentID + "|" + d.Version
+		if !seenKnown[key] {
+			seenKnown[key] = true
+			findings = append(findings, Finding{
+				ID:          fmt.Sprintf("COMPONENT_%s_%s_OBSERVED", d.ComponentID, d.Version),
+				Category:    CategoryComponent,
+				Severity:    SeverityInfo,
+				Summary:     fmt.Sprintf("Component %s version %s observed", d.Name, d.Version),
+				Remediation: fmt.Sprintf("Verify %s %s compatibility with Kubernetes 1.%d", d.Name, d.Version, targetMinor),
+			})
 		}
 
 		// Handle detection limitations

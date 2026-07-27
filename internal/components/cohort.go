@@ -35,22 +35,39 @@ func (detector WorkloadDetector) Detect(snapshot inventory.Snapshot) []Detection
 		if !detector.matchesWorkload(workload) {
 			continue
 		}
-		version, confidence, status := detector.version(workload)
-		detection := Detection{
-			ComponentID: detector.componentID,
-			Name:        detector.name,
-			Version:     version,
-			Confidence:  confidence,
-			Status:      status,
-			Evidence:    []ResourceRef{ResourceFromInventory(workload.Ref)},
-		}
-		if status == StatusUnknown {
-			detection.Limitations = append(detection.Limitations, Limitation{
-				Code:    "VERSION_UNKNOWN",
-				Summary: "component version evidence is missing or ambiguous",
+		detectedVersions, hasAmbiguousEvidence := detector.versions(workload)
+		if len(detectedVersions) == 0 {
+			detections = append(detections, Detection{
+				ComponentID: detector.componentID,
+				Name:        detector.name,
+				Version:     UnknownVersion,
+				Confidence:  ConfidenceUnknown,
+				Status:      StatusUnknown,
+				Evidence:    []ResourceRef{ResourceFromInventory(workload.Ref)},
+				Limitations: []Limitation{{
+					Code:    "VERSION_UNKNOWN",
+					Summary: "component version evidence is missing or ambiguous",
+				}},
 			})
+			continue
 		}
-		detections = append(detections, detection)
+		for _, version := range detectedVersions {
+			detection := Detection{
+				ComponentID: detector.componentID,
+				Name:        detector.name,
+				Version:     version,
+				Confidence:  ConfidenceHigh,
+				Status:      StatusFound,
+				Evidence:    []ResourceRef{ResourceFromInventory(workload.Ref)},
+			}
+			if hasAmbiguousEvidence {
+				detection.Limitations = append(detection.Limitations, Limitation{
+					Code:    "VERSION_PARTIAL",
+					Summary: "component has known version evidence plus ambiguous matching evidence",
+				})
+			}
+			detections = append(detections, detection)
+		}
 	}
 	return detections
 }
@@ -73,28 +90,25 @@ func (detector WorkloadDetector) matchesWorkload(workload inventory.Workload) bo
 	return false
 }
 
-func (detector WorkloadDetector) version(workload inventory.Workload) (string, Confidence, Status) {
-	var foundVersion string
+func (detector WorkloadDetector) versions(workload inventory.Workload) ([]string, bool) {
+	seen := map[string]bool{}
+	var versions []string
+	hasAmbiguousEvidence := false
 	for _, container := range workload.Containers {
 		if !detector.matchesImage(container.Image) {
 			continue
 		}
 		version, confidence, status := NormalizeVersion(container.Image)
-		if status == StatusUnknown {
-			return UnknownVersion, ConfidenceUnknown, StatusUnknown
+		if status == StatusUnknown || confidence != ConfidenceHigh {
+			hasAmbiguousEvidence = true
+			continue
 		}
-		if foundVersion != "" && foundVersion != version {
-			return UnknownVersion, ConfidenceUnknown, StatusUnknown
-		}
-		foundVersion = version
-		if confidence != ConfidenceHigh {
-			return UnknownVersion, ConfidenceUnknown, StatusUnknown
+		if !seen[version] {
+			seen[version] = true
+			versions = append(versions, version)
 		}
 	}
-	if foundVersion == "" {
-		return UnknownVersion, ConfidenceUnknown, StatusUnknown
-	}
-	return foundVersion, ConfidenceHigh, StatusFound
+	return versions, hasAmbiguousEvidence
 }
 
 func (detector WorkloadDetector) matchesImage(image string) bool {
