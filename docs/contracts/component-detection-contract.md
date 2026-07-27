@@ -69,6 +69,19 @@ supported result. Conflicting known versions across containers, replicas, or
 workloads must produce deterministic per-version detections and verdicts for
 each observed version.
 
+## 4.1 Operator-provided version overrides
+
+When the detector cannot determine a clean version for all matching evidence,
+the assessment report may ask the operator for a local override file. The
+template must preserve observed versions and use placeholders for unknown
+versions. Filled overrides are explicit operator evidence and must be recorded
+as `FOUND` detections with `MEDIUM` confidence unless future source-specific
+rules justify higher confidence.
+
+Overrides are local input. KUA must not create them from internet lookups, must
+not mutate cluster resources, and must not commit filled override files or raw
+cluster identifiers.
+
 ## 5. Determinism
 
 Detection results must be sorted deterministically by component ID, namespace,
