@@ -196,6 +196,59 @@ func TestRunAnalyzeRedactsResourceNames(t *testing.T) {
 	}
 }
 
+func TestRunAnalyzeRedactsPreflightErrorHost(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	privateHost := "private-cluster-dns-1234.hcp.southeastasia.azmk8s.io"
+
+	code := RunWithDependencies([]string{
+		"--format=json",
+		"--redacted",
+		"analyze",
+	}, &stdout, &stderr, BuildInfo{}, Dependencies{
+		PreflightRunner: fakePreflightRunner{
+			err: errors.New(`read server version: Get "https://` + privateHost + `:443/version": dial tcp: lookup ` + privateHost + `: no such host`),
+		},
+		InventoryCollector: fakeInventoryCollector{},
+	})
+
+	if code != ExitExecution {
+		t.Fatalf("Run(analyze redacted preflight failure) exit code = %d, want %d", code, ExitExecution)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("Run(analyze redacted preflight failure) stdout = %q, want empty", stdout.String())
+	}
+	if strings.Contains(stderr.String(), privateHost) || strings.Contains(stderr.String(), "southeastasia.azmk8s.io") {
+		t.Fatalf("redacted preflight error leaked private host:\n%s", stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "redacted-host") {
+		t.Fatalf("redacted preflight error missing host alias:\n%s", stderr.String())
+	}
+}
+
+func TestRunAnalyzePlainPreflightErrorKeepsHost(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	privateHost := "private-cluster-dns-1234.hcp.southeastasia.azmk8s.io"
+
+	code := RunWithDependencies([]string{
+		"--format=json",
+		"analyze",
+	}, &stdout, &stderr, BuildInfo{}, Dependencies{
+		PreflightRunner: fakePreflightRunner{
+			err: errors.New(`read server version: Get "https://` + privateHost + `:443/version": dial tcp: lookup ` + privateHost + `: no such host`),
+		},
+		InventoryCollector: fakeInventoryCollector{},
+	})
+
+	if code != ExitExecution {
+		t.Fatalf("Run(analyze plain preflight failure) exit code = %d, want %d", code, ExitExecution)
+	}
+	if !strings.Contains(stderr.String(), privateHost) {
+		t.Fatalf("plain preflight error should preserve host for local troubleshooting:\n%s", stderr.String())
+	}
+}
+
 func TestRunReportRendersInputDocument(t *testing.T) {
 	tmp := t.TempDir() + "/assessment.json"
 	input := `{"schemaVersion":"kua.assessment.v1","assessmentId":"assessment-test","generatedAt":"2026-07-27T04:02:00Z","redacted":false,"currentVersion":"1.30.0","readiness":"INCONCLUSIVE","risk":"UNKNOWN","findings":[],"limitations":[]}`
