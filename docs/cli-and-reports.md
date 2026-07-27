@@ -8,8 +8,9 @@ Last updated: 2026-07-27
 Common flags include `--context`, `--kubeconfig`, `--config`, `--input`,
 `--output`, `--format`, `--provider-source=auto`, `--provider-evidence`,
 `--subscription`, `--resource-group`, `--cluster-name`, `--target-version`,
-`--redacted`, and `--log-level`. `--namespace`, `--timeout`, and `--catalog`
-remain planned flags and must not be documented as complete until wired.
+`--component-overrides`, `--redacted`, and `--log-level`. `--namespace`,
+`--timeout`, and `--catalog` remain planned flags and must not be documented as
+complete until wired.
 
 Provider source values are `auto`, `azure`, `file`, `offline`, and `none`. No command mutates the cluster or Azure resources.
 
@@ -56,6 +57,33 @@ document without Kubernetes or provider access.
 
 KUA never starts `az login`; it reports the corrective command when authentication is missing or expired.
 
+When component evidence is missing, ambiguous, or confusing, JSON assessment
+output must include a `componentVersionOverrides` helper object. The helper must
+list each affected component, observed versions when available, placeholder
+versions to fill when no confident version exists, and a rerun command using
+`--component-overrides <file>`. The placeholder is operator input only; KUA must
+not infer support from it until the user supplies a filled overrides file.
+
+`--component-overrides <file>` consumes a local JSON file with this shape:
+
+```json
+{
+  "schemaVersion": "kua.component-overrides.v1",
+  "components": [
+    {
+      "id": "coredns",
+      "versions": ["1.9.4-13"],
+      "evidence": "user-confirmed"
+    }
+  ]
+}
+```
+
+Overrides may add or confirm component versions for the current assessment. They
+must not suppress explicit incompatibility findings or provider/API/health
+findings. Unknown component-version findings may be downgraded only when the
+file supplies one or more non-placeholder versions for the matching component.
+
 ## 3. Output discipline
 
 Human output goes to stdout. Logs and diagnostics go to stderr. JSON mode emits only JSON on stdout. File writes should be atomic and must not overwrite an existing file unless an approved `--force` contract is added.
@@ -73,6 +101,7 @@ Top-level fields include:
 - sanitized cluster and provider metadata;
 - collection scope and limitations;
 - inventory and component detections;
+- component version override template when operator input is needed;
 - findings;
 - current version, candidates, destination, and staged path;
 - readiness, risk, decision trace, and recommended actions.

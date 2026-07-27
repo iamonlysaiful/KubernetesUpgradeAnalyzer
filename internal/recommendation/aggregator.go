@@ -164,6 +164,8 @@ func (a *Aggregator) AggregateComponents(detections []components.Detection, targ
 	findings := make([]Finding, 0)
 	seenUnknown := map[string]bool{}
 	seenKnown := map[string]bool{}
+	seenPartial := map[string]bool{}
+	hasKnownVersion := knownComponentVersions(detections)
 
 	for _, d := range detections {
 		// Skip not found components
@@ -173,6 +175,20 @@ func (a *Aggregator) AggregateComponents(detections []components.Detection, targ
 
 		// Handle unknown version or status
 		if d.Status == components.StatusUnknown || d.Version == "UNKNOWN" {
+			if hasKnownVersion[d.ComponentID] {
+				if seenPartial[d.ComponentID] {
+					continue
+				}
+				seenPartial[d.ComponentID] = true
+				findings = append(findings, Finding{
+					ID:          fmt.Sprintf("COMPONENT_%s_VERSION_PARTIAL", d.ComponentID),
+					Category:    CategoryComponent,
+					Severity:    SeverityWarning,
+					Summary:     fmt.Sprintf("Component %s has known versions plus ambiguous version evidence", d.Name),
+					Remediation: fmt.Sprintf("Review %s workloads with ambiguous image tags", d.Name),
+				})
+				continue
+			}
 			key := d.ComponentID + "|UNKNOWN"
 			if seenUnknown[key] {
 				continue
@@ -215,6 +231,16 @@ func (a *Aggregator) AggregateComponents(detections []components.Detection, targ
 	return findings
 }
 
+func knownComponentVersions(detections []components.Detection) map[string]bool {
+	known := map[string]bool{}
+	for _, d := range detections {
+		if d.Status == components.StatusFound && d.Version != "" && d.Version != "UNKNOWN" {
+			known[d.ComponentID] = true
+		}
+	}
+	return known
+}
+
 // AggregateLimitations extracts limitations from various sources.
 func (a *Aggregator) AggregateLimitations(
 	apiFindings []kubent.Finding,
@@ -234,11 +260,27 @@ func (a *Aggregator) AggregateLimitations(
 	}
 
 	// Component limitations
+	seenComponentLimitations := map[string]bool{}
+	knownVersions := knownComponentVersions(detections)
 	for _, d := range detections {
 		for _, lim := range d.Limitations {
+			key := d.ComponentID + "|" + lim.Code
+			if knownVersions[d.ComponentID] && lim.Code == "VERSION_UNKNOWN" {
+				key = d.ComponentID + "|VERSION_PARTIAL"
+			}
+			if seenComponentLimitations[key] {
+				continue
+			}
+			seenComponentLimitations[key] = true
+			code := lim.Code
+			summary := lim.Summary
+			if knownVersions[d.ComponentID] && lim.Code == "VERSION_UNKNOWN" {
+				code = "VERSION_PARTIAL"
+				summary = "component has known versions plus ambiguous version evidence"
+			}
 			limitations = append(limitations, Limitation{
-				Code:    lim.Code,
-				Summary: fmt.Sprintf("%s: %s", d.Name, lim.Summary),
+				Code:    code,
+				Summary: fmt.Sprintf("%s: %s", d.Name, summary),
 				Impact:  "Component compatibility analysis may be incomplete",
 			})
 		}

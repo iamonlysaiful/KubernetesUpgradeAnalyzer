@@ -3,20 +3,21 @@ package app
 import "fmt"
 
 type Config struct {
-	LogLevel         string
-	Format           string
-	ProviderSource   string
-	Context          string
-	Kubeconfig       string
-	ConfigPath       string
-	OutputPath       string
-	InputPath        string
-	ProviderEvidence string
-	Subscription     string
-	ResourceGroup    string
-	ClusterName      string
-	TargetVersion    string
-	Redacted         bool
+	LogLevel           string
+	Format             string
+	ProviderSource     string
+	Context            string
+	Kubeconfig         string
+	ConfigPath         string
+	OutputPath         string
+	InputPath          string
+	ProviderEvidence   string
+	Subscription       string
+	ResourceGroup      string
+	ClusterName        string
+	TargetVersion      string
+	ComponentOverrides string
+	Redacted           bool
 }
 
 func DefaultConfig() Config {
@@ -81,7 +82,7 @@ func isFlag(value string) bool {
 
 func isKnownFlag(name string) bool {
 	switch name {
-	case "--log-level", "--format", "--provider-source", "--context", "--kubeconfig", "--config", "--output", "--input", "--provider-evidence", "--subscription", "--resource-group", "--cluster-name", "--target-version", "--redacted":
+	case "--log-level", "--format", "--provider-source", "--context", "--kubeconfig", "--config", "--output", "--input", "--provider-evidence", "--subscription", "--resource-group", "--cluster-name", "--target-version", "--component-overrides", "--redacted":
 		return true
 	default:
 		return false
@@ -133,6 +134,8 @@ func applyFlag(cfg *Config, name string, value string) *AppError {
 		cfg.ClusterName = value
 	case "--target-version":
 		cfg.TargetVersion = value
+	case "--component-overrides":
+		cfg.ComponentOverrides = value
 	case "--redacted":
 		if !oneOf(value, "true", "false") {
 			return UsageError("invalid --redacted; expected true or false")

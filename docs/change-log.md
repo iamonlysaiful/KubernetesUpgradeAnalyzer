@@ -2,6 +2,16 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-27 — Phase 8.5 component override workflow
+
+- Required JSON assessments with missing or confusing component versions to emit
+  a component-version override template and rerun command.
+- Added `--component-overrides <file>` as the local operator-confirmed evidence
+  input for rerunning analysis with filled component versions.
+- Kept overrides conservative: they may resolve missing component-version
+  evidence but cannot suppress API, provider, health, or explicit
+  incompatibility findings.
+
 ## 2026-07-27 — Phase 8.5 component multi-version verdicts
 
 - Required component detection to preserve each confidently extracted observed

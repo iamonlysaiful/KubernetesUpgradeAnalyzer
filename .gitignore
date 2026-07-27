@@ -34,6 +34,7 @@ kubeconfig.*
 
 # Local provider evidence and unsanitized assessment artifacts
 /local/
+/local-output/
 /artifacts/
 /reports/
 /kua-report.*

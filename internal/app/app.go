@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"time"
 
@@ -129,7 +130,7 @@ func RunWithDependencies(args []string, stdout io.Writer, stderr io.Writer, buil
 func runAnalyze(cfg Config, stdout io.Writer, stderr io.Writer, deps Dependencies) int {
 	doc, appErr := buildAssessmentDocument(cfg, deps)
 	if appErr != nil {
-		fmt.Fprintln(stderr, appErr.Message)
+		fmt.Fprintln(stderr, errorMessageForOutput(appErr.Message, cfg.Redacted))
 		return appErr.Code
 	}
 	return renderAssessment(cfg, doc, stdout, stderr)
@@ -138,7 +139,7 @@ func runAnalyze(cfg Config, stdout io.Writer, stderr io.Writer, deps Dependencie
 func runAnalyzeSubset(cfg Config, stdout io.Writer, stderr io.Writer, deps Dependencies, subset string) int {
 	doc, appErr := buildAssessmentDocument(cfg, deps)
 	if appErr != nil {
-		fmt.Fprintln(stderr, appErr.Message)
+		fmt.Fprintln(stderr, errorMessageForOutput(appErr.Message, cfg.Redacted))
 		return appErr.Code
 	}
 	switch subset {
@@ -148,6 +149,28 @@ func runAnalyzeSubset(cfg Config, stdout io.Writer, stderr io.Writer, deps Depen
 		doc.Findings = filterFindings(doc.Findings, recommendation.CategoryAPI, recommendation.CategoryComponent)
 	}
 	return renderAssessment(cfg, doc, stdout, stderr)
+}
+
+func errorMessageForOutput(message string, redacted bool) string {
+	if !redacted {
+		return message
+	}
+	return redactCLIError(message)
+}
+
+var (
+	urlHostPattern     = regexp.MustCompile(`https?://[^/\s:]+(?::[0-9]+)?`)
+	aksHostPattern     = regexp.MustCompile(`[A-Za-z0-9.-]+\.azmk8s\.io(?::[0-9]+)?`)
+	dnsLookupPattern   = regexp.MustCompile(`lookup [^:\s]+`)
+	hostBracketPattern = regexp.MustCompile(`Host: "[^"]+"`)
+)
+
+func redactCLIError(message string) string {
+	redacted := urlHostPattern.ReplaceAllString(message, "https://redacted-host")
+	redacted = aksHostPattern.ReplaceAllString(redacted, "redacted-host")
+	redacted = dnsLookupPattern.ReplaceAllString(redacted, "lookup redacted-host")
+	redacted = hostBracketPattern.ReplaceAllString(redacted, `Host: "redacted-host"`)
+	return redacted
 }
 
 func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *AppError) {
@@ -188,6 +211,11 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 
 	healthFindings := health.NewRunner(health.DefaultRules()...).Evaluate(snapshot, health.Options{Now: clock})
 	detections := components.NewRunner(components.InitialDetectorCohort()...).Detect(snapshot)
+	overrides, err := loadComponentOverrides(cfg.ComponentOverrides)
+	if err != nil {
+		return report.Document{}, ExecutionError("read component overrides failed: "+err.Error(), err)
+	}
+	detections = applyComponentOverrides(detections, overrides)
 
 	providerEvidence, providerLimit := collectProviderEvidence(context.Background(), cfg, deps.ProviderFactory.NewProvider(snapshot, cfg))
 	targetVersion := cfg.TargetVersion
@@ -217,7 +245,11 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 		rec.Limitations = append(rec.Limitations, providerLimit)
 	}
 
-	return documentFromRecommendation(rec, clock()), nil
+	doc := documentFromRecommendation(rec, clock())
+	if cfg.ComponentOverrides == "" {
+		doc.ComponentVersionOverrides = buildComponentOverrideTemplate(detections, cfg)
+	}
+	return doc, nil
 }
 
 type kubentAnalyzer struct{}
