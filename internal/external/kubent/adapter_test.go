@@ -75,6 +75,19 @@ func TestRunJSONParsesDeprecatedAPIs(t *testing.T) {
 	}
 }
 
+func TestRunJSONParsesArrayReport(t *testing.T) {
+	runner := &fakeRunner{result: Result{Stdout: []byte(`[]`)}}
+	adapter := Adapter{Runner: runner}
+
+	report, err := adapter.RunJSON(context.Background(), "1.34.9", "", "")
+	if err != nil {
+		t.Fatalf("RunJSON returned error: %v", err)
+	}
+	if len(report.DeprecatedAPIs) != 0 {
+		t.Fatalf("DeprecatedAPIs = %#v, want empty", report.DeprecatedAPIs)
+	}
+}
+
 func TestRunJSONRejectsMalformedOutput(t *testing.T) {
 	adapter := Adapter{Runner: &fakeRunner{result: Result{Stdout: []byte(`not json`)}}}
 
