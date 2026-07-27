@@ -244,8 +244,8 @@ func TestRunAnalyzeAggregatesAPIFindings(t *testing.T) {
 		Clock: func() time.Time { return time.Date(2026, 7, 27, 4, 3, 0, 0, time.UTC) },
 	})
 
-	if code != ExitInconclusive {
-		t.Fatalf("Run(analyze API) exit code = %d, want %d", code, ExitInconclusive)
+	if code != ExitNotReady {
+		t.Fatalf("Run(analyze API) exit code = %d, want %d", code, ExitNotReady)
 	}
 	var got report.Document
 	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
@@ -253,6 +253,56 @@ func TestRunAnalyzeAggregatesAPIFindings(t *testing.T) {
 	}
 	if len(got.Findings) == 0 || got.Findings[0].Category != recommendation.CategoryAPI {
 		t.Fatalf("findings = %#v, want API finding", got.Findings)
+	}
+}
+
+func TestRunAnalyzeCanReturnReadyWhenEvidencePasses(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := RunWithDependencies([]string{
+		"--format=json",
+		"--provider-source=file",
+		"--target-version", "1.33.12",
+		"analyze",
+	}, &stdout, &stderr, BuildInfo{}, Dependencies{
+		PreflightRunner:    fakePreflightRunner{result: validPreflight("ctx-ready", "v1.30.0")},
+		InventoryCollector: fakeInventoryCollector{snapshot: validCoreSnapshot("ctx-ready", "1.30.0")},
+		ProviderFactory: fakeProviderFactory{provider: fakeProvider{evidence: &provider.ProviderEvidence{
+			SchemaVersion:  "kua.provider-evidence.aks.v1",
+			EvidenceID:     "synthetic",
+			CurrentVersion: "1.30.0",
+			Cluster: provider.ClusterIdentity{
+				Provider:           provider.ProviderAKS,
+				IdentityConfidence: provider.ConfidenceHigh,
+			},
+			AvailableUpgrades: []provider.UpgradeOption{
+				{Version: "1.31.9"},
+				{Version: "1.32.7"},
+				{Version: "1.33.12"},
+			},
+			Limitations: []provider.Limitation{},
+		}}},
+		APIAnalyzer: fakeAPIAnalyzer{findings: []kubent.Finding{{
+			AnalyzerVersion: "0.7.3",
+			TargetVersion:   "1.33.12",
+			Status:          kubent.FindingPass,
+		}}},
+		Clock: func() time.Time { return time.Date(2026, 7, 27, 4, 4, 0, 0, time.UTC) },
+	})
+
+	if code != ExitReady {
+		t.Fatalf("Run(analyze ready) exit code = %d, want %d; stderr=%q stdout=%s", code, ExitReady, stderr.String(), stdout.String())
+	}
+	var got report.Document
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("Run(analyze ready) output is not JSON: %v\n%s", err, stdout.String())
+	}
+	if got.Readiness != recommendation.ReadinessReady || got.Risk != recommendation.RiskLow {
+		t.Fatalf("readiness/risk = %s/%s, want READY/LOW", got.Readiness, got.Risk)
+	}
+	if got.Destination != "1.33.12" || len(got.Path) != 3 {
+		t.Fatalf("destination/path = %q/%#v, want 1.33.12 with 3 stages", got.Destination, got.Path)
 	}
 }
 

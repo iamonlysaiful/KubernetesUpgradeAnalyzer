@@ -215,8 +215,6 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 	if providerLimit.Code != "" {
 		rec.Limitations = append(rec.Limitations, providerLimit)
 	}
-	rec.Readiness = recommendation.ReadinessInconclusive
-	rec.Risk = recommendation.RiskUnknown
 
 	return documentFromRecommendation(rec, clock()), nil
 }
