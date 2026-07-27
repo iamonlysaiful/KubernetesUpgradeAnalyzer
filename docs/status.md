@@ -13,7 +13,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Gate B - collection safety | Passed for P2-02 | P2-02 core inventory has fake-client/golden coverage and a locally approved live smoke-test record. Expanded live inventory is deferred and still requires separate Gate B expansion approval. |
 | Gate C - compatibility validity | Complete for Phase 5 | Catalog foundation is merged; kubent target-rule coverage validated for 1.30-1.33; go/no-go decision is GO for MVP. |
 | Gate D - recommendation calibration | Complete for Phase 8 | Recommendation matrix outputs, deterministic path evaluation, and report rendering/redaction foundation are merged. |
-| Gate E - release | Blocked pending Phase 8.5 | Release-candidate tooling exists, but publication is blocked until end-to-end `kua analyze` wiring and sanitized AKS validation pass. |
+| Gate E - release | Blocked pending publication approval | End-to-end `kua analyze` wiring and sanitized AKS staging validation have passed locally. Publication still requires a fresh post-helper release candidate and explicit owner approval. |
 
 ## Phase status
 
@@ -28,8 +28,8 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Phase 6 - AKS provider evidence | Complete | Provider interface, AKS identity/CLI/file adapters, candidate/path construction, and closeout are merged; no live CLI execution. |
 | Phase 7 - Recommendation engine | Complete | Recommendation engine, finding aggregation, policy evaluation, AKS 1.30 validation case, and closeout are merged. |
 | Phase 8 - Reports and hardening | Complete | Multi-format report rendering, redaction mode, hardening checks, and closeout are merged. |
-| Phase 8.5 - End-to-end CLI recovery | Validation in progress | `kua analyze`, `health`, `compatibility`, and `report` are wired through the assessment/report pipeline; live analysis inventory, kubent, AKS provider evidence, advertised-edge handling, and component multi-version verdicts are merged. Exit now depends on sanitized AKS staging validation. |
-| Phase 9 - Controlled staging validation and MVP release | Blocked | Prior release-candidate artifacts are stale relative to Phase 8.5 recovery work. Publication waits for sanitized staging validation, fresh release-candidate gates, and separate owner approval. |
+| Phase 8.5 - End-to-end CLI recovery | Complete pending merge of helper | `kua analyze`, `health`, `compatibility`, `report`, live analysis inventory, kubent, AKS provider evidence, advertised-edge handling, component multi-version verdicts, redacted preflight errors, and component override workflow are implemented. The helper command is on `feature/component-overrides-helper` pending merge. |
+| Phase 9 - Controlled staging validation and MVP release | Blocked pending fresh RC/publication approval | Sanitized staging validation passed locally. `0.1.0-rc.2` was generated before the component override helper, so a fresh RC should be generated after helper merge before any tag/release publication. |
 
 ## Current branch focus
 
@@ -218,14 +218,18 @@ Phase 8.5 recovery work merged to `main`:
   emits per-version verdicts instead of hiding known versions behind one
   component-level `UNKNOWN`.
 
-Phase 8.5 remaining gate:
+Phase 8.5 validation result:
 
-- run an explicitly approved sanitized AKS staging validation using the merged
-  `kua analyze` CLI;
-- confirm redacted output contains versions, decisions, counts, and remediation
-  without public staging identifiers or secrets;
-- update validation/release records with sanitized evidence only;
-- generate a fresh release candidate after Phase 8.5 validation passes.
+- approved sanitized AKS staging validation passed locally;
+- redacted output preserved versions, decisions, counts, and remediation;
+- subscription, resource group, and cluster-name leak check returned zero leaks;
+- after generated component overrides, the assessment returned
+  `READY_WITH_WARNINGS` / `MEDIUM`, destination `1.34.9`, provider-valid
+  `1.30.0 -> 1.34.9`, zero blockers, zero unknown findings, and only the
+  provider-direct multi-minor warning;
+- the component override helper command is implemented on
+  `feature/component-overrides-helper` and must be merged before the next
+  release candidate.
 
 Approved hybrid AKS behavior follows provider-advertised upgrade edges. When AKS
 offers only a direct higher target such as `1.34.x` and no lower intermediate
