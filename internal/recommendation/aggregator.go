@@ -162,6 +162,7 @@ func (a *Aggregator) apiRemediation(af kubent.Finding) string {
 // AggregateComponents converts component detections to recommendation findings.
 func (a *Aggregator) AggregateComponents(detections []components.Detection, targetMinor int) []Finding {
 	findings := make([]Finding, 0)
+	seenUnknown := map[string]bool{}
 
 	for _, d := range detections {
 		// Skip not found components
@@ -171,6 +172,11 @@ func (a *Aggregator) AggregateComponents(detections []components.Detection, targ
 
 		// Handle unknown version or status
 		if d.Status == components.StatusUnknown || d.Version == "UNKNOWN" {
+			key := d.ComponentID + "|UNKNOWN"
+			if seenUnknown[key] {
+				continue
+			}
+			seenUnknown[key] = true
 			findings = append(findings, Finding{
 				ID:          fmt.Sprintf("COMPONENT_%s_UNKNOWN", d.ComponentID),
 				Category:    CategoryComponent,
