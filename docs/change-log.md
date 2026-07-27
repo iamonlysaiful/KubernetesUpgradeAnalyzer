@@ -26,6 +26,16 @@ This log records material scope and architecture changes. Git remains the detail
 - Kept MVP release publication blocked until the full end-to-end AKS upgrade
   analysis exits Phase 8.5.
 
+## 2026-07-27 — Phase 8.5 live analysis inventory expansion
+
+- Approved wiring `kua analyze` to collect the MVP read-only metadata groups
+  already covered by fake-client collectors: workloads, storage, networking,
+  CRDs, and events.
+- Kept `kua inventory` core-only until its output contract is separately
+  updated.
+- Confirmed this is not approval for unsupervised live staging execution; real
+  context runs still require the Phase 9 command record.
+
 ## 2026-07-27 — Phase 9 release candidate tooling
 
 - Added `scripts/release-candidate.sh` to build Linux/macOS amd64/arm64 release

@@ -30,6 +30,13 @@ land, it returns `INCONCLUSIVE` with explicit limitations for partial live
 inventory and missing API compatibility evidence. That temporary behavior is
 valid only inside Phase 8.5 and must not be used to claim MVP release readiness.
 
+Phase 8.5 expands the `kua analyze` live inventory path to the accepted MVP
+read-only metadata groups: workloads, storage, networking, CRDs, and events.
+This expansion does not approve unsupervised live staging execution. Any run
+against a real context still requires explicit command approval under the
+staging record. `kua inventory` may remain core-only until its own output
+contract is updated.
+
 `kua health` and `kua compatibility` may initially render filtered views of the
 same assessment pipeline, as long as omitted evidence is reported as a
 limitation. `kua report --input <assessment.json>` renders a saved report

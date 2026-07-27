@@ -213,6 +213,11 @@ First Phase 8.5 implementation slice:
 - provider auto-detection still needs safe live AKS identity wiring when no
   explicit provider flags or provider evidence file are supplied.
 
+Next Phase 8.5 slice expands `kua analyze` live collection to the MVP read-only
+metadata groups already covered by fake-client collectors: workloads, storage,
+networking, CRDs, and events. This is CLI wiring approval only; it is not
+approval to run live staging commands without the Phase 9 command record.
+
 ## Current quality evidence
 
 Latest local checks:
