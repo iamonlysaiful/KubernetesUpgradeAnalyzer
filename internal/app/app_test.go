@@ -2,14 +2,19 @@ package app
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/inventory"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/preflight"
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/provider"
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/recommendation"
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/report"
 )
 
 func TestRunVersion(t *testing.T) {
@@ -66,27 +71,6 @@ func TestRunVersionWithGlobalFlags(t *testing.T) {
 	}
 }
 
-func TestRunUnimplementedCommands(t *testing.T) {
-	for _, command := range []string{"analyze", "health", "compatibility", "report"} {
-		t.Run(command, func(t *testing.T) {
-			var stdout bytes.Buffer
-			var stderr bytes.Buffer
-
-			code := Run([]string{command}, &stdout, &stderr, BuildInfo{})
-
-			if code != ExitExecution {
-				t.Fatalf("Run(%s) exit code = %d, want %d", command, code, ExitExecution)
-			}
-			if stdout.Len() != 0 {
-				t.Fatalf("Run(%s) stdout = %q, want empty", command, stdout.String())
-			}
-			if !strings.Contains(stderr.String(), "not implemented yet") {
-				t.Fatalf("Run(%s) stderr = %q, want unimplemented message", command, stderr.String())
-			}
-		})
-	}
-}
-
 func TestRunInventoryPreflight(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -128,6 +112,106 @@ func TestRunInventoryPreflight(t *testing.T) {
 		if !strings.Contains(stdout.String(), want) {
 			t.Fatalf("Run(inventory) output missing %q in:\n%s", want, stdout.String())
 		}
+	}
+}
+
+func TestRunAnalyzeJSONProducesInconclusiveAssessment(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	now := time.Date(2026, 7, 27, 4, 0, 0, 0, time.UTC)
+
+	code := RunWithDependencies([]string{
+		"--format=json",
+		"--provider-source=none",
+		"analyze",
+	}, &stdout, &stderr, BuildInfo{}, Dependencies{
+		PreflightRunner: fakePreflightRunner{result: preflight.Result{
+			Context:         preflight.ContextSelection{Name: "ctx-analyze", KubeconfigSource: preflight.KubeconfigSourceDefault},
+			ServerVersion:   "v1.30.0",
+			DiscoveryStatus: preflight.StatusPass,
+		}},
+		InventoryCollector: fakeInventoryCollector{snapshot: validCoreSnapshot("ctx-analyze", "1.30.0")},
+		ProviderFactory:    fakeProviderFactory{provider: fakeProvider{}},
+		Clock:              func() time.Time { return now },
+	})
+
+	if code != ExitInconclusive {
+		t.Fatalf("Run(analyze json) exit code = %d, want %d", code, ExitInconclusive)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("Run(analyze json) stderr = %q, want empty", stderr.String())
+	}
+
+	var got report.Document
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("Run(analyze json) output is not report JSON: %v\n%s", err, stdout.String())
+	}
+	if got.SchemaVersion != "kua.assessment.v1" {
+		t.Fatalf("schemaVersion = %q, want kua.assessment.v1", got.SchemaVersion)
+	}
+	if got.Current != "1.30.0" {
+		t.Fatalf("current = %q, want 1.30.0", got.Current)
+	}
+	if got.Readiness != "INCONCLUSIVE" || got.Risk != "UNKNOWN" {
+		t.Fatalf("readiness/risk = %s/%s, want INCONCLUSIVE/UNKNOWN", got.Readiness, got.Risk)
+	}
+	if !hasLimitation(got.Limitations, "API_COMPATIBILITY_NOT_COLLECTED") {
+		t.Fatalf("limitations = %#v, want API_COMPATIBILITY_NOT_COLLECTED", got.Limitations)
+	}
+	if strings.Contains(stdout.String(), "ctx-analyze") {
+		t.Fatalf("analyze JSON leaked context name:\n%s", stdout.String())
+	}
+}
+
+func TestRunAnalyzeRedactsResourceNames(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	snapshot := validCoreSnapshot("ctx-redact", "1.30.0")
+	snapshot.Inventory.Nodes[0].Ref.Name = "node-private"
+	snapshot.Inventory.Nodes[0].Conditions = []inventory.Condition{}
+
+	code := RunWithDependencies([]string{
+		"--format=json",
+		"--redacted",
+		"--provider-source=none",
+		"analyze",
+	}, &stdout, &stderr, BuildInfo{}, Dependencies{
+		PreflightRunner:    fakePreflightRunner{result: validPreflight("ctx-redact", "v1.30.0")},
+		InventoryCollector: fakeInventoryCollector{snapshot: snapshot},
+		ProviderFactory:    fakeProviderFactory{provider: fakeProvider{}},
+		Clock:              func() time.Time { return time.Date(2026, 7, 27, 4, 1, 0, 0, time.UTC) },
+	})
+
+	if code != ExitInconclusive {
+		t.Fatalf("Run(analyze redacted) exit code = %d, want %d", code, ExitInconclusive)
+	}
+	if strings.Contains(stdout.String(), "node-private") {
+		t.Fatalf("redacted output leaked node name:\n%s", stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "\"redacted\": true") {
+		t.Fatalf("redacted output missing redacted marker:\n%s", stdout.String())
+	}
+}
+
+func TestRunReportRendersInputDocument(t *testing.T) {
+	tmp := t.TempDir() + "/assessment.json"
+	input := `{"schemaVersion":"kua.assessment.v1","assessmentId":"assessment-test","generatedAt":"2026-07-27T04:02:00Z","redacted":false,"currentVersion":"1.30.0","readiness":"INCONCLUSIVE","risk":"UNKNOWN","findings":[],"limitations":[]}`
+	if err := os.WriteFile(tmp, []byte(input), 0o600); err != nil {
+		t.Fatalf("WriteFile returned error: %v", err)
+	}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := Run([]string{"--format=console", "--input", tmp, "report"}, &stdout, &stderr, BuildInfo{})
+
+	if code != ExitInconclusive {
+		t.Fatalf("Run(report) exit code = %d, want %d", code, ExitInconclusive)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("Run(report) stderr = %q, want empty", stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Assessment: assessment-test") {
+		t.Fatalf("Run(report) output = %q, want rendered assessment", stdout.String())
 	}
 }
 
@@ -400,6 +484,76 @@ func (f fakePreflightRunner) Run(preflight.KubeconfigOptions) (preflight.Result,
 type fakeInventoryCollector struct {
 	snapshot inventory.Snapshot
 	err      error
+}
+
+type fakeProviderFactory struct {
+	provider provider.Provider
+}
+
+func (f fakeProviderFactory) NewProvider(inventory.Snapshot, Config) provider.Provider {
+	return f.provider
+}
+
+type fakeProvider struct {
+	evidence *provider.ProviderEvidence
+	err      error
+}
+
+func (f fakeProvider) Identity() (provider.ProviderType, provider.Confidence) {
+	return provider.ProviderAKS, provider.ConfidenceHigh
+}
+
+func (f fakeProvider) Evidence(context.Context, provider.EvidenceOptions) (*provider.ProviderEvidence, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.evidence, nil
+}
+
+func validPreflight(contextName string, serverVersion string) preflight.Result {
+	return preflight.Result{
+		Context:         preflight.ContextSelection{Name: contextName, KubeconfigSource: preflight.KubeconfigSourceDefault},
+		ServerVersion:   serverVersion,
+		DiscoveryStatus: preflight.StatusPass,
+	}
+}
+
+func validCoreSnapshot(contextName string, serverVersion string) inventory.Snapshot {
+	return inventory.Snapshot{
+		SchemaVersion: inventory.SchemaVersion,
+		SnapshotID:    "synthetic-20260727T040000Z",
+		CapturedAt:    "2026-07-27T04:00:00Z",
+		Cluster: inventory.Cluster{
+			Identity: inventory.ResourceRef{Kind: "Cluster", Name: contextName},
+			Provider: inventory.Provider{Type: "UNKNOWN", Confidence: "UNKNOWN"},
+			Context:  inventory.Context{Name: contextName, KubeconfigSource: "DEFAULT"},
+		},
+		Kubernetes: inventory.Kubernetes{ServerVersion: serverVersion},
+		Inventory: inventory.Inventory{
+			Namespaces: []inventory.ResourceRef{{APIVersion: "v1", Kind: "Namespace", Name: "default"}},
+			Nodes: []inventory.Node{{
+				Ref:               inventory.ResourceRef{APIVersion: "v1", Kind: "Node", Name: "node-a"},
+				KubeletVersion:    serverVersion,
+				ProviderIDPresent: false,
+				Conditions:        []inventory.Condition{{Type: "Ready", Status: "TRUE", Reason: "KubeletReady"}},
+			}},
+			Workloads:  []inventory.Workload{},
+			Storage:    []inventory.ResourceRef{},
+			Networking: []inventory.ResourceRef{},
+			CRDs:       []inventory.ResourceRef{},
+			Events:     []inventory.Event{},
+		},
+		Limitations: []inventory.Limitation{{Code: "PARTIAL_INVENTORY_P2_02", Severity: "WARN", Summary: "partial inventory"}},
+	}
+}
+
+func hasLimitation(limitations []recommendation.Limitation, code string) bool {
+	for _, limitation := range limitations {
+		if limitation.Code == code {
+			return true
+		}
+	}
+	return false
 }
 
 func (f fakeInventoryCollector) CollectCore(preflight.KubeconfigOptions, preflight.Result) (inventory.Snapshot, error) {

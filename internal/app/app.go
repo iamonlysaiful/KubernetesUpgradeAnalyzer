@@ -1,14 +1,23 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
 	"runtime"
+	"time"
 
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/components"
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/health"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/inventory"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/preflight"
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/provider"
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/provider/aks"
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/recommendation"
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/report"
 )
 
 const (
@@ -34,6 +43,8 @@ type BuildInfo struct {
 type Dependencies struct {
 	PreflightRunner    PreflightRunner
 	InventoryCollector InventoryCollector
+	ProviderFactory    ProviderFactory
+	Clock              func() time.Time
 }
 
 type PreflightRunner interface {
@@ -44,10 +55,26 @@ type InventoryCollector interface {
 	CollectCore(preflight.KubeconfigOptions, preflight.Result) (inventory.Snapshot, error)
 }
 
+type ProviderFactory interface {
+	NewProvider(inventory.Snapshot, Config) provider.Provider
+}
+
+type defaultProviderFactory struct{}
+
+func (defaultProviderFactory) NewProvider(snapshot inventory.Snapshot, cfg Config) provider.Provider {
+	return aks.NewAKSProvider(aks.IdentitySignals{
+		ExplicitSubscription:  cfg.Subscription,
+		ExplicitResourceGroup: cfg.ResourceGroup,
+		ExplicitClusterName:   cfg.ClusterName,
+		ContextName:           snapshot.Cluster.Context.Name,
+	})
+}
+
 func Run(args []string, stdout io.Writer, stderr io.Writer, build BuildInfo) int {
 	return RunWithDependencies(args, stdout, stderr, build, Dependencies{
 		PreflightRunner:    preflight.LiveRunner{},
 		InventoryCollector: inventory.LiveCollector{},
+		ProviderFactory:    defaultProviderFactory{},
 	})
 }
 
@@ -71,10 +98,14 @@ func RunWithDependencies(args []string, stdout io.Writer, stderr io.Writer, buil
 		return ExitReady
 	case "inventory":
 		return runInventory(cfg, stdout, stderr, deps.PreflightRunner, deps.InventoryCollector)
-	case "analyze", "health", "compatibility", "report":
-		appErr := UnimplementedError(positional[0])
-		fmt.Fprintln(stderr, appErr.Message)
-		return appErr.Code
+	case "analyze":
+		return runAnalyze(cfg, stdout, stderr, deps)
+	case "health":
+		return runAnalyzeSubset(cfg, stdout, stderr, deps, "HEALTH")
+	case "compatibility":
+		return runAnalyzeSubset(cfg, stdout, stderr, deps, "COMPATIBILITY")
+	case "report":
+		return runReport(cfg, stdout, stderr)
 	case "help", "-h", "--help":
 		printUsage(stdout)
 		return ExitReady
@@ -83,6 +114,230 @@ func RunWithDependencies(args []string, stdout io.Writer, stderr io.Writer, buil
 		printUsage(stderr)
 		return ExitUsage
 	}
+}
+
+func runAnalyze(cfg Config, stdout io.Writer, stderr io.Writer, deps Dependencies) int {
+	doc, appErr := buildAssessmentDocument(cfg, deps)
+	if appErr != nil {
+		fmt.Fprintln(stderr, appErr.Message)
+		return appErr.Code
+	}
+	return renderAssessment(cfg, doc, stdout, stderr)
+}
+
+func runAnalyzeSubset(cfg Config, stdout io.Writer, stderr io.Writer, deps Dependencies, subset string) int {
+	doc, appErr := buildAssessmentDocument(cfg, deps)
+	if appErr != nil {
+		fmt.Fprintln(stderr, appErr.Message)
+		return appErr.Code
+	}
+	switch subset {
+	case "HEALTH":
+		doc.Findings = filterFindings(doc.Findings, recommendation.CategoryHealth)
+	case "COMPATIBILITY":
+		doc.Findings = filterFindings(doc.Findings, recommendation.CategoryAPI, recommendation.CategoryComponent)
+	}
+	return renderAssessment(cfg, doc, stdout, stderr)
+}
+
+func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *AppError) {
+	if deps.PreflightRunner == nil {
+		return report.Document{}, ExecutionError("analyze preflight runner is not configured", nil)
+	}
+	if deps.InventoryCollector == nil {
+		return report.Document{}, ExecutionError("analyze inventory collector is not configured", nil)
+	}
+	if deps.ProviderFactory == nil {
+		deps.ProviderFactory = defaultProviderFactory{}
+	}
+	clock := deps.Clock
+	if clock == nil {
+		clock = time.Now
+	}
+
+	options := preflight.KubeconfigOptions{Path: cfg.Kubeconfig, Context: cfg.Context}
+	preflightResult, err := deps.PreflightRunner.Run(options)
+	if err != nil {
+		return report.Document{}, ExecutionError("analyze preflight failed: "+err.Error(), err)
+	}
+	if preflightResult.HasRequiredFailure() {
+		rec := inconclusiveRecommendation(preflightResult.ServerVersion, clock(), "PREFLIGHT_REQUIRED_FAILURE", "Required Kubernetes preflight check failed")
+		return documentFromRecommendation(rec, clock()), nil
+	}
+
+	snapshot, err := deps.InventoryCollector.CollectCore(options, preflightResult)
+	if err != nil {
+		return report.Document{}, ExecutionError("analyze inventory collection failed: "+err.Error(), err)
+	}
+	if err := inventory.ValidateCoreSnapshot(snapshot); err != nil {
+		return report.Document{}, ExecutionError("analyze inventory snapshot validation failed: "+err.Error(), err)
+	}
+
+	healthFindings := health.NewRunner(health.DefaultRules()...).Evaluate(snapshot, health.Options{Now: clock})
+	detections := components.NewRunner(components.InitialDetectorCohort()...).Detect(snapshot)
+
+	providerEvidence, providerLimit := collectProviderEvidence(context.Background(), cfg, deps.ProviderFactory.NewProvider(snapshot, cfg))
+
+	engine := recommendation.NewEngine().WithClock(clock)
+	rec, err := engine.Generate(recommendation.Input{
+		CurrentVersion:      trimVersionPrefix(snapshot.Kubernetes.ServerVersion),
+		HealthFindings:      healthFindings,
+		ComponentDetections: detections,
+		ProviderEvidence:    providerEvidence,
+	}, recommendation.RecommendationOptions{
+		TargetVersion: cfg.TargetVersion,
+		MaxMinorSkip:  3,
+	})
+	if err != nil {
+		return report.Document{}, ExecutionError("generate recommendation failed: "+err.Error(), err)
+	}
+	rec.Limitations = append(rec.Limitations, recommendation.Limitation{
+		Code:    "API_COMPATIBILITY_NOT_COLLECTED",
+		Summary: "kubent API compatibility is not yet wired into the end-to-end CLI pipeline",
+		Impact:  "API compatibility remains inconclusive",
+	})
+	rec.Limitations = append(rec.Limitations, recommendation.Limitation{
+		Code:    "LIVE_INVENTORY_PARTIAL",
+		Summary: "live CLI collection currently includes core inventory only",
+		Impact:  "health and component analysis may miss workload, storage, networking, CRD, and event evidence",
+	})
+	if providerLimit.Code != "" {
+		rec.Limitations = append(rec.Limitations, providerLimit)
+	}
+	rec.Readiness = recommendation.ReadinessInconclusive
+	rec.Risk = recommendation.RiskUnknown
+
+	return documentFromRecommendation(rec, clock()), nil
+}
+
+func collectProviderEvidence(ctx context.Context, cfg Config, p provider.Provider) (*provider.ProviderEvidence, recommendation.Limitation) {
+	if p == nil {
+		return nil, recommendation.Limitation{Code: "PROVIDER_UNAVAILABLE", Summary: "provider adapter is not configured", Impact: "provider availability remains unknown"}
+	}
+	evidence, err := p.Evidence(ctx, provider.EvidenceOptions{
+		Mode:          provider.SourceMode(cfg.ProviderSource),
+		FilePath:      cfg.ProviderEvidence,
+		Subscription:  cfg.Subscription,
+		ResourceGroup: cfg.ResourceGroup,
+		ClusterName:   cfg.ClusterName,
+		Timeout:       aks.DefaultTimeout,
+	})
+	if err != nil {
+		return nil, recommendation.Limitation{Code: "PROVIDER_EVIDENCE_ERROR", Summary: sanitizeProviderError(err.Error()), Impact: "provider availability remains unknown"}
+	}
+	return evidence, recommendation.Limitation{}
+}
+
+func sanitizeProviderError(message string) string {
+	if message == "" {
+		return "provider evidence unavailable"
+	}
+	return "provider evidence unavailable; verify Azure CLI authentication or provide --provider-evidence"
+}
+
+func inconclusiveRecommendation(current string, now time.Time, code string, summary string) *recommendation.Recommendation {
+	return &recommendation.Recommendation{
+		SchemaVersion:  "kua.recommendation.v1",
+		CurrentVersion: trimVersionPrefix(current),
+		Readiness:      recommendation.ReadinessInconclusive,
+		Risk:           recommendation.RiskUnknown,
+		Findings:       []recommendation.Finding{},
+		Limitations:    []recommendation.Limitation{{Code: code, Summary: summary, Impact: "assessment cannot continue"}},
+		GeneratedAt:    now.UTC(),
+	}
+}
+
+func documentFromRecommendation(rec *recommendation.Recommendation, now time.Time) report.Document {
+	return report.Document{
+		SchemaVersion: "kua.assessment.v1",
+		AssessmentID:  fmt.Sprintf("assessment-%d", now.UTC().Unix()),
+		GeneratedAt:   rec.GeneratedAt,
+		Redacted:      false,
+		Current:       rec.CurrentVersion,
+		Destination:   rec.Destination,
+		Readiness:     rec.Readiness,
+		Risk:          rec.Risk,
+		Path:          rec.Path,
+		Findings:      rec.Findings,
+		Limitations:   rec.Limitations,
+	}
+}
+
+func renderAssessment(cfg Config, doc report.Document, stdout io.Writer, stderr io.Writer) int {
+	format := report.RenderFormat(cfg.Format)
+	content, err := report.Render(doc, report.RenderOptions{Format: format, Redacted: cfg.Redacted})
+	if err != nil {
+		appErr := ExecutionError("render assessment failed: "+err.Error(), err)
+		fmt.Fprintln(stderr, appErr.Message)
+		return appErr.Code
+	}
+	if cfg.OutputPath != "" {
+		if err := report.WriteAtomic(cfg.OutputPath, content); err != nil {
+			appErr := ExecutionError("write assessment output failed: "+err.Error(), err)
+			fmt.Fprintln(stderr, appErr.Message)
+			return appErr.Code
+		}
+		return exitCodeForReadiness(doc.Readiness)
+	}
+	if _, err := stdout.Write(content); err != nil {
+		appErr := ExecutionError("write assessment output failed: "+err.Error(), err)
+		fmt.Fprintln(stderr, appErr.Message)
+		return appErr.Code
+	}
+	return exitCodeForReadiness(doc.Readiness)
+}
+
+func runReport(cfg Config, stdout io.Writer, stderr io.Writer) int {
+	if cfg.InputPath == "" {
+		appErr := UsageError("missing --input for report")
+		fmt.Fprintln(stderr, appErr.Message)
+		return appErr.Code
+	}
+	data, err := os.ReadFile(cfg.InputPath)
+	if err != nil {
+		appErr := ExecutionError("read report input failed: "+err.Error(), err)
+		fmt.Fprintln(stderr, appErr.Message)
+		return appErr.Code
+	}
+	var doc report.Document
+	if err := json.Unmarshal(data, &doc); err != nil {
+		appErr := ExecutionError("parse report input failed: "+err.Error(), err)
+		fmt.Fprintln(stderr, appErr.Message)
+		return appErr.Code
+	}
+	return renderAssessment(cfg, doc, stdout, stderr)
+}
+
+func filterFindings(findings []recommendation.Finding, categories ...recommendation.FindingCategory) []recommendation.Finding {
+	allowed := map[recommendation.FindingCategory]bool{}
+	for _, category := range categories {
+		allowed[category] = true
+	}
+	var out []recommendation.Finding
+	for _, finding := range findings {
+		if allowed[finding.Category] {
+			out = append(out, finding)
+		}
+	}
+	return out
+}
+
+func exitCodeForReadiness(readiness recommendation.ReadinessState) int {
+	switch readiness {
+	case recommendation.ReadinessNotReady:
+		return ExitNotReady
+	case recommendation.ReadinessInconclusive:
+		return ExitInconclusive
+	default:
+		return ExitReady
+	}
+}
+
+func trimVersionPrefix(version string) string {
+	if len(version) > 0 && version[0] == 'v' {
+		return version[1:]
+	}
+	return version
 }
 
 func runInventory(cfg Config, stdout io.Writer, stderr io.Writer, runner PreflightRunner, collector InventoryCollector) int {
