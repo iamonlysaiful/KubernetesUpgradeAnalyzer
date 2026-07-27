@@ -2,6 +2,15 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-27 — Phase 8.5 component multi-version verdicts
+
+- Required component detection to preserve each confidently extracted observed
+  version instead of collapsing conflicting versions to one `UNKNOWN`.
+- Required recommendation output to emit deterministic per-version component
+  verdicts when multiple known versions are present.
+- Kept unknown or missing component compatibility evidence conservative: it
+  remains `UNKNOWN` and never becomes `PASS`.
+
 ## 2026-07-27 — Phase 8.5 end-to-end CLI recovery plan
 
 - Added a strict corrective plan to block MVP publication until the accepted

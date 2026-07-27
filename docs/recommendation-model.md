@@ -47,7 +47,7 @@ Blockers include:
 - unready node, unresolved node pressure, unbound required PVC, unavailable critical workload, or persistent fatal pod condition when policy classifies it as upgrade unsafe;
 - failed required analyzer or corrupt compatibility catalog.
 
-Deprecations scheduled after the destination are warnings. Unknown component versions, missing compatibility records, incomplete RBAC, and stale provider evidence generally make the relevant claim inconclusive rather than compatible.
+Deprecations scheduled after the destination are warnings. Unknown component versions, missing compatibility records, incomplete RBAC, and stale provider evidence generally make the relevant claim inconclusive rather than compatible. When multiple known versions of a component are detected, the recommendation must emit a deterministic verdict for each version; known versions must not be hidden behind a single component-level `UNKNOWN`.
 
 ## 6. Risk model
 
@@ -85,4 +85,3 @@ This does not assert that AKS supports one direct `1.30 → 1.33.12` operation.
 - Kubernetes version-skew policy states that kube-apiserver minor versions must not be skipped: <https://kubernetes.io/releases/version-skew-policy/>
 - AKS states that supported cluster upgrades must proceed sequentially by minor version: <https://learn.microsoft.com/azure/aks/upgrade-aks-control-plane>
 - AKS support/version policy and available versions remain provider-controlled: <https://learn.microsoft.com/azure/aks/supported-kubernetes-versions>
-
