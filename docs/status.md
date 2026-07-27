@@ -28,8 +28,8 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Phase 6 - AKS provider evidence | Complete | Provider interface, AKS identity/CLI/file adapters, candidate/path construction, and closeout are merged; no live CLI execution. |
 | Phase 7 - Recommendation engine | Complete | Recommendation engine, finding aggregation, policy evaluation, AKS 1.30 validation case, and closeout are merged. |
 | Phase 8 - Reports and hardening | Complete | Multi-format report rendering, redaction mode, hardening checks, and closeout are merged. |
-| Phase 8.5 - End-to-end CLI recovery | In progress | Corrective plan added; first implementation slice wires `kua analyze`, `health`, `compatibility`, and `report` away from unimplemented command failures while preserving `INCONCLUSIVE` for missing MVP evidence. |
-| Phase 9 - Controlled staging validation and MVP release | Blocked | Release-candidate artifact generation may be used locally, but publication waits for Phase 8.5 exit and separate owner approval. |
+| Phase 8.5 - End-to-end CLI recovery | Validation in progress | `kua analyze`, `health`, `compatibility`, and `report` are wired through the assessment/report pipeline; live analysis inventory, kubent, AKS provider evidence, advertised-edge handling, and component multi-version verdicts are merged. Exit now depends on sanitized AKS staging validation. |
+| Phase 9 - Controlled staging validation and MVP release | Blocked | Prior release-candidate artifacts are stale relative to Phase 8.5 recovery work. Publication waits for sanitized staging validation, fresh release-candidate gates, and separate owner approval. |
 
 ## Current branch focus
 
@@ -193,38 +193,39 @@ P8 reports and hardening foundation is merged:
 - targeted race checks in CI/local quality gates;
 - Phase 8 closeout record.
 
-Current live `kua inventory` behavior remains partial/core inventory only.
-Workloads, storage, networking, CRDs, events, health, compatibility, provider
-evidence, recommendations, and reports are not emitted from live collection yet.
+Current live `kua inventory` behavior remains partial/core inventory only, by
+contract. `kua analyze` now uses the expanded MVP read-only metadata groups
+needed for assessment: workloads, storage, networking, CRDs, and events.
 
-Phase 8.5 corrects this before MVP publication. The release goal is not only to
-produce binaries; it is to produce a CLI that can scan an AKS staging cluster and
-return a proper upgrade analysis through `kua analyze`.
+Phase 8.5 recovery work merged to `main`:
 
-First Phase 8.5 implementation slice:
-
-- `kua analyze` renders a canonical assessment document and exits
-  `INCONCLUSIVE` when API compatibility or expanded live inventory evidence is
-  absent;
+- `kua analyze` renders a canonical assessment document and uses the
+  recommendation policy once provider evidence and kubent API compatibility are
+  available;
 - `kua health` and `kua compatibility` expose filtered views of the same
   assessment document;
 - `kua report --input <assessment.json>` renders saved assessment documents
   without cluster/provider access;
-- provider auto-detection still needs safe live AKS identity wiring when no
-  explicit provider flags or provider evidence file are supplied.
+- live analysis collection includes the approved MVP read-only inventory groups;
+- kubent is invoked through the controlled adapter with JSON output and Helm
+  collection disabled;
+- AKS provider evidence supports `auto`, `azure`, `file`, `offline`, and `none`
+  source modes;
+- provider-advertised AKS upgrade edges are followed when AKS no longer exposes
+  intermediate lower minors, with a provider-direct multi-minor warning and at
+  least `MEDIUM` risk unless future evidence proves lower-risk behavior;
+- component detection preserves each confidently observed component version and
+  emits per-version verdicts instead of hiding known versions behind one
+  component-level `UNKNOWN`.
 
-Next Phase 8.5 slice expands `kua analyze` live collection to the MVP read-only
-metadata groups already covered by fake-client collectors: workloads, storage,
-networking, CRDs, and events. This is CLI wiring approval only; it is not
-approval to run live staging commands without the Phase 9 command record.
+Phase 8.5 remaining gate:
 
-Following slice wires kubent API compatibility into `kua analyze` through the
-approved adapter. Missing target version, missing kubent, execution failure,
-malformed output, or unverified target coverage keeps API compatibility
-`INCONCLUSIVE` with sanitized limitations.
-
-After provider and API evidence are present, `kua analyze` should use the
-recommendation policy directly instead of forcing `INCONCLUSIVE`.
+- run an explicitly approved sanitized AKS staging validation using the merged
+  `kua analyze` CLI;
+- confirm redacted output contains versions, decisions, counts, and remediation
+  without public staging identifiers or secrets;
+- update validation/release records with sanitized evidence only;
+- generate a fresh release candidate after Phase 8.5 validation passes.
 
 Approved hybrid AKS behavior follows provider-advertised upgrade edges. When AKS
 offers only a direct higher target such as `1.34.x` and no lower intermediate
@@ -241,5 +242,5 @@ git diff --check
 git fsck --full --strict
 ```
 
-`git fsck` reports only the accepted known dangling blobs. Any AppleDouble
+`git fsck` reports only accepted known dangling objects. Any AppleDouble
 `._*` files must be removed before publication after a verified recovery point.

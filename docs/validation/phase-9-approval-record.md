@@ -1,6 +1,6 @@
 # Phase 9 staging approval record
 
-Status: Partial staging run; provider evidence blocked
+Status: Partial staging run superseded by Phase 8.5 recovery work
 Last updated: 2026-07-27
 
 This record captures required explicit approval and execution boundaries before
@@ -63,7 +63,9 @@ Stop immediately if any of the following occur:
 - Commands executed exactly as approved (yes/no): yes for local context, inventory, release-candidate, CI, and race checks; provider evidence command stopped at Azure authentication
 - Raw output retained locally (yes/no): yes
 - Sanitized outputs reviewed (yes/no): no sanitized derivatives were produced
-- Follow-up decisions required: refresh Azure CLI authentication, then rerun the approved read-only AKS upgrade evidence command before any release publication decision
+- Follow-up decisions required: run a new explicitly approved read-only
+  `kua analyze` staging validation with the merged Phase 8.5 CLI before any
+  release publication decision.
 
 ## 6. Sanitization checklist before any commit
 

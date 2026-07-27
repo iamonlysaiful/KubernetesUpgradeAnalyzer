@@ -1,13 +1,13 @@
 # Phase 9 release candidate record
 
-Status: Release-candidate artifacts generated; provider validation incomplete
+Status: Prior release candidate superseded; provider validation incomplete
 Last updated: 2026-07-27
 
 This record tracks MVP release-candidate artifacts and final publication gates.
 
 ## 1. Release candidate metadata
 
-- Candidate version: `0.1.0-rc.1`
+- Candidate version: `0.1.0-rc.1` (superseded by merged Phase 8.5 recovery work)
 - Git commit: `7528a7e2d5d5`
 - Build date/time (UTC): 2026-07-27T03:27:18Z
 - Operator: local maintainer through Codex-assisted run
@@ -60,9 +60,14 @@ Record results:
 
 ## 5. Notes and limitations
 
-- Known limitations: AKS upgrade evidence was not collected because the local Azure CLI login is expired; live KUA inventory remains partial/core inventory only.
-- Deferred work: refresh Azure CLI authentication and rerun read-only AKS upgrade evidence collection.
-- Follow-up actions: complete Phase 8.5 end-to-end CLI recovery, then rerun provider validation with sanitized evidence policy before requesting explicit publication approval.
+- Known limitations: the recorded candidate was built before merged Phase 8.5
+  recovery work for end-to-end `kua analyze`, expanded live analysis inventory,
+  kubent wiring, AKS advertised-edge handling, and component multi-version
+  verdicts.
+- Deferred work: rerun read-only AKS staging validation with the merged CLI,
+  review redacted output, then generate a fresh release candidate.
+- Follow-up actions: complete the Phase 8.5 validation gate with sanitized
+  evidence policy before requesting explicit publication approval.
 
 ## 6. Publication hold point
 
