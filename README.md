@@ -95,20 +95,16 @@ a `componentVersionOverrides` helper:
 jq '.componentVersionOverrides' analyze.redacted.json
 ```
 
-Create `component-overrides.json` using the helper template:
+Generate `component-overrides.json` from the assessment:
 
-```json
-{
-  "schemaVersion": "kua.component-overrides.v1",
-  "components": [
-    {
-      "id": "coredns",
-      "versions": ["1.9.4-13"],
-      "evidence": "user-confirmed"
-    }
-  ]
-}
+```bash
+./bin/kua component-overrides \
+  --input analyze.redacted.json \
+  --output component-overrides.json
 ```
+
+Review the generated file. KUA uses observed versions when present and leaves a
+`<fill-version>` placeholder only when no usable version was observed.
 
 Then rerun:
 

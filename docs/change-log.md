@@ -2,6 +2,14 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-27 — Component override helper command
+
+- Added `kua component-overrides --input <assessment.json> --output
+  <component-overrides.json>` as the safer operator workflow for generating
+  override files from assessment output.
+- Required the helper to run locally only, avoid Kubernetes/Azure access, and
+  refuse to overwrite existing files.
+
 ## 2026-07-27 — Phase 8.5 component override workflow
 
 - Required JSON assessments with missing or confusing component versions to emit
