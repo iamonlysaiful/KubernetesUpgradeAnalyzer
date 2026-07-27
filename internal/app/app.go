@@ -53,6 +53,7 @@ type PreflightRunner interface {
 
 type InventoryCollector interface {
 	CollectCore(preflight.KubeconfigOptions, preflight.Result) (inventory.Snapshot, error)
+	CollectAssessment(preflight.KubeconfigOptions, preflight.Result) (inventory.Snapshot, error)
 }
 
 type ProviderFactory interface {
@@ -165,7 +166,7 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 		return documentFromRecommendation(rec, clock()), nil
 	}
 
-	snapshot, err := deps.InventoryCollector.CollectCore(options, preflightResult)
+	snapshot, err := deps.InventoryCollector.CollectAssessment(options, preflightResult)
 	if err != nil {
 		return report.Document{}, ExecutionError("analyze inventory collection failed: "+err.Error(), err)
 	}
@@ -195,11 +196,6 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 		Code:    "API_COMPATIBILITY_NOT_COLLECTED",
 		Summary: "kubent API compatibility is not yet wired into the end-to-end CLI pipeline",
 		Impact:  "API compatibility remains inconclusive",
-	})
-	rec.Limitations = append(rec.Limitations, recommendation.Limitation{
-		Code:    "LIVE_INVENTORY_PARTIAL",
-		Summary: "live CLI collection currently includes core inventory only",
-		Impact:  "health and component analysis may miss workload, storage, networking, CRD, and event evidence",
 	})
 	if providerLimit.Code != "" {
 		rec.Limitations = append(rec.Limitations, providerLimit)

@@ -563,6 +563,13 @@ func (f fakeInventoryCollector) CollectCore(preflight.KubeconfigOptions, preflig
 	return f.snapshot, nil
 }
 
+func (f fakeInventoryCollector) CollectAssessment(preflight.KubeconfigOptions, preflight.Result) (inventory.Snapshot, error) {
+	if f.err != nil {
+		return inventory.Snapshot{}, f.err
+	}
+	return f.snapshot, nil
+}
+
 func TestParseArgsStoresConfig(t *testing.T) {
 	cfg, positional, err := parseArgs([]string{
 		"--log-level", "warn",
