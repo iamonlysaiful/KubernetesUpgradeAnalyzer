@@ -25,10 +25,10 @@ Standard kubeconfig resolution applies: explicit `--kubeconfig`, then normal cli
 - `kua version`: show build, Go, schema, and embedded catalog versions.
 
 During Phase 8.5, `kua analyze` is the recovery command. It must be usable and
-must not fail as unimplemented. Until expanded live inventory and kubent wiring
-land, it returns `INCONCLUSIVE` with explicit limitations for partial live
-inventory and missing API compatibility evidence. That temporary behavior is
-valid only inside Phase 8.5 and must not be used to claim MVP release readiness.
+must not fail as unimplemented. Until kubent wiring lands, it returns
+`INCONCLUSIVE` with explicit limitations for missing API compatibility evidence.
+That temporary behavior is valid only inside Phase 8.5 and must not be used to
+claim MVP release readiness.
 
 Phase 8.5 expands the `kua analyze` live inventory path to the accepted MVP
 read-only metadata groups: workloads, storage, networking, CRDs, and events.
@@ -36,6 +36,13 @@ This expansion does not approve unsupervised live staging execution. Any run
 against a real context still requires explicit command approval under the
 staging record. `kua inventory` may remain core-only until its own output
 contract is updated.
+
+Phase 8.5 wires kubent API compatibility through the existing adapter. KUA may
+invoke only the approved kubent command shape: JSON output, `--helm3=false`,
+explicit target version, optional kubeconfig, and optional context. If no target
+version can be determined, or kubent is missing, wrong-versioned, malformed, or
+fails, API compatibility becomes `INCONCLUSIVE` with sanitized limitations.
+Stderr and raw kubent diagnostics must not be copied into committed records.
 
 `kua health` and `kua compatibility` may initially render filtered views of the
 same assessment pipeline, as long as omitted evidence is reported as a

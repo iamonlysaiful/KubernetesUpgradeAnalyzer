@@ -218,6 +218,11 @@ metadata groups already covered by fake-client collectors: workloads, storage,
 networking, CRDs, and events. This is CLI wiring approval only; it is not
 approval to run live staging commands without the Phase 9 command record.
 
+Following slice wires kubent API compatibility into `kua analyze` through the
+approved adapter. Missing target version, missing kubent, execution failure,
+malformed output, or unverified target coverage keeps API compatibility
+`INCONCLUSIVE` with sanitized limitations.
+
 ## Current quality evidence
 
 Latest local checks:

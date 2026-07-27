@@ -36,6 +36,14 @@ This log records material scope and architecture changes. Git remains the detail
 - Confirmed this is not approval for unsupervised live staging execution; real
   context runs still require the Phase 9 command record.
 
+## 2026-07-27 — Phase 8.5 kubent CLI wiring
+
+- Approved wiring kubent API compatibility into `kua analyze` through the
+  existing controlled adapter.
+- Required JSON output, `--helm3=false`, target-rule coverage validation, and
+  sanitized limitations for missing or failed kubent evidence.
+- Kept raw kubent stderr and live staging evidence out of committed records.
+
 ## 2026-07-27 — Phase 9 release candidate tooling
 
 - Added `scripts/release-candidate.sh` to build Linux/macOS amd64/arm64 release
