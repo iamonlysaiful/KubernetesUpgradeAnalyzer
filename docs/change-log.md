@@ -14,6 +14,18 @@ This log records material scope and architecture changes. Git remains the detail
   subscription IDs, resource groups, cluster names, node names, namespaces,
   workload names, registry hosts, trace IDs, or authentication details.
 
+## 2026-07-27 — Phase 8.5 first CLI recovery slice
+
+- Documented temporary Phase 8.5 command behavior for `kua analyze`, `kua health`,
+  `kua compatibility`, and `kua report`.
+- Required `kua analyze` to return `INCONCLUSIVE` with explicit limitations
+  while expanded live inventory and kubent API compatibility remain unwired.
+- Documented `--input`, `--provider-evidence`, `--subscription`,
+  `--resource-group`, `--cluster-name`, `--target-version`, and `--redacted`
+  as implemented flags for the recovery slice.
+- Kept MVP release publication blocked until the full end-to-end AKS upgrade
+  analysis exits Phase 8.5.
+
 ## 2026-07-27 — Phase 9 release candidate tooling
 
 - Added `scripts/release-candidate.sh` to build Linux/macOS amd64/arm64 release

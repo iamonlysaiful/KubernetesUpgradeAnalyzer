@@ -28,7 +28,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Phase 6 - AKS provider evidence | Complete | Provider interface, AKS identity/CLI/file adapters, candidate/path construction, and closeout are merged; no live CLI execution. |
 | Phase 7 - Recommendation engine | Complete | Recommendation engine, finding aggregation, policy evaluation, AKS 1.30 validation case, and closeout are merged. |
 | Phase 8 - Reports and hardening | Complete | Multi-format report rendering, redaction mode, hardening checks, and closeout are merged. |
-| Phase 8.5 - End-to-end CLI recovery | In progress | Corrective plan added to wire the accepted MVP user journey before release. |
+| Phase 8.5 - End-to-end CLI recovery | In progress | Corrective plan added; first implementation slice wires `kua analyze`, `health`, `compatibility`, and `report` away from unimplemented command failures while preserving `INCONCLUSIVE` for missing MVP evidence. |
 | Phase 9 - Controlled staging validation and MVP release | Blocked | Release-candidate artifact generation may be used locally, but publication waits for Phase 8.5 exit and separate owner approval. |
 
 ## Current branch focus
@@ -200,6 +200,18 @@ evidence, recommendations, and reports are not emitted from live collection yet.
 Phase 8.5 corrects this before MVP publication. The release goal is not only to
 produce binaries; it is to produce a CLI that can scan an AKS staging cluster and
 return a proper upgrade analysis through `kua analyze`.
+
+First Phase 8.5 implementation slice:
+
+- `kua analyze` renders a canonical assessment document and exits
+  `INCONCLUSIVE` when API compatibility or expanded live inventory evidence is
+  absent;
+- `kua health` and `kua compatibility` expose filtered views of the same
+  assessment document;
+- `kua report --input <assessment.json>` renders saved assessment documents
+  without cluster/provider access;
+- provider auto-detection still needs safe live AKS identity wiring when no
+  explicit provider flags or provider evidence file are supplied.
 
 ## Current quality evidence
 
