@@ -43,6 +43,9 @@ explicit target version, optional kubeconfig, and optional context. If no target
 version can be determined, or kubent is missing, wrong-versioned, malformed, or
 fails, API compatibility becomes `INCONCLUSIVE` with sanitized limitations.
 Stderr and raw kubent diagnostics must not be copied into committed records.
+When provider evidence and kubent API compatibility both pass and no health or
+component blockers are present, `kua analyze` may return `READY` or
+`READY_WITH_WARNINGS` according to the recommendation policy.
 
 `kua health` and `kua compatibility` may initially render filtered views of the
 same assessment pipeline, as long as omitted evidence is reported as a

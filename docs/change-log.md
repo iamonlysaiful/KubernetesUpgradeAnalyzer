@@ -44,6 +44,14 @@ This log records material scope and architecture changes. Git remains the detail
   sanitized limitations for missing or failed kubent evidence.
 - Kept raw kubent stderr and live staging evidence out of committed records.
 
+## 2026-07-27 — Phase 8.5 recommendation readiness handoff
+
+- Approved removing the temporary forced `INCONCLUSIVE` state once provider
+  evidence and kubent API compatibility are wired into `kua analyze`.
+- Required the command to use the recommendation policy directly: sufficient
+  passing evidence may produce `READY`/`LOW`, while missing evidence remains
+  `INCONCLUSIVE`/`UNKNOWN`.
+
 ## 2026-07-27 — Phase 9 release candidate tooling
 
 - Added `scripts/release-candidate.sh` to build Linux/macOS amd64/arm64 release

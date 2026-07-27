@@ -223,6 +223,9 @@ approved adapter. Missing target version, missing kubent, execution failure,
 malformed output, or unverified target coverage keeps API compatibility
 `INCONCLUSIVE` with sanitized limitations.
 
+After provider and API evidence are present, `kua analyze` should use the
+recommendation policy directly instead of forcing `INCONCLUSIVE`.
+
 ## Current quality evidence
 
 Latest local checks:
