@@ -13,7 +13,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Gate B - collection safety | Passed for P2-02 | P2-02 core inventory has fake-client/golden coverage and a locally approved live smoke-test record. Expanded live inventory is deferred and still requires separate Gate B expansion approval. |
 | Gate C - compatibility validity | Complete for Phase 5 | Catalog foundation is merged; kubent target-rule coverage validated for 1.30-1.33; go/no-go decision is GO for MVP. |
 | Gate D - recommendation calibration | Complete for Phase 8 | Recommendation matrix outputs, deterministic path evaluation, and report rendering/redaction foundation are merged. |
-| Gate E - release | In progress | Phase 9 release records/tooling started; live staging validation and publication still require explicit approval. |
+| Gate E - release | Blocked pending Phase 8.5 | Release-candidate tooling exists, but publication is blocked until end-to-end `kua analyze` wiring and sanitized AKS validation pass. |
 
 ## Phase status
 
@@ -28,7 +28,8 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Phase 6 - AKS provider evidence | Complete | Provider interface, AKS identity/CLI/file adapters, candidate/path construction, and closeout are merged; no live CLI execution. |
 | Phase 7 - Recommendation engine | Complete | Recommendation engine, finding aggregation, policy evaluation, AKS 1.30 validation case, and closeout are merged. |
 | Phase 8 - Reports and hardening | Complete | Multi-format report rendering, redaction mode, hardening checks, and closeout are merged. |
-| Phase 9 - Controlled staging validation and MVP release | In progress | Approval records and release-candidate artifact tooling added; live validation/publication pending explicit approval. |
+| Phase 8.5 - End-to-end CLI recovery | In progress | Corrective plan added to wire the accepted MVP user journey before release. |
+| Phase 9 - Controlled staging validation and MVP release | Blocked | Release-candidate artifact generation may be used locally, but publication waits for Phase 8.5 exit and separate owner approval. |
 
 ## Current branch focus
 
@@ -195,6 +196,10 @@ P8 reports and hardening foundation is merged:
 Current live `kua inventory` behavior remains partial/core inventory only.
 Workloads, storage, networking, CRDs, events, health, compatibility, provider
 evidence, recommendations, and reports are not emitted from live collection yet.
+
+Phase 8.5 corrects this before MVP publication. The release goal is not only to
+produce binaries; it is to produce a CLI that can scan an AKS staging cluster and
+return a proper upgrade analysis through `kua analyze`.
 
 ## Current quality evidence
 

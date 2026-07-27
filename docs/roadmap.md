@@ -91,7 +91,24 @@ Exit: every MVP recommendation acceptance criterion passes.
 
 Exit: release-candidate quality gates and privacy review pass.
 
+## Phase 8.5 — End-to-end CLI recovery
+
+- Wire the accepted MVP user journey into `kua analyze`.
+- Expand live read-only inventory only after Gate B expansion approval.
+- Connect existing health, component, API, provider, recommendation, and report
+  packages into one deterministic assessment pipeline.
+- Replace unimplemented MVP commands with working command flows or documented
+  subsets of the same pipeline.
+- Validate against sanitized AKS fixtures before returning to Phase 9.
+
+Exit: `kua analyze` produces a schema-valid, explainable AKS upgrade assessment
+with console, JSON, Markdown, HTML, and redacted output coverage.
+
 ## Phase 9 — Controlled staging validation and MVP release
+
+Phase 9 publication is blocked until Phase 8.5 end-to-end CLI recovery exits.
+Release-candidate artifact generation may continue for local verification, but
+an MVP release requires the real `kua analyze` user journey to pass first.
 
 - Run separately approved read-only steps against the named AKS staging context.
 - Compare results with Azure CLI evidence and manual platform-engineering review.

@@ -2,6 +2,18 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-27 — Phase 8.5 end-to-end CLI recovery plan
+
+- Added a strict corrective plan to block MVP publication until the accepted
+  `kua analyze` user journey is wired end to end.
+- Clarified that release-candidate artifacts alone do not satisfy the MVP
+  release gate.
+- Required live expanded inventory, health, component, kubent, provider,
+  recommendation, and report integration before returning to Phase 9.
+- Reaffirmed that public release records must not include staging context names,
+  subscription IDs, resource groups, cluster names, node names, namespaces,
+  workload names, registry hosts, trace IDs, or authentication details.
+
 ## 2026-07-27 — Phase 9 release candidate tooling
 
 - Added `scripts/release-candidate.sh` to build Linux/macOS amd64/arm64 release
