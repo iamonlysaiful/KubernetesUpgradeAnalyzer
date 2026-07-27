@@ -270,6 +270,46 @@ func TestEngine_Generate_SequentialPath(t *testing.T) {
 	}
 }
 
+func TestEngine_Generate_ProviderDirectMultiMinorPath(t *testing.T) {
+	engine := NewEngine().WithClock(fixedClock)
+
+	input := Input{
+		CurrentVersion: "1.30.0",
+		APIFindings: []kubent.Finding{
+			{Status: kubent.FindingPass, TargetVersion: "1.34.9"},
+		},
+		ComponentDetections: []components.Detection{
+			{ComponentID: "nginx-ingress", Name: "NGINX Ingress", Version: "1.12.1", Status: components.StatusFound},
+		},
+		ProviderEvidence: &provider.ProviderEvidence{
+			CurrentVersion: "1.30.0",
+			AvailableUpgrades: []provider.UpgradeOption{
+				{Version: "1.34.9", IsPreview: false},
+			},
+		},
+	}
+
+	rec, err := engine.Generate(input, DefaultOptions())
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+	if rec.Destination != "1.34.9" {
+		t.Fatalf("Destination = %s, want 1.34.9", rec.Destination)
+	}
+	if len(rec.Path) != 1 || rec.Path[0].From != "1.30.0" || rec.Path[0].To != "1.34.9" {
+		t.Fatalf("Path = %#v, want direct 1.30.0 to 1.34.9", rec.Path)
+	}
+	if rec.Readiness != ReadinessReadyWithWarnings {
+		t.Fatalf("Readiness = %s, want READY_WITH_WARNINGS", rec.Readiness)
+	}
+	if rec.Risk != RiskMedium {
+		t.Fatalf("Risk = %s, want MEDIUM", rec.Risk)
+	}
+	if len(rec.Findings) == 0 || rec.Findings[0].ID != "PROVIDER_DIRECT_MULTI_MINOR" {
+		t.Fatalf("Findings = %#v, want provider direct warning", rec.Findings)
+	}
+}
+
 func TestEngine_Generate_ExplicitTarget(t *testing.T) {
 	engine := NewEngine().WithClock(fixedClock)
 

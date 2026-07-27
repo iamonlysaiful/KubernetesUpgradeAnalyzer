@@ -205,7 +205,7 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 		ProviderEvidence:    providerEvidence,
 	}, recommendation.RecommendationOptions{
 		TargetVersion: cfg.TargetVersion,
-		MaxMinorSkip:  3,
+		MaxMinorSkip:  4,
 	})
 	if err != nil {
 		return report.Document{}, ExecutionError("generate recommendation failed: "+err.Error(), err)

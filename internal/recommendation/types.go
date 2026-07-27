@@ -141,14 +141,14 @@ type RecommendationOptions struct {
 	TargetVersion string
 	// AllowPreview includes preview versions.
 	AllowPreview bool
-	// MaxMinorSkip limits the destination (default: 3 minors).
+	// MaxMinorSkip limits the destination (default: 4 minors).
 	MaxMinorSkip int
 }
 
 // DefaultOptions returns the default recommendation options.
 func DefaultOptions() RecommendationOptions {
 	return RecommendationOptions{
-		MaxMinorSkip: 3,
+		MaxMinorSkip: 4,
 		AllowPreview: false,
 	}
 }
