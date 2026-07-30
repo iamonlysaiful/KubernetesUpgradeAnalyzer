@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -124,6 +125,7 @@ func TestRunAnalyzeJSONProducesInconclusiveAssessment(t *testing.T) {
 	code := RunWithDependencies([]string{
 		"--format=json",
 		"--provider-source=none",
+		"--yes",
 		"analyze",
 	}, &stdout, &stderr, BuildInfo{}, Dependencies{
 		PreflightRunner: fakePreflightRunner{result: preflight.Result{
@@ -176,6 +178,7 @@ func TestRunAnalyzeRedactsResourceNames(t *testing.T) {
 		"--format=json",
 		"--redacted",
 		"--provider-source=none",
+		"--yes",
 		"analyze",
 	}, &stdout, &stderr, BuildInfo{}, Dependencies{
 		PreflightRunner:    fakePreflightRunner{result: validPreflight("ctx-redact", "v1.30.0")},
@@ -204,6 +207,7 @@ func TestRunAnalyzeRedactsPreflightErrorHost(t *testing.T) {
 	code := RunWithDependencies([]string{
 		"--format=json",
 		"--redacted",
+		"--yes",
 		"analyze",
 	}, &stdout, &stderr, BuildInfo{}, Dependencies{
 		PreflightRunner: fakePreflightRunner{
@@ -233,6 +237,7 @@ func TestRunAnalyzePlainPreflightErrorKeepsHost(t *testing.T) {
 
 	code := RunWithDependencies([]string{
 		"--format=json",
+		"--yes",
 		"analyze",
 	}, &stdout, &stderr, BuildInfo{}, Dependencies{
 		PreflightRunner: fakePreflightRunner{
@@ -266,7 +271,7 @@ func TestRunReportRendersInputDocument(t *testing.T) {
 	if stderr.Len() != 0 {
 		t.Fatalf("Run(report) stderr = %q, want empty", stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "Assessment: assessment-test") {
+	if !strings.Contains(stdout.String(), "ID: assessment-test") {
 		t.Fatalf("Run(report) output = %q, want rendered assessment", stdout.String())
 	}
 }
@@ -311,6 +316,7 @@ func TestRunAnalyzeAggregatesAPIFindings(t *testing.T) {
 		"--format=json",
 		"--provider-source=none",
 		"--target-version", "1.33.0",
+		"--yes",
 		"analyze",
 	}, &stdout, &stderr, BuildInfo{}, Dependencies{
 		PreflightRunner:    fakePreflightRunner{result: validPreflight("ctx-api", "v1.30.0")},
@@ -349,6 +355,7 @@ func TestRunAnalyzeCanReturnReadyWhenEvidencePasses(t *testing.T) {
 		"--format=json",
 		"--provider-source=file",
 		"--target-version", "1.33.12",
+		"--yes",
 		"analyze",
 	}, &stdout, &stderr, BuildInfo{}, Dependencies{
 		PreflightRunner:    fakePreflightRunner{result: validPreflight("ctx-ready", "v1.30.0")},
@@ -783,7 +790,7 @@ func TestParseArgsStoresConfig(t *testing.T) {
 		ConfigPath:     "/tmp/kua.yaml",
 		OutputPath:     "/tmp/report.md",
 	}
-	if cfg != want {
+	if !reflect.DeepEqual(cfg, want) {
 		t.Fatalf("parseArgs config = %#v, want %#v", cfg, want)
 	}
 }

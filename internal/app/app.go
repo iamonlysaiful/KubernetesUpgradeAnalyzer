@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -11,6 +12,7 @@ import (
 	"os/exec"
 	"regexp"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/components"
@@ -50,6 +52,7 @@ type Dependencies struct {
 	ProviderFactory    ProviderFactory
 	APIAnalyzer        APIAnalyzer
 	Clock              func() time.Time
+	Stdin              io.Reader // set to os.Stdin for interactive terminal sessions
 }
 
 type PreflightRunner interface {
@@ -86,6 +89,7 @@ func Run(args []string, stdout io.Writer, stderr io.Writer, build BuildInfo) int
 		InventoryCollector: inventory.LiveCollector{},
 		ProviderFactory:    defaultProviderFactory{},
 		APIAnalyzer:        kubentAnalyzer{},
+		Stdin:              os.Stdin,
 	})
 }
 
@@ -130,12 +134,102 @@ func RunWithDependencies(args []string, stdout io.Writer, stderr io.Writer, buil
 }
 
 func runAnalyze(cfg Config, stdout io.Writer, stderr io.Writer, deps Dependencies) int {
+	interactive := isInteractiveTTY(deps.Stdin)
+
+	// Resolve display label for confirmation and --yes banner.
+	contextName, serverURL := preflight.ResolveContextDisplay(
+		preflight.KubeconfigOptions{Path: cfg.Kubeconfig, Context: cfg.Context},
+	)
+	clusterLabel := contextLabel(contextName, serverURL)
+
+	if interactive {
+		if !confirmAnalysis(bufio.NewReader(deps.Stdin), stdout, clusterLabel) {
+			fmt.Fprintln(stdout, "Analysis cancelled.")
+			return ExitReady
+		}
+	} else if !cfg.Yes {
+		fmt.Fprintln(stderr, "kua analyze: requires confirmation; pass --yes to run non-interactively")
+		return ExitUsage
+	} else if cfg.Format == "console" {
+		fmt.Fprintf(stdout, "Analyzing cluster: %s\n", clusterLabel)
+	}
+
 	doc, appErr := buildAssessmentDocument(cfg, deps)
 	if appErr != nil {
 		fmt.Fprintln(stderr, errorMessageForOutput(appErr.Message, cfg.Redacted))
 		return appErr.Code
 	}
+
+	// One interactive loop: prompt for unknown component versions then re-analyze.
+	if interactive && cfg.Format == "console" &&
+		doc.ComponentVersionOverrides != nil &&
+		len(doc.ComponentVersionOverrides.Components) > 0 {
+
+		reader := bufio.NewReader(deps.Stdin)
+		answers := promptComponentVersions(reader, stdout, doc.ComponentVersionOverrides.Components)
+		if len(answers) > 0 {
+			cfg.inlineOverrides = answers
+			fmt.Fprintln(stdout, "\nRe-analyzing with provided component versions...")
+			doc, appErr = buildAssessmentDocument(cfg, deps)
+			if appErr != nil {
+				fmt.Fprintln(stderr, errorMessageForOutput(appErr.Message, cfg.Redacted))
+				return appErr.Code
+			}
+		}
+	}
+
 	return renderAssessment(cfg, doc, stdout, stderr)
+}
+
+// isInteractiveTTY reports whether r is a character device (interactive terminal).
+func isInteractiveTTY(r io.Reader) bool {
+	f, ok := r.(*os.File)
+	if !ok {
+		return false
+	}
+	fi, err := f.Stat()
+	return err == nil && fi.Mode()&os.ModeCharDevice != 0
+}
+
+// contextLabel builds a display string for the confirmation prompt.
+func contextLabel(name, server string) string {
+	if name == "" {
+		name = "(current context)"
+	}
+	if server != "" {
+		return name + " (" + server + ")"
+	}
+	return name
+}
+
+// confirmAnalysis prompts the operator and returns true only on explicit yes.
+func confirmAnalysis(reader *bufio.Reader, stdout io.Writer, clusterLabel string) bool {
+	fmt.Fprintf(stdout, "\nCluster: %s\n", clusterLabel)
+	fmt.Fprintf(stdout, "Analyze this cluster? [y/N]: ")
+	line, _ := reader.ReadString('\n')
+	answer := strings.TrimSpace(strings.ToLower(line))
+	return answer == "y" || answer == "yes"
+}
+
+// promptComponentVersions asks for missing component versions and returns the answers.
+func promptComponentVersions(reader *bufio.Reader, stdout io.Writer, requests []report.ComponentVersionOverrideRequest) map[string]string {
+	fmt.Fprintln(stdout)
+	fmt.Fprintln(stdout, "Some component versions could not be detected automatically:")
+	overrides := make(map[string]string)
+	for _, req := range requests {
+		fmt.Fprintf(stdout, "\n  %s", req.Name)
+		if len(req.ObservedVersions) > 0 {
+			fmt.Fprintf(stdout, " (observed: %s)", strings.Join(req.ObservedVersions, ", "))
+		}
+		fmt.Fprintf(stdout, "\n  Reason: %s\n", req.Reason)
+		fmt.Fprintf(stdout, "  Version [skip]: ")
+		line, _ := reader.ReadString('\n')
+		answer := strings.TrimSpace(line)
+		if answer != "" && answer != "skip" {
+			overrides[req.ID] = answer
+		}
+	}
+	return overrides
 }
 
 func runAnalyzeSubset(cfg Config, stdout io.Writer, stderr io.Writer, deps Dependencies, subset string) int {
@@ -216,6 +310,9 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 	overrides, err := loadComponentOverrides(cfg.ComponentOverrides)
 	if err != nil {
 		return report.Document{}, ExecutionError("read component overrides failed: "+err.Error(), err)
+	}
+	if len(cfg.inlineOverrides) > 0 {
+		overrides = mergeInlineOverrides(overrides, cfg.inlineOverrides)
 	}
 	detections = applyComponentOverrides(detections, overrides)
 
@@ -590,6 +687,9 @@ Commands:
   compatibility  Run API and component compatibility checks
   report         Render a saved assessment
   version        Print build and contract versions
+
+Flags (analyze):
+  --yes          Skip confirmation prompt (required when not running interactively)
 `, binaryName, binaryName)
 }
 

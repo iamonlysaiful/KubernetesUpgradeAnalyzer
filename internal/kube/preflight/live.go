@@ -38,6 +38,25 @@ func (LiveRunner) Run(options KubeconfigOptions) (Result, error) {
 	}.Run(options)
 }
 
+// ResolveContextDisplay returns the context name and API server URL for display
+// in an operator confirmation prompt. Returns empty strings on any error; it
+// does not run preflight checks.
+func ResolveContextDisplay(options KubeconfigOptions) (contextName, serverURL string) {
+	config, source, err := loadConfig(options.Path)
+	if err != nil {
+		return "", ""
+	}
+	selection, err := selectContext(config, source, options.Context)
+	if err != nil {
+		return "", ""
+	}
+	restCfg, err := restConfigForContext(config, selection.Name)
+	if err != nil {
+		return selection.Name, ""
+	}
+	return selection.Name, restCfg.Host
+}
+
 type staticResolver struct {
 	selection ContextSelection
 }

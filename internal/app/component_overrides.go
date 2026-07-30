@@ -96,6 +96,18 @@ type componentOverrideEntry struct {
 	Evidence string   `json:"evidence"`
 }
 
+// mergeInlineOverrides adds or replaces entries from interactive prompt answers
+// into the existing file-based overrides map.
+func mergeInlineOverrides(overrides map[string][]string, inline map[string]string) map[string][]string {
+	if overrides == nil {
+		overrides = make(map[string][]string)
+	}
+	for id, version := range inline {
+		overrides[id] = uniqueSorted(append(overrides[id], version))
+	}
+	return overrides
+}
+
 func loadComponentOverrides(path string) (map[string][]string, error) {
 	if path == "" {
 		return nil, nil

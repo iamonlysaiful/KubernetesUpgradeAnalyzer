@@ -18,6 +18,8 @@ type Config struct {
 	TargetVersion      string
 	ComponentOverrides string
 	Redacted           bool
+	Yes                bool              // skip interactive confirmation
+	inlineOverrides     map[string]string // component ID -> version, set by interactive prompts
 }
 
 func DefaultConfig() Config {
@@ -82,7 +84,7 @@ func isFlag(value string) bool {
 
 func isKnownFlag(name string) bool {
 	switch name {
-	case "--log-level", "--format", "--provider-source", "--context", "--kubeconfig", "--config", "--output", "--input", "--provider-evidence", "--subscription", "--resource-group", "--cluster-name", "--target-version", "--component-overrides", "--redacted":
+	case "--log-level", "--format", "--provider-source", "--context", "--kubeconfig", "--config", "--output", "--input", "--provider-evidence", "--subscription", "--resource-group", "--cluster-name", "--target-version", "--component-overrides", "--redacted", "--yes":
 		return true
 	default:
 		return false
@@ -90,7 +92,7 @@ func isKnownFlag(name string) bool {
 }
 
 func isBoolFlag(name string) bool {
-	return name == "--redacted"
+	return name == "--redacted" || name == "--yes"
 }
 
 func applyFlag(cfg *Config, name string, value string) *AppError {
@@ -141,6 +143,11 @@ func applyFlag(cfg *Config, name string, value string) *AppError {
 			return UsageError("invalid --redacted; expected true or false")
 		}
 		cfg.Redacted = value == "true"
+	case "--yes":
+		if !oneOf(value, "true", "false") {
+			return UsageError("invalid --yes; expected true or false")
+		}
+		cfg.Yes = value == "true"
 	}
 
 	return nil
