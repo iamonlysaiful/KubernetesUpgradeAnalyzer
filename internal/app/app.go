@@ -156,8 +156,18 @@ func runAnalyze(cfg Config, stdout io.Writer, stderr io.Writer, deps Dependencie
 
 	doc, appErr := buildAssessmentDocument(cfg, deps)
 	if appErr != nil {
-		fmt.Fprintln(stderr, errorMessageForOutput(appErr.Message, cfg.Redacted))
-		return appErr.Code
+		// In interactive console mode, a missing destination triggers a target version prompt.
+		if interactive && cfg.Format == "console" && strings.Contains(appErr.Message, "no suitable destination") {
+			reader := bufio.NewReader(deps.Stdin)
+			if v := promptTargetVersion(reader, stdout); v != "" {
+				cfg.TargetVersion = v
+				doc, appErr = buildAssessmentDocument(cfg, deps)
+			}
+		}
+		if appErr != nil {
+			fmt.Fprintln(stderr, errorMessageForOutput(appErr.Message, cfg.Redacted))
+			return appErr.Code
+		}
 	}
 
 	// One interactive loop: prompt for unknown component versions then re-analyze.
@@ -230,6 +240,21 @@ func promptComponentVersions(reader *bufio.Reader, stdout io.Writer, requests []
 		}
 	}
 	return overrides
+}
+
+// promptTargetVersion asks the operator for a destination version when the provider cannot supply one.
+func promptTargetVersion(reader *bufio.Reader, stdout io.Writer) string {
+	fmt.Fprintln(stdout, "\nUpgrade targets could not be detected from the provider.")
+	fmt.Fprintln(stdout, "To fetch available upgrades from AKS:")
+	fmt.Fprintln(stdout, "  az aks get-upgrades --resource-group <rg> --name <cluster> -o json > upgrades.json")
+	fmt.Fprintln(stdout, "  kua analyze --provider-evidence upgrades.json")
+	fmt.Fprintf(stdout, "\nEnter target version (e.g. 1.35.0) [skip]: ")
+	line, _ := reader.ReadString('\n')
+	answer := strings.TrimSpace(line)
+	if answer == "" || answer == "skip" {
+		return ""
+	}
+	return answer
 }
 
 func runAnalyzeSubset(cfg Config, stdout io.Writer, stderr io.Writer, deps Dependencies, subset string) int {

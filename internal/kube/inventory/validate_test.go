@@ -15,7 +15,7 @@ func TestValidateCoreSnapshotRejectsInvalidSnapshot(t *testing.T) {
 	snapshot := collectGoldenSnapshot(t)
 	snapshot.SchemaVersion = "kua.cluster-snapshot.v2"
 	snapshot.CapturedAt = "not-a-time"
-	snapshot.Kubernetes.ServerVersion = "1.29.0"
+	snapshot.Kubernetes.ServerVersion = "notaversion"
 	snapshot.Inventory.Nodes[0].Conditions = nil
 	snapshot.Limitations[0].Severity = "warning"
 
