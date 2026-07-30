@@ -9,7 +9,7 @@ import (
 
 var (
 	snapshotIDPattern        = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$`)
-	kubernetesVersionPattern = regexp.MustCompile(`^1\.(30|31|32|33)(\.([0-9]+))?([+-][A-Za-z0-9._-]+)?$`)
+	kubernetesVersionPattern = regexp.MustCompile(`^1\.(30|31|32|33|34)(\.([0-9]+))?([+-][A-Za-z0-9._-]+)?$`)
 )
 
 func ValidateCoreSnapshot(snapshot Snapshot) error {
