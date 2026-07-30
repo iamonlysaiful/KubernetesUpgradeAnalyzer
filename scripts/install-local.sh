@@ -28,12 +28,14 @@ echo "  version: ${VERSION}  commit: ${COMMIT}"
 
 echo
 read -rp "Install to ${INSTALL_DIR}/${BINARY_NAME}? [y/N]: " answer
-case "${answer,,}" in
+case "$(echo "${answer}" | tr '[:upper:]' '[:lower:]')" in
   y|yes)
     if [[ -w "${INSTALL_DIR}" ]]; then
       cp "${ROOT}/bin/${BINARY_NAME}" "${INSTALL_DIR}/${BINARY_NAME}"
+      chmod 755 "${INSTALL_DIR}/${BINARY_NAME}"
     else
       sudo cp "${ROOT}/bin/${BINARY_NAME}" "${INSTALL_DIR}/${BINARY_NAME}"
+      sudo chmod 755 "${INSTALL_DIR}/${BINARY_NAME}"
     fi
     echo "Installed: ${INSTALL_DIR}/${BINARY_NAME}"
     "${INSTALL_DIR}/${BINARY_NAME}" version
