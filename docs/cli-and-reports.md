@@ -8,9 +8,14 @@ Last updated: 2026-07-27
 Common flags include `--context`, `--kubeconfig`, `--config`, `--input`,
 `--output`, `--format`, `--provider-source=auto`, `--provider-evidence`,
 `--subscription`, `--resource-group`, `--cluster-name`, `--target-version`,
-`--component-overrides`, `--redacted`, and `--log-level`. `--namespace`,
+`--component-overrides`, `--redacted`, `--yes`, and `--log-level`. `--namespace`,
 `--timeout`, and `--catalog` remain planned flags and must not be documented as
 complete until wired.
+
+`--yes` skips the interactive confirmation prompt for `kua analyze`. It is
+required when running without a terminal (CI, scripts, pipes). Without `--yes`
+and without an interactive terminal, `kua analyze` exits with a usage error
+rather than running silently.
 
 Provider source values are `auto`, `azure`, `file`, `offline`, and `none`. No command mutates the cluster or Azure resources.
 
@@ -57,6 +62,13 @@ document without Kubernetes or provider access.
 `auto` provider behavior for detected AKS clusters is: use the local authenticated Azure CLI, fall back to supplied JSON evidence, then continue with exact provider availability `UNKNOWN`. `azure` and `file` require their named source. `offline` prohibits provider network access but may consume a local evidence file. `none` skips provider-specific analysis.
 
 KUA never starts `az login`; it reports the corrective command when authentication is missing or expired.
+
+When `kua analyze` runs interactively (stdin is a terminal and `--format
+console` is in effect), it prompts the operator directly for any unknown
+component versions after the first analysis pass and re-analyzes inline with
+the supplied versions. No file writing or rerun flag is required in this path.
+The non-interactive path (JSON output, `--yes`, or piped stdin) retains the
+file-based `--component-overrides` workflow described below.
 
 When component evidence is missing, ambiguous, or confusing, JSON assessment
 output must include a `componentVersionOverrides` helper object. The helper must

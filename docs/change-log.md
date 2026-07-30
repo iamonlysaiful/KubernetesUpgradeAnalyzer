@@ -2,6 +2,24 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-30 — Interactive analyze UX and local install
+
+- Made `kua analyze` interactive when run from a terminal: auto-detects the
+  current kubectl context and server URL, prompts for confirmation before
+  running, and loops once to ask the operator for any unknown component
+  versions before re-analyzing inline.
+- Added `--yes` flag to `kua analyze` to skip confirmation when running
+  non-interactively (scripts, CI). Running without a terminal and without
+  `--yes` now exits with a clear error rather than silently proceeding.
+- Replaced the verbose component-overrides file workflow with an inline
+  interactive prompt: when component versions are unknown, the operator is
+  asked directly on the terminal; no JSON file editing or rerun flag required.
+- Rewrote the console report renderer for operator focus: header with verdict,
+  grouped BLOCKERS / WARNINGS / EVIDENCE GAPS sections, per-finding
+  remediation hints, and a compact footer.
+- Added `scripts/install-local.sh` to build and install the current branch
+  binary to `/usr/local/bin/kua` for local verification before any publish.
+
 ## 2026-07-27 — Component override helper command
 
 - Added `kua component-overrides --input <assessment.json> --output
