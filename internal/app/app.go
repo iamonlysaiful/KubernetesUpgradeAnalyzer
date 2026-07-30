@@ -156,17 +156,20 @@ func runAnalyze(cfg Config, stdout io.Writer, stderr io.Writer, deps Dependencie
 
 	doc, appErr := buildAssessmentDocument(cfg, deps)
 	if appErr != nil {
-		// In interactive console mode, a missing destination triggers a target version prompt.
-		if interactive && cfg.Format == "console" && strings.Contains(appErr.Message, "no suitable destination") {
-			reader := bufio.NewReader(deps.Stdin)
-			if v := promptTargetVersion(reader, stdout); v != "" {
-				cfg.TargetVersion = v
-				doc, appErr = buildAssessmentDocument(cfg, deps)
+		fmt.Fprintln(stderr, errorMessageForOutput(appErr.Message, cfg.Redacted))
+		return appErr.Code
+	}
+
+	// After first pass: if no destination and no explicit target, prompt interactively.
+	if interactive && cfg.Format == "console" && cfg.TargetVersion == "" && doc.Destination == "" {
+		reader := bufio.NewReader(deps.Stdin)
+		if v := promptTargetVersion(reader, stdout); v != "" {
+			cfg.TargetVersion = v
+			doc, appErr = buildAssessmentDocument(cfg, deps)
+			if appErr != nil {
+				fmt.Fprintln(stderr, errorMessageForOutput(appErr.Message, cfg.Redacted))
+				return appErr.Code
 			}
-		}
-		if appErr != nil {
-			fmt.Fprintln(stderr, errorMessageForOutput(appErr.Message, cfg.Redacted))
-			return appErr.Code
 		}
 	}
 
