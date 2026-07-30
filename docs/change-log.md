@@ -9,8 +9,9 @@ This log records material scope and architecture changes. Git remains the detail
   (`1.X.Y[-+qualifier]`) only. The catalog `validatedRange` is informational
   metadata and does not gate analysis of newer cluster versions.
 - Added interactive target-version prompt to `kua analyze`: when no
-  `--target-version` is given and the provider cannot determine available
-  upgrade targets, the operator is asked for a destination version. If AKS
+  `--target-version` is given and the first analysis pass produces no
+  destination (provider unavailable or no upgrades advertised), the operator
+  is asked for a destination version and analysis is repeated. If AKS
   authentication is missing the prompt prints the corrective
   `az aks get-upgrades` command.
 
