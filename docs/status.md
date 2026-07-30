@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: 2026-07-27
+Last updated: 2026-07-30
 
 This page summarizes the current implementation phase, review gates, and
 publication state. Detailed history remains in Git and `docs/change-log.md`.
@@ -11,7 +11,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | --- | --- | --- |
 | Gate A - contracts | Complete | Phase 0 contracts, schemas, fixtures, security/RBAC, and dependency rules are documented and merged. |
 | Gate B - collection safety | Passed for P2-02 | P2-02 core inventory has fake-client/golden coverage and a locally approved live smoke-test record. Expanded live inventory is deferred and still requires separate Gate B expansion approval. |
-| Gate C - compatibility validity | Complete for Phase 5 | Catalog foundation is merged; kubent target-rule coverage validated for 1.30-1.33; go/no-go decision is GO for MVP. |
+| Gate C - compatibility validity | Complete for Phase 5 + 1.34 live validation | Catalog foundation is merged; kubent target-rule coverage validated for 1.30-1.33 via fixture; 1.34 added to coverage policy via live AKS staging validation during Phase 8.5; go/no-go decision is GO for MVP. |
 | Gate D - recommendation calibration | Complete for Phase 8 | Recommendation matrix outputs, deterministic path evaluation, and report rendering/redaction foundation are merged. |
 | Gate E - release | Blocked pending publication approval | End-to-end `kua analyze` wiring and sanitized AKS staging validation have passed locally. Publication still requires a fresh post-helper release candidate and explicit owner approval. |
 
@@ -24,12 +24,12 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Phase 2 - Kubernetes preflight and inventory | Complete | Fake-client inventory foundation is merged; live core inventory is verified; expanded live inventory is deferred. |
 | Phase 3 - Health analysis | Complete | Health foundation and internal rules are merged; no expanded live collection was introduced. |
 | Phase 4 - Component detection and catalog | Complete | Catalog loader, detector framework, initial cohort, and closeout are merged; compatibility decisions remain deferred. |
-| Phase 5 - API compatibility | Complete | Kubent adapter foundation, target-rule coverage for 1.30-1.33, go/no-go decision GO, and closeout are merged. |
+| Phase 5 - API compatibility | Complete | Kubent adapter foundation, target-rule coverage for 1.30-1.33 via fixture, go/no-go decision GO, and closeout are merged. 1.34 coverage added to policy via live staging validation in Phase 8.5. |
 | Phase 6 - AKS provider evidence | Complete | Provider interface, AKS identity/CLI/file adapters, candidate/path construction, and closeout are merged; no live CLI execution. |
 | Phase 7 - Recommendation engine | Complete | Recommendation engine, finding aggregation, policy evaluation, AKS 1.30 validation case, and closeout are merged. |
 | Phase 8 - Reports and hardening | Complete | Multi-format report rendering, redaction mode, hardening checks, and closeout are merged. |
-| Phase 8.5 - End-to-end CLI recovery | Complete pending merge of helper | `kua analyze`, `health`, `compatibility`, `report`, live analysis inventory, kubent, AKS provider evidence, advertised-edge handling, component multi-version verdicts, redacted preflight errors, and component override workflow are implemented. The helper command is on `feature/component-overrides-helper` pending merge. |
-| Phase 9 - Controlled staging validation and MVP release | Blocked pending fresh RC/publication approval | Sanitized staging validation passed locally. `0.1.0-rc.2` was generated before the component override helper, so a fresh RC should be generated after helper merge before any tag/release publication. |
+| Phase 8.5 - End-to-end CLI recovery | Complete | `kua analyze`, `health`, `compatibility`, `report`, live analysis inventory, kubent, AKS provider evidence, advertised-edge handling, component multi-version verdicts, redacted preflight errors, and component override workflow are implemented. Component override helper merged to `main` in PR #36. |
+| Phase 9 - Controlled staging validation and MVP release | Blocked pending fresh RC/publication approval | Sanitized staging validation passed locally. Component override helper merged. Interactive CLI UX (`feature/interactive-cli-ux`) is in progress and must merge before `0.1.0-rc.3` is generated. No tag or release approved. |
 
 ## Current branch focus
 
@@ -153,11 +153,13 @@ P5-02 kubent adapter foundation is merged:
 
 P5-03 kubent coverage decision is merged:
 
-- target-rule coverage validation for `1.30` through `1.33`;
+- target-rule coverage validation for `1.30` through `1.33` via fixture;
 - normalized API findings;
 - go/no-go helper returns GO for MVP;
 - Phase 5 closeout record;
 - no live kubent execution.
+- `1.34` subsequently added to coverage policy (`kubent-0.7.3-live-validation`)
+  during Phase 8.5 live AKS staging validation.
 
 `docs/plans/phase-6-provider-plan` started Phase 6:
 
@@ -242,9 +244,8 @@ Phase 8.5 validation result:
   `READY_WITH_WARNINGS` / `MEDIUM`, destination `1.34.9`, provider-valid
   `1.30.0 -> 1.34.9`, zero blockers, zero unknown findings, and only the
   provider-direct multi-minor warning;
-- the component override helper command is implemented on
-  `feature/component-overrides-helper` and must be merged before the next
-  release candidate.
+- the component override helper command is merged to `main` in PR #36;
+  `feature/interactive-cli-ux` must merge before `0.1.0-rc.3` is generated.
 
 Approved hybrid AKS behavior follows provider-advertised upgrade edges. When AKS
 offers only a direct higher target such as `1.34.x` and no lower intermediate

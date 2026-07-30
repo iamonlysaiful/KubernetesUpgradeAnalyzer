@@ -1,7 +1,7 @@
 # Phase 9 release candidate record
 
-Status: RC.2 generated locally; superseded by component override helper branch
-Last updated: 2026-07-27
+Status: RC.2 generated locally; superseded — helper merged, interactive CLI UX in progress
+Last updated: 2026-07-30
 
 This record tracks MVP release-candidate artifacts and final publication gates.
 
@@ -61,11 +61,12 @@ Record results:
 ## 5. Notes and limitations
 
 - Known limitations: `0.1.0-rc.2` was generated before the
-  `feature/component-overrides-helper` branch. It is suitable as a local
-  verification artifact but should not be published as the final MVP candidate.
-- Deferred work: merge the helper branch, generate a fresh release candidate
-  (`0.1.0-rc.3` unless the owner chooses another version), rerun release gates,
-  then request explicit publication approval.
+  `feature/component-overrides-helper` branch. That helper is now merged to
+  `main` in PR #36. `feature/interactive-cli-ux` (interactive analyze UX,
+  format-only version validation, target version prompt) is in progress and
+  must merge before `0.1.0-rc.3` is generated.
+- Deferred work: merge `feature/interactive-cli-ux`, generate `0.1.0-rc.3`,
+  rerun release gates, then request explicit publication approval.
 - Follow-up actions: no tag, GitHub release, or artifact publication is approved
   yet.
 
