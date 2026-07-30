@@ -33,6 +33,21 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 
 ## Current branch focus
 
+`feature/interactive-cli-ux` (in progress, not yet merged):
+
+- Interactive `kua analyze` confirmation: detects current kubectl context and
+  server URL; prompts `[y/N]` before running; requires `--yes` in CI/scripts.
+- Interactive component version prompt: unknown component versions are asked
+  inline after first pass; re-analysis runs with supplied answers.
+- Console renderer rewrite: operator-focused grouped output with BLOCKERS /
+  WARNINGS / EVIDENCE GAPS sections and per-finding remediation hints.
+- Snapshot validator changed to format-only version check; catalog
+  `validatedRange` is now strictly informational.
+- Interactive target-version prompt: when no `--target-version` and provider
+  upgrades are unavailable, operator is asked for destination version; missing
+  AKS auth prints the corrective `az aks get-upgrades` command.
+- `scripts/install-local.sh` added for local pre-publish verification.
+
 P2-01 and P2-02 are merged to `main`:
 
 - kubeconfig/current or explicit context preflight;

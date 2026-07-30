@@ -136,7 +136,9 @@ drift from `schemas/cluster-snapshot/v1.json`:
 - schema version, snapshot ID, and RFC3339 capture timestamp;
 - required cluster identity, provider, and context fields;
 - supported provider type and confidence enums;
-- supported Kubernetes version range;
+- Kubernetes server and kubelet version format (`1.X.Y[-+qualifier]`); the
+  validator checks format only — the catalog `validatedRange` is informational
+  metadata and does not restrict which cluster versions KUA can analyse;
 - namespace and node required fields;
 - node condition status enums;
 - required future inventory groups are non-nil arrays;

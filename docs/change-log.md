@@ -2,6 +2,18 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-30 — Version validation format-only and interactive target version prompt
+
+- Removed hardcoded minor-version list from the snapshot validator.
+  `kubernetes.serverVersion` and `kubeletVersion` are now validated for format
+  (`1.X.Y[-+qualifier]`) only. The catalog `validatedRange` is informational
+  metadata and does not gate analysis of newer cluster versions.
+- Added interactive target-version prompt to `kua analyze`: when no
+  `--target-version` is given and the provider cannot determine available
+  upgrade targets, the operator is asked for a destination version. If AKS
+  authentication is missing the prompt prints the corrective
+  `az aks get-upgrades` command.
+
 ## 2026-07-30 — Interactive analyze UX and local install
 
 - Made `kua analyze` interactive when run from a terminal: auto-detects the

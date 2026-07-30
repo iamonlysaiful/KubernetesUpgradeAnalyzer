@@ -70,6 +70,15 @@ the supplied versions. No file writing or rerun flag is required in this path.
 The non-interactive path (JSON output, `--yes`, or piped stdin) retains the
 file-based `--component-overrides` workflow described below.
 
+When running interactively and `--target-version` is not specified and the
+provider cannot determine available upgrade targets (no upgrades advertised or
+provider evidence unavailable), `kua analyze` prompts the operator for a target
+Kubernetes version before running analysis. If the AKS provider was reachable
+but authentication is absent or expired, the prompt also prints the corrective
+`az aks get-upgrades` command so the operator can export evidence to a file and
+rerun with `--provider-evidence`. Supplying a version at the prompt is
+equivalent to passing `--target-version` on the command line.
+
 When component evidence is missing, ambiguous, or confusing, JSON assessment
 output must include a `componentVersionOverrides` helper object. The helper must
 list each affected component, observed versions when available, placeholder
