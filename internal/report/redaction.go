@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
+
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/plan"
 )
 
 // Redactor generates deterministic assessment-local aliases.
@@ -53,7 +55,54 @@ func (r *Redactor) RedactDocument(doc Document) Document {
 		redacted.Limitations[i].Impact = r.redactFreeText(redacted.Limitations[i].Impact)
 	}
 
+	if redacted.UpgradePlan != nil {
+		p := *redacted.UpgradePlan
+		p.Steps = r.redactPlanSteps(redacted.UpgradePlan.Steps)
+		p.ValidationSteps = r.redactPlanSteps(redacted.UpgradePlan.ValidationSteps)
+		redacted.UpgradePlan = &p
+	}
+
 	return redacted
+}
+
+func (r *Redactor) redactPlanSteps(steps []plan.PlanStep) []plan.PlanStep {
+	out := make([]plan.PlanStep, len(steps))
+	for i, s := range steps {
+		s.Command = r.redactCommand(s.Command)
+		out[i] = s
+	}
+	return out
+}
+
+// redactCommand redacts resource group and cluster/resource name values
+// following common Azure CLI and kubectl flags (e.g. "-g <rg> -n <name>").
+func (r *Redactor) redactCommand(in string) string {
+	if in == "" {
+		return in
+	}
+	out := in
+	for _, flag := range []string{"-g", "--resource-group"} {
+		out = redactFlagValue(out, flag, r, "rg")
+	}
+	for _, flag := range []string{"-n", "--name", "--cluster-name"} {
+		out = redactFlagValue(out, flag, r, "res")
+	}
+	return r.redactFreeText(out)
+}
+
+func redactFlagValue(in, flag string, r *Redactor, prefix string) string {
+	fields := strings.Fields(in)
+	changed := false
+	for i := 0; i < len(fields)-1; i++ {
+		if fields[i] == flag {
+			fields[i+1] = r.alias(prefix, fields[i+1])
+			changed = true
+		}
+	}
+	if !changed {
+		return in
+	}
+	return strings.Join(fields, " ")
 }
 
 func (r *Redactor) redactResourceText(in string, originalNamespace string, originalName string, namespaceAlias string, nameAlias string) string {

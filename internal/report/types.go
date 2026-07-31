@@ -3,6 +3,7 @@ package report
 import (
 	"time"
 
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/plan"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/recommendation"
 )
 
@@ -27,6 +28,10 @@ type Document struct {
 	Readiness                 recommendation.ReadinessState     `json:"readiness"`
 	Risk                      recommendation.RiskLevel          `json:"risk"`
 	Path                      []recommendation.UpgradeStage     `json:"path,omitempty"`
+	Decision                  recommendation.Decision           `json:"decision,omitempty"`
+	Confidence                *recommendation.ConfidenceModel   `json:"confidence,omitempty"`
+	Evidence                  *recommendation.EvidenceSummary   `json:"evidence,omitempty"`
+	UpgradePlan               *plan.UpgradePlan                 `json:"upgradePlan,omitempty"`
 	Findings                  []recommendation.Finding          `json:"findings"`
 	Limitations               []recommendation.Limitation       `json:"limitations"`
 	ComponentVersionOverrides *ComponentVersionOverrideTemplate `json:"componentVersionOverrides,omitempty"`
