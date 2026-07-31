@@ -41,6 +41,9 @@ func (a *Aggregator) AggregateHealth(healthFindings []health.Finding) []Finding 
 		// Add remediation based on rule
 		f.Remediation = a.healthRemediation(hf.RuleID)
 
+		// Enhance with Impact, Action, IfIgnored (Phase 10.5)
+		EnhanceHealthFinding(&f)
+
 		findings = append(findings, f)
 	}
 
@@ -142,6 +145,10 @@ func (a *Aggregator) AggregateAPI(apiFindings []kubent.Finding, targetVersion st
 			}
 		}
 
+		// Enhance with Impact, Action, IfIgnored (Phase 10.5)
+		isRemoved := af.Status == kubent.FindingFail
+		EnhanceAPIFinding(&f, isRemoved, af.Replacement, af.RemovedIn)
+
 		findings = append(findings, f)
 	}
 
@@ -180,13 +187,15 @@ func (a *Aggregator) AggregateComponents(detections []components.Detection, targ
 					continue
 				}
 				seenPartial[d.ComponentID] = true
-				findings = append(findings, Finding{
+				f := Finding{
 					ID:          fmt.Sprintf("COMPONENT_%s_VERSION_PARTIAL", d.ComponentID),
 					Category:    CategoryComponent,
 					Severity:    SeverityWarning,
 					Summary:     fmt.Sprintf("Component %s has known versions plus ambiguous version evidence", d.Name),
 					Remediation: fmt.Sprintf("Review %s workloads with ambiguous image tags", d.Name),
-				})
+				}
+				EnhanceComponentFinding(&f, d.Name, false, true)
+				findings = append(findings, f)
 				continue
 			}
 			key := d.ComponentID + "|UNKNOWN"
@@ -194,26 +203,30 @@ func (a *Aggregator) AggregateComponents(detections []components.Detection, targ
 				continue
 			}
 			seenUnknown[key] = true
-			findings = append(findings, Finding{
+			f := Finding{
 				ID:          fmt.Sprintf("COMPONENT_%s_UNKNOWN", d.ComponentID),
 				Category:    CategoryComponent,
 				Severity:    SeverityUnknown,
 				Summary:     fmt.Sprintf("Component %s version is unknown", d.Name),
 				Remediation: fmt.Sprintf("Verify %s version and compatibility", d.Name),
-			})
+			}
+			EnhanceComponentFinding(&f, d.Name, true, false)
+			findings = append(findings, f)
 			continue
 		}
 
 		key := d.ComponentID + "|" + d.Version
 		if !seenKnown[key] {
 			seenKnown[key] = true
-			findings = append(findings, Finding{
+			f := Finding{
 				ID:          fmt.Sprintf("COMPONENT_%s_%s_OBSERVED", d.ComponentID, d.Version),
 				Category:    CategoryComponent,
 				Severity:    SeverityInfo,
 				Summary:     fmt.Sprintf("Component %s version %s observed", d.Name, d.Version),
 				Remediation: fmt.Sprintf("Verify %s %s compatibility with Kubernetes 1.%d", d.Name, d.Version, targetMinor),
-			})
+			}
+			EnhanceComponentFinding(&f, d.Name, false, false)
+			findings = append(findings, f)
 		}
 
 		// Handle detection limitations

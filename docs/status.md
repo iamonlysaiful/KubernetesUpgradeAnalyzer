@@ -34,15 +34,15 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 
 ## Current branch focus
 
-`feature/phase-10-advisor-model` (in progress):
+`feature/phase-10.5-finding-enhancement` (in progress):
 
 Transform KUA from "Kubernetes Upgrade Analyzer" to "Kubernetes Upgrade Advisor":
 
-- **Phase 10.1**: Confidence model foundation — weighted scoring replaces binary pass/fail
-- **Phase 10.2**: Traffic light decisions — 🟢 GO / 🟡 CAUTION / 🔴 STOP
-- **Phase 10.3**: Evidence summary — "Why do I trust this?"
-- **Phase 10.4**: Upgrade plan generator — step-by-step checklist with time estimates
-- **Phase 10.5**: Finding enhancement — mandatory actions, impact, consequences
+- **Phase 10.1**: Confidence model foundation — weighted scoring replaces binary pass/fail ✅ Merged
+- **Phase 10.2**: Traffic light decisions — 🟢 GO / 🟡 CAUTION / 🔴 STOP ✅ Merged
+- **Phase 10.3**: Evidence summary — "Why do I trust this?" ✅ Merged
+- **Phase 10.4**: Upgrade plan generator — step-by-step checklist with time estimates ✅ Merged
+- **Phase 10.5**: Finding enhancement — mandatory actions, impact, consequences 🔄 In progress
 - **Phase 10.6**: Console renderer overhaul — advisor output format
 - **Phase 10.7**: Version-specific gotchas — proactive breaking change warnings
 - **Phase 10.8**: Pre-flight/day-of modes — separate preparation from execution
