@@ -149,6 +149,20 @@ func (e *Engine) Generate(input Input, opts RecommendationOptions) (*Recommendat
 		}
 	}
 
+	// Fall back to the operator-provided target version when provider evidence
+	// could not confirm a destination or upgrade path (e.g. no CLI access or
+	// evidence file). The destination is then unvalidated against the provider.
+	if rec.Destination == "" && opts.TargetVersion != "" {
+		if tv, err := provider.ParseVersion(opts.TargetVersion); err == nil {
+			rec.Destination = tv.String()
+			rec.Limitations = append(rec.Limitations, Limitation{
+				Code:    "DESTINATION_UNVALIDATED",
+				Summary: fmt.Sprintf("Destination %s set from operator-provided target version; not validated against provider evidence", tv.String()),
+				Impact:  "Upgrade path stages and provider validation are unavailable; verify supported upgrade steps manually",
+			})
+		}
+	}
+
 	// Evaluate readiness and risk (legacy)
 	rec.Readiness = policy.EvaluateReadiness(rec.Findings, rec.Limitations)
 	rec.Risk = policy.EvaluateRisk(rec.Findings, rec.Limitations)

@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/catalog"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/components"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/external/kubent"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/health"
@@ -734,7 +735,17 @@ func printVersion(w io.Writer, build BuildInfo) {
 	fmt.Fprintf(w, "buildDate: %s\n", defaultString(build.BuildDate, "unknown"))
 	fmt.Fprintf(w, "go: %s\n", runtime.Version())
 	fmt.Fprintf(w, "assessmentSchema: %s\n", schemaVersion)
-	fmt.Fprintf(w, "catalogVersion: %s\n", defaultString(build.CatalogVersion, "unavailable"))
+	fmt.Fprintf(w, "catalogVersion: %s\n", defaultString(build.CatalogVersion, embeddedCatalogVersion()))
+}
+
+// embeddedCatalogVersion reads the catalog version baked into the binary via
+// go:embed, used when no build-time catalogVersion ldflag was set.
+func embeddedCatalogVersion() string {
+	bundle, err := catalog.LoadEmbedded()
+	if err != nil || bundle.CatalogVersion == "" {
+		return "unavailable"
+	}
+	return bundle.CatalogVersion
 }
 
 func defaultString(value string, fallback string) string {

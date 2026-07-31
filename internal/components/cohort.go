@@ -73,9 +73,12 @@ func (detector WorkloadDetector) Detect(snapshot inventory.Snapshot) []Detection
 }
 
 func (detector WorkloadDetector) matchesWorkload(workload inventory.Workload) bool {
-	resourceText := strings.ToLower(workload.Ref.Name + " " + workload.Ref.Namespace)
+	// Match on the workload's own name only. Matching on namespace would
+	// misclassify unrelated workloads that merely share a namespace with
+	// the component (e.g. a config-reloader deployed in an "emqx" namespace).
+	resourceName := strings.ToLower(workload.Ref.Name)
 	for _, hint := range detector.nameHints {
-		if strings.Contains(resourceText, hint) {
+		if strings.Contains(resourceName, hint) {
 			return true
 		}
 	}

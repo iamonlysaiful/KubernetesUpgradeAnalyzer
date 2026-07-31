@@ -14,7 +14,7 @@ explicit owner approval.
 - Deprecated API adapter: installed `kubent` binary for MVP
 - Native API analyzer: planned
 - Architecture baseline: documented under [`docs/`](docs/README.md)
-- Implementation progress: Phases 1-8.5 complete; Phase 10 (advisor model) in progress; Phase 9 publication blocked pending Phase 10 completion
+- Implementation progress: Phases 1-8.5 complete; Phase 10 (advisor model) 10.1-10.6 merged — confidence scoring, traffic-light decisions, evidence summary, upgrade plan, and advisor console output are live; 10.7 (version-specific gotchas) and 10.8 (pre-flight/day-of modes) pending; Phase 9 publication blocked pending Phase 10 completion and owner approval
 
 Follow [`AGENTS.md`](AGENTS.md) and the docs-first approval workflow.
 
@@ -82,17 +82,25 @@ az account set --subscription "<SUBSCRIPTION_ID>"
 
 ### 5. Assessment states
 
-Current output states:
+Console output leads with a confidence-based traffic-light decision:
 
-| Readiness | Risk | Meaning |
-|-----------|------|---------|
-| `READY` | `LOW` | No blockers, no material warnings |
-| `READY_WITH_WARNINGS` | `MEDIUM` | No blockers, review warnings before upgrade |
-| `NOT_READY` | `HIGH` | Blockers must be fixed before upgrade |
-| `INCONCLUSIVE` | `UNKNOWN` | Required evidence is missing or failed |
+| Decision | Confidence | Meaning |
+|----------|------------|---------|
+| 🟢 `GO` (PROCEED WITH UPGRADE) | ≥90% (balanced profile) | No blockers; confidence factors all strong |
+| 🟡 `GO_WITH_CAUTION` (PROCEED WITH CAUTION) | 70-89% | No blockers, but review warnings/evidence gaps first |
+| 🔴 `DO_NOT_PROCEED` (DO NOT PROCEED) | <70% or any blocker | Fix blockers or gather more evidence before upgrading |
 
-> **Note:** Phase 10 will replace these with confidence-based decisions:
-> 🟢 GO / 🟡 GO WITH CAUTION / 🔴 DO NOT PROCEED
+Confidence is a weighted score (API compatibility, component compatibility,
+cluster health, provider evidence, storage health, analysis coverage) that
+drops whenever evidence is missing, ambiguous, or a provider/API check could
+not run — see [`docs/recommendation-model.md`](docs/recommendation-model.md).
+Each finding also carries a plain-language impact, action, and consequence
+if ignored, and the console report includes an evidence summary and
+step-by-step upgrade plan when a destination version is available.
+
+The legacy `readiness`/`risk` fields (`READY` / `READY_WITH_WARNINGS` /
+`NOT_READY` / `INCONCLUSIVE`, `LOW` / `MEDIUM` / `HIGH` / `UNKNOWN`) remain in
+the JSON output for backward reference alongside `decision` and `confidence`.
 
 ### 6. Component version overrides
 

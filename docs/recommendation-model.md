@@ -60,6 +60,27 @@ Risk is rule-based, not an unexplained arithmetic score:
 
 The report includes the rules that determined the result. Future weighted scoring requires a separate approved ADR and calibration dataset.
 
+### When `UNKNOWN` is expected and correct
+
+Supplying `--target-version` without provider evidence (no `az` CLI access and no
+`--provider-evidence` file) produces a `DESTINATION_UNVALIDATED` limitation.
+The risk policy treats any Limitation as `hasUnknown = true`, so the legacy `risk`
+field correctly returns `UNKNOWN`: kua cannot confirm the version is AKS-supported
+or that the upgrade path has no skipped minor versions.
+
+This is not a defect. The operator-provided destination is still used for plan
+generation, and the engine appends an explicit `DESTINATION_UNVALIDATED`
+evidence gap. The **Phase 10 confidence score and traffic-light decision are the
+primary actionable outputs** in this case; `risk: UNKNOWN` is a legacy field that
+will be removed when Schema 2.0 lands (OQ-010).
+
+To promote `UNKNOWN` → a bounded risk level, supply confirmed provider evidence:
+
+```bash
+az aks get-upgrades --resource-group <rg> --name <cluster> -o json > evidence.json
+kua analyze --provider-evidence evidence.json --target-version 1.35.6
+```
+
 ## 7. AKS 1.30 validation case
 
 Given sanitized evidence:

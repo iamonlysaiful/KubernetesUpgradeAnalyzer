@@ -43,6 +43,14 @@ func (c Collector) collectWorkloads(ctx context.Context) ([]Workload, error) {
 		return nil, err
 	}
 	for _, replicaSet := range replicaSets.Items {
+		// Skip scaled-to-zero ReplicaSets owned by a Deployment: Kubernetes
+		// retains these as rollout history (old revisions) so rollbacks are
+		// possible, but they are not running and would otherwise be double
+		// counted (and misdetected as distinct component versions) alongside
+		// the active Deployment they belong to.
+		if isStaleDeploymentRevision(replicaSet) {
+			continue
+		}
 		workloads = append(workloads, workloadFromReplicaSet(replicaSet))
 	}
 
@@ -104,6 +112,21 @@ func workloadFromReplicaSet(replicaSet appsv1.ReplicaSet) Workload {
 		Critical:        "UNKNOWN",
 		Containers:      containers(replicaSet.Spec.Template.Spec.Containers),
 	}
+}
+
+// isStaleDeploymentRevision reports whether a ReplicaSet is a scaled-to-zero
+// revision kept by a Deployment for rollback history rather than an active
+// or standalone workload.
+func isStaleDeploymentRevision(replicaSet appsv1.ReplicaSet) bool {
+	if int32Value(replicaSet.Spec.Replicas, 1) != 0 {
+		return false
+	}
+	for _, owner := range replicaSet.OwnerReferences {
+		if owner.Kind == "Deployment" {
+			return true
+		}
+	}
+	return false
 }
 
 func workloadFromJob(job batchv1.Job) Workload {
