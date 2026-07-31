@@ -34,7 +34,16 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 
 ## Current branch focus
 
-`feature/phase-10.6-console-renderer` (in progress):
+`fix/destination-fallback-catalog-version-emqx-detection` (awaiting PR merge):
+
+Live-cluster bugfixes verified against CFEMS-STAG (read-only `kua analyze`):
+
+- `catalogVersion: unavailable` → fixed: default changed to `""`, runtime fallback reads embedded catalog
+- `Destination: n/a` with `--target-version` → fixed: `DESTINATION_UNVALIDATED` fallback block in engine
+- Stale ReplicaSet inflation (EMQX 12→2, NGINX 6→4, etc.) → fixed: `isStaleDeploymentRevision()` filter
+- Component namespace-substring false-positive → fixed: match on workload name only
+
+Next branch (after merge): complete Phase 10.6 console renderer remaining items.
 
 Transform KUA from "Kubernetes Upgrade Analyzer" to "Kubernetes Upgrade Advisor":
 
@@ -43,9 +52,9 @@ Transform KUA from "Kubernetes Upgrade Analyzer" to "Kubernetes Upgrade Advisor"
 - **Phase 10.3**: Evidence summary — "Why do I trust this?" ✅ Merged
 - **Phase 10.4**: Upgrade plan generator — step-by-step checklist with time estimates ✅ Merged
 - **Phase 10.5**: Finding enhancement — mandatory actions, impact, consequences ✅ Merged
-- **Phase 10.6**: Console renderer overhaul — advisor output format 🔄 In progress
-- **Phase 10.7**: Version-specific gotchas — proactive breaking change warnings
-- **Phase 10.8**: Pre-flight/day-of modes — separate preparation from execution
+- **Phase 10.6**: Console renderer overhaul — advisor output format 🔄 Partial (structure done; remaining: clean Destination line, BLOCKERS(0) always shown, human-readable time range, upgrade path in header, footer Overall Decision line, Schema 2.0 field rename)
+- **Phase 10.7**: Version-specific gotchas — proactive breaking change warnings ⏳ Not started
+- **Phase 10.8**: Pre-flight/day-of modes — separate preparation from execution ⏳ Not started
 
 Approved decisions:
 - OQ-008: Start with heuristic weights; calibrate from real outcomes
