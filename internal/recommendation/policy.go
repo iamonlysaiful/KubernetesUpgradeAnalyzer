@@ -1,11 +1,20 @@
 package recommendation
 
 // Policy evaluates findings to determine readiness and risk.
-type Policy struct{}
+type Policy struct {
+	confidenceCalc *ConfidenceCalculator
+}
 
-// NewPolicy creates a new policy evaluator.
+// NewPolicy creates a new policy evaluator with balanced risk profile.
 func NewPolicy() *Policy {
-	return &Policy{}
+	return NewPolicyWithProfile(RiskProfileBalanced)
+}
+
+// NewPolicyWithProfile creates a policy evaluator with the specified risk profile.
+func NewPolicyWithProfile(profile RiskProfile) *Policy {
+	return &Policy{
+		confidenceCalc: NewConfidenceCalculator(profile),
+	}
 }
 
 // EvaluateReadiness determines the overall readiness state from findings.
@@ -152,4 +161,15 @@ func (p *Policy) ClassifyFinding(f Finding) FindingSeverity {
 		return SeverityWarning
 	}
 	return SeverityInfo
+}
+
+// EvaluateConfidence calculates the confidence model from findings and limitations.
+// This is the Phase 10 decision engine that produces a traffic light decision.
+func (p *Policy) EvaluateConfidence(findings []Finding, limitations []Limitation) ConfidenceModel {
+	return p.confidenceCalc.Calculate(findings, limitations)
+}
+
+// RiskProfile returns the risk profile used by this policy.
+func (p *Policy) RiskProfile() RiskProfile {
+	return p.confidenceCalc.profile
 }

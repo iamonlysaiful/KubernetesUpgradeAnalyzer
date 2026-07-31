@@ -153,6 +153,8 @@ type RecommendationOptions struct {
 	AllowPreview bool
 	// MaxMinorSkip limits the destination (default: 4 minors).
 	MaxMinorSkip int
+	// RiskProfile controls confidence thresholds (default: balanced).
+	RiskProfile RiskProfile
 }
 
 // DefaultOptions returns the default recommendation options.
@@ -160,5 +162,6 @@ func DefaultOptions() RecommendationOptions {
 	return RecommendationOptions{
 		MaxMinorSkip: 4,
 		AllowPreview: false,
+		RiskProfile:  RiskProfileBalanced,
 	}
 }
