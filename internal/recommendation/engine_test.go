@@ -7,6 +7,7 @@ import (
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/components"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/external/kubent"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/health"
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/inventory"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/provider"
 )
 
@@ -663,5 +664,96 @@ func TestEngine_Generate_RiskProfileFromOptions(t *testing.T) {
 			t.Logf("Profile=%s, Score=%.2f (%d%%), Decision=%s (expected %s)",
 				tt.profile, rec.Confidence.Score, rec.Confidence.Percentage, rec.Decision, tt.wantDecision)
 		})
+	}
+}
+
+// TestEngine_Generate_PopulatesUpgradePlan verifies Phase 10.4 plan generation.
+func TestEngine_Generate_PopulatesUpgradePlan(t *testing.T) {
+	engine := NewEngine().WithClock(fixedClock)
+
+	input := Input{
+		CurrentVersion: "1.30.0",
+		ClusterName:    "my-cluster",
+		ResourceGroup:  "my-rg",
+		HealthFindings: []health.Finding{
+			{RuleID: "NODE_READY", Status: health.StatusPass},
+		},
+		ComponentDetections: []components.Detection{
+			{ComponentID: "nginx-ingress", Name: "NGINX Ingress", Version: "1.12.1", Status: components.StatusFound},
+		},
+		ProviderEvidence: &provider.ProviderEvidence{
+			CurrentVersion: "1.30.0",
+			Cluster: provider.ClusterIdentity{
+				Provider: provider.ProviderAKS,
+			},
+			AvailableUpgrades: []provider.UpgradeOption{
+				{Version: "1.31.0", IsPreview: false},
+			},
+			NodePools: []provider.NodePoolEvidence{
+				{NameAlias: "systempool", CurrentVersion: "1.30.0"},
+				{NameAlias: "userpool", CurrentVersion: "1.30.0"},
+			},
+		},
+		InventorySnapshot: &inventory.Inventory{
+			Nodes: []inventory.Node{
+				{Ref: inventory.ResourceRef{Kind: "Node", Name: "node-1"}},
+				{Ref: inventory.ResourceRef{Kind: "Node", Name: "node-2"}},
+			},
+			Workloads: []inventory.Workload{
+				{Ref: inventory.ResourceRef{Kind: "StatefulSet", Name: "db"}},
+			},
+		},
+	}
+
+	rec, err := engine.Generate(input, DefaultOptions())
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+
+	// Verify UpgradePlan is populated
+	if rec.UpgradePlan == nil {
+		t.Fatal("UpgradePlan should be populated when destination exists")
+	}
+
+	// Verify steps exist
+	if len(rec.UpgradePlan.Steps) < 5 {
+		t.Errorf("UpgradePlan.Steps count = %d, want >= 5", len(rec.UpgradePlan.Steps))
+	}
+
+	// Verify validation steps exist
+	if len(rec.UpgradePlan.ValidationSteps) < 5 {
+		t.Errorf("ValidationSteps count = %d, want >= 5", len(rec.UpgradePlan.ValidationSteps))
+	}
+
+	// Verify estimated time is reasonable
+	if rec.UpgradePlan.EstimatedTime < 30*60*1e9 { // 30 minutes in nanoseconds
+		t.Errorf("EstimatedTime = %v, want >= 30m", rec.UpgradePlan.EstimatedTime)
+	}
+
+	// Verify rollback guidance exists
+	if rec.UpgradePlan.RollbackGuidance == "" {
+		t.Error("RollbackGuidance should not be empty")
+	}
+
+	t.Logf("UpgradePlan: %d steps, %d validation steps, estimated time: %v",
+		len(rec.UpgradePlan.Steps), len(rec.UpgradePlan.ValidationSteps), rec.UpgradePlan.EstimatedTime)
+}
+
+// TestEngine_Generate_NoUpgradePlanWithoutDestination verifies no plan when no destination.
+func TestEngine_Generate_NoUpgradePlanWithoutDestination(t *testing.T) {
+	engine := NewEngine().WithClock(fixedClock)
+
+	input := Input{
+		CurrentVersion: "1.30.0",
+		// No provider evidence, so no destination
+	}
+
+	rec, err := engine.Generate(input, DefaultOptions())
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+
+	if rec.UpgradePlan != nil {
+		t.Error("UpgradePlan should be nil when no destination")
 	}
 }

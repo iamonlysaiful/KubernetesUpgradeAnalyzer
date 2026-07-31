@@ -9,6 +9,7 @@ import (
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/external/kubent"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/health"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/inventory"
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/plan"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/provider"
 )
 
@@ -28,6 +29,10 @@ type Input struct {
 	ProviderEvidence *provider.ProviderEvidence
 	// InventorySnapshot provides raw cluster inventory for evidence summary.
 	InventorySnapshot *inventory.Inventory
+	// ClusterName is used for plan generation (optional).
+	ClusterName string
+	// ResourceGroup is used for AKS plan generation (optional).
+	ResourceGroup string
 }
 
 // Engine produces upgrade recommendations.
@@ -35,6 +40,7 @@ type Engine struct {
 	aggregator      *Aggregator
 	policy          *Policy
 	evidenceBuilder *EvidenceBuilder
+	planGenerator   *plan.Generator
 	clock           func() time.Time
 }
 
@@ -44,6 +50,7 @@ func NewEngine() *Engine {
 		aggregator:      NewAggregator(),
 		policy:          NewPolicy(),
 		evidenceBuilder: NewEvidenceBuilder(),
+		planGenerator:   plan.NewGenerator(),
 		clock:           time.Now,
 	}
 }
@@ -154,6 +161,11 @@ func (e *Engine) Generate(input Input, opts RecommendationOptions) (*Recommendat
 	// Build evidence summary (Phase 10)
 	deprecatedAPICount := e.countDeprecatedAPIs(rec.Findings)
 	rec.Evidence = e.evidenceBuilder.Build(input.InventorySnapshot, input.ComponentDetections, deprecatedAPICount)
+
+	// Generate upgrade plan (Phase 10)
+	if rec.Destination != "" {
+		rec.UpgradePlan = e.generateUpgradePlan(input, rec)
+	}
 
 	// Sort findings by severity
 	e.sortFindings(rec.Findings)
@@ -353,4 +365,52 @@ func (e *Engine) countDeprecatedAPIs(findings []Finding) int {
 		}
 	}
 	return count
+}
+
+// generateUpgradePlan creates an upgrade plan based on inputs and recommendation.
+func (e *Engine) generateUpgradePlan(input Input, rec *Recommendation) *plan.UpgradePlan {
+	planInput := plan.PlanInput{
+		CurrentVersion: input.CurrentVersion,
+		TargetVersion:  rec.Destination,
+		ClusterName:    input.ClusterName,
+		ResourceGroup:  input.ResourceGroup,
+		RiskLevel:      string(rec.Risk),
+	}
+
+	// Determine provider
+	if input.ProviderEvidence != nil {
+		planInput.Provider = string(input.ProviderEvidence.Cluster.Provider)
+		// Count node pools
+		planInput.NodePoolCount = len(input.ProviderEvidence.NodePools)
+		if planInput.NodePoolCount == 0 {
+			planInput.NodePoolCount = 1 // Assume at least 1
+		}
+	}
+
+	// Count nodes and workloads from inventory
+	if input.InventorySnapshot != nil {
+		planInput.TotalNodeCount = len(input.InventorySnapshot.Nodes)
+
+		for _, w := range input.InventorySnapshot.Workloads {
+			if w.Ref.Kind == "StatefulSet" {
+				planInput.HasStatefulSets = true
+			}
+		}
+
+		for _, n := range input.InventorySnapshot.Networking {
+			if n.Kind == "Ingress" {
+				planInput.HasIngress = true
+				break
+			}
+		}
+	}
+
+	// Extract detected component names
+	for _, d := range input.ComponentDetections {
+		if d.Status == components.StatusFound || d.Status == components.StatusUnknown {
+			planInput.DetectedComponents = append(planInput.DetectedComponents, d.Name)
+		}
+	}
+
+	return e.planGenerator.Generate(planInput)
 }
