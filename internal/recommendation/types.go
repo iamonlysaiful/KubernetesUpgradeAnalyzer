@@ -3,6 +3,8 @@ package recommendation
 
 import (
 	"time"
+
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/plan"
 )
 
 // ReadinessState indicates overall upgrade readiness.
@@ -139,6 +141,8 @@ type Recommendation struct {
 	Confidence *ConfidenceModel `json:"confidence,omitempty"`
 	// Evidence summarizes what was analyzed (Phase 10).
 	Evidence *EvidenceSummary `json:"evidence,omitempty"`
+	// UpgradePlan provides step-by-step upgrade instructions (Phase 10).
+	UpgradePlan *plan.UpgradePlan `json:"upgradePlan,omitempty"`
 	// Findings contains all blockers, warnings, and info.
 	Findings []Finding `json:"findings"`
 	// Limitations lists evidence gaps.
