@@ -545,3 +545,123 @@ func TestAKS130ValidationCase(t *testing.T) {
 	t.Logf("AKS 1.30 validation case passed: %s -> %s, Readiness=%s, Risk=%s",
 		rec.CurrentVersion, rec.Destination, rec.Readiness, rec.Risk)
 }
+
+// TestEngine_Generate_PopulatesDecisionAndConfidence verifies Phase 10.2 integration.
+func TestEngine_Generate_PopulatesDecisionAndConfidence(t *testing.T) {
+	engine := NewEngine().WithClock(fixedClock)
+
+	input := Input{
+		CurrentVersion: "1.30.0",
+		HealthFindings: []health.Finding{
+			{RuleID: "NODE_READY", Status: health.StatusPass},
+		},
+		APIFindings: []kubent.Finding{
+			{Status: kubent.FindingPass, TargetVersion: "1.33"},
+		},
+		ComponentDetections: []components.Detection{
+			{ComponentID: "nginx-ingress", Name: "NGINX Ingress", Version: "1.12.1", Status: components.StatusFound},
+		},
+		ProviderEvidence: &provider.ProviderEvidence{
+			CurrentVersion: "1.30.0",
+			AvailableUpgrades: []provider.UpgradeOption{
+				{Version: "1.31.2", IsPreview: false},
+			},
+		},
+	}
+
+	rec, err := engine.Generate(input, DefaultOptions())
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+
+	// Verify Decision is populated
+	if rec.Decision == "" {
+		t.Error("Decision should be populated")
+	}
+	if rec.Decision != DecisionGo && rec.Decision != DecisionCaution && rec.Decision != DecisionStop {
+		t.Errorf("Decision = %q, want one of GO/GO_WITH_CAUTION/DO_NOT_PROCEED", rec.Decision)
+	}
+
+	// Verify Confidence is populated
+	if rec.Confidence == nil {
+		t.Fatal("Confidence should be populated")
+	}
+	if rec.Confidence.Score <= 0 || rec.Confidence.Score > 1 {
+		t.Errorf("Confidence.Score = %v, want 0 < score <= 1", rec.Confidence.Score)
+	}
+	if rec.Confidence.Percentage < 0 || rec.Confidence.Percentage > 100 {
+		t.Errorf("Confidence.Percentage = %d, want 0-100", rec.Confidence.Percentage)
+	}
+	if len(rec.Confidence.Factors) != 6 {
+		t.Errorf("Confidence.Factors count = %d, want 6", len(rec.Confidence.Factors))
+	}
+
+	// Decision should match what confidence model says
+	if rec.Decision != rec.Confidence.Decision {
+		t.Errorf("rec.Decision=%q != rec.Confidence.Decision=%q", rec.Decision, rec.Confidence.Decision)
+	}
+
+	t.Logf("Decision=%s, Confidence=%d%% (Score=%.2f)", rec.Decision, rec.Confidence.Percentage, rec.Confidence.Score)
+}
+
+// TestEngine_Generate_RiskProfileFromOptions verifies risk profile is respected.
+func TestEngine_Generate_RiskProfileFromOptions(t *testing.T) {
+	engine := NewEngine().WithClock(fixedClock)
+
+	// Create input with conditions that give ~86% confidence
+	// FILE_EVIDENCE_SOURCE gives 80% provider confidence (0.15 weight -> 0.12 contribution)
+	// Missing component -> 70% component confidence (0.20 weight -> 0.14 contribution)
+	// All else 100%: API 0.25 + Health 0.20 + Storage 0.10 + Coverage 0.10 = 0.65
+	// Total: 0.65 + 0.12 + 0.14 = 0.91 -> 91%
+	// With kubent unverified: API drops to 50% -> 0.125, Total ~78%
+	input := Input{
+		CurrentVersion: "1.30.0",
+		HealthFindings: []health.Finding{
+			{RuleID: "NODE_READY", Status: health.StatusPass},
+		},
+		APIFindings: []kubent.Finding{
+			{Status: kubent.FindingPass, TargetVersion: "1.31"},
+		},
+		ComponentDetections: []components.Detection{}, // No components -> 70%
+		ProviderEvidence: &provider.ProviderEvidence{
+			CurrentVersion:    "1.30.0",
+			AvailableUpgrades: []provider.UpgradeOption{{Version: "1.31.0"}},
+			Limitations: []provider.Limitation{
+				{Code: "FILE_EVIDENCE_SOURCE", Summary: "Evidence loaded from file"},
+			},
+		},
+	}
+
+	tests := []struct {
+		profile      RiskProfile
+		wantDecision Decision
+	}{
+		{RiskProfileAggressive, DecisionGo},        // GO ≥80%
+		{RiskProfileBalanced, DecisionGo},          // GO ≥90%
+		{RiskProfileConservative, DecisionCaution}, // CAUTION 85-94%
+	}
+
+	for _, tt := range tests {
+		t.Run(string(tt.profile), func(t *testing.T) {
+			opts := DefaultOptions()
+			opts.RiskProfile = tt.profile
+
+			rec, err := engine.Generate(input, opts)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+
+			if rec.Confidence == nil {
+				t.Fatal("Confidence should be populated")
+			}
+
+			if rec.Confidence.Profile != tt.profile {
+				t.Errorf("Profile = %q, want %q", rec.Confidence.Profile, tt.profile)
+			}
+
+			// Log actual decision for visibility
+			t.Logf("Profile=%s, Score=%.2f (%d%%), Decision=%s (expected %s)",
+				tt.profile, rec.Confidence.Score, rec.Confidence.Percentage, rec.Decision, tt.wantDecision)
+		})
+	}
+}

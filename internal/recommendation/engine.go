@@ -55,6 +55,12 @@ func (e *Engine) Generate(input Input, opts RecommendationOptions) (*Recommendat
 		opts = DefaultOptions()
 	}
 
+	// Use risk profile from options, defaulting to balanced
+	policy := e.policy
+	if opts.RiskProfile != "" && opts.RiskProfile != e.policy.RiskProfile() {
+		policy = NewPolicyWithProfile(opts.RiskProfile)
+	}
+
 	rec := &Recommendation{
 		SchemaVersion:  schemaVersion,
 		CurrentVersion: input.CurrentVersion,
@@ -130,9 +136,14 @@ func (e *Engine) Generate(input Input, opts RecommendationOptions) (*Recommendat
 		}
 	}
 
-	// Evaluate readiness and risk
-	rec.Readiness = e.policy.EvaluateReadiness(rec.Findings, rec.Limitations)
-	rec.Risk = e.policy.EvaluateRisk(rec.Findings, rec.Limitations)
+	// Evaluate readiness and risk (legacy)
+	rec.Readiness = policy.EvaluateReadiness(rec.Findings, rec.Limitations)
+	rec.Risk = policy.EvaluateRisk(rec.Findings, rec.Limitations)
+
+	// Evaluate confidence and decision (Phase 10)
+	confidence := policy.EvaluateConfidence(rec.Findings, rec.Limitations)
+	rec.Decision = confidence.Decision
+	rec.Confidence = &confidence
 
 	// Sort findings by severity
 	e.sortFindings(rec.Findings)
