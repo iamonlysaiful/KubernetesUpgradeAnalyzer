@@ -79,6 +79,12 @@ type Finding struct {
 	Stage string `json:"stage,omitempty"`
 	// Remediation suggests how to address the finding.
 	Remediation string `json:"remediation,omitempty"`
+	// Impact describes the finding's effect (Phase 10).
+	Impact *FindingImpact `json:"impact,omitempty"`
+	// Action is the recommended action to address this (Phase 10).
+	Action *ActionItem `json:"action,omitempty"`
+	// IfIgnored describes consequences of not addressing this (Phase 10).
+	IfIgnored string `json:"ifIgnored,omitempty"`
 }
 
 // ResourceRef identifies a Kubernetes resource.
@@ -123,10 +129,14 @@ type Recommendation struct {
 	Destination string `json:"destination,omitempty"`
 	// Path is the sequential upgrade stages.
 	Path []UpgradeStage `json:"path,omitempty"`
-	// Readiness indicates overall upgrade readiness.
+	// Readiness indicates overall upgrade readiness (legacy).
 	Readiness ReadinessState `json:"readiness"`
-	// Risk indicates the risk level.
+	// Risk indicates the risk level (legacy).
 	Risk RiskLevel `json:"risk"`
+	// Decision is the traffic light decision (Phase 10).
+	Decision Decision `json:"decision,omitempty"`
+	// Confidence is the confidence model (Phase 10).
+	Confidence *ConfidenceModel `json:"confidence,omitempty"`
 	// Findings contains all blockers, warnings, and info.
 	Findings []Finding `json:"findings"`
 	// Limitations lists evidence gaps.
