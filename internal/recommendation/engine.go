@@ -8,6 +8,7 @@ import (
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/components"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/external/kubent"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/health"
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/inventory"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/provider"
 )
 
@@ -25,27 +26,32 @@ type Input struct {
 	ComponentDetections []components.Detection
 	// ProviderEvidence is from the provider adapter.
 	ProviderEvidence *provider.ProviderEvidence
+	// InventorySnapshot provides raw cluster inventory for evidence summary.
+	InventorySnapshot *inventory.Inventory
 }
 
 // Engine produces upgrade recommendations.
 type Engine struct {
-	aggregator *Aggregator
-	policy     *Policy
-	clock      func() time.Time
+	aggregator      *Aggregator
+	policy          *Policy
+	evidenceBuilder *EvidenceBuilder
+	clock           func() time.Time
 }
 
 // NewEngine creates a new recommendation engine.
 func NewEngine() *Engine {
 	return &Engine{
-		aggregator: NewAggregator(),
-		policy:     NewPolicy(),
-		clock:      time.Now,
+		aggregator:      NewAggregator(),
+		policy:          NewPolicy(),
+		evidenceBuilder: NewEvidenceBuilder(),
+		clock:           time.Now,
 	}
 }
 
 // WithClock sets a custom clock for testing.
 func (e *Engine) WithClock(clock func() time.Time) *Engine {
 	e.clock = clock
+	e.evidenceBuilder = e.evidenceBuilder.WithClock(clock)
 	return e
 }
 
@@ -144,6 +150,10 @@ func (e *Engine) Generate(input Input, opts RecommendationOptions) (*Recommendat
 	confidence := policy.EvaluateConfidence(rec.Findings, rec.Limitations)
 	rec.Decision = confidence.Decision
 	rec.Confidence = &confidence
+
+	// Build evidence summary (Phase 10)
+	deprecatedAPICount := e.countDeprecatedAPIs(rec.Findings)
+	rec.Evidence = e.evidenceBuilder.Build(input.InventorySnapshot, input.ComponentDetections, deprecatedAPICount)
 
 	// Sort findings by severity
 	e.sortFindings(rec.Findings)
@@ -332,4 +342,15 @@ func (e *Engine) sortFindings(findings []Finding) {
 		// Then by ID
 		return findings[i].ID < findings[j].ID
 	})
+}
+
+// countDeprecatedAPIs counts findings related to deprecated APIs.
+func (e *Engine) countDeprecatedAPIs(findings []Finding) int {
+	count := 0
+	for _, f := range findings {
+		if f.Category == CategoryAPI && (f.ID == "API_DEPRECATED" || f.ID == "API_REMOVED") {
+			count++
+		}
+	}
+	return count
 }
