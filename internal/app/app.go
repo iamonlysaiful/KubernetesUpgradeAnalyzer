@@ -500,6 +500,10 @@ func documentFromRecommendation(rec *recommendation.Recommendation, now time.Tim
 		Readiness:     rec.Readiness,
 		Risk:          rec.Risk,
 		Path:          rec.Path,
+		Decision:      rec.Decision,
+		Confidence:    rec.Confidence,
+		Evidence:      rec.Evidence,
+		UpgradePlan:   rec.UpgradePlan,
 		Findings:      rec.Findings,
 		Limitations:   rec.Limitations,
 	}
