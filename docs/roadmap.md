@@ -132,8 +132,7 @@ Transform KUA from analyzer (fact reporter) to advisor (decision engine).
 - Add risk appetite configuration (conservative/balanced/aggressive thresholds).
 
 Exit: `kua analyze` produces confidence percentage, traffic light decision,
-actionable upgrade plan, and evidence summary. JSON schema version 2.0.0
-with backward-compatible legacy output option.
+actionable upgrade plan, and evidence summary. Clean break to JSON schema 2.0.0.
 
 See: [ADR-0006](decisions/0006-advisor-model.md), [phase-10-advisor-model-plan.md](plans/phase-10-advisor-model-plan.md)
 

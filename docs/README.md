@@ -49,6 +49,7 @@ For operator setup and controlled staging execution steps, see the runbook in
 | [`plans/phase-7-recommendation-plan.md`](plans/phase-7-recommendation-plan.md) | Phase 7 recommendation engine plan |
 | [`plans/phase-8-reports-hardening-plan.md`](plans/phase-8-reports-hardening-plan.md) | Phase 8 reports and hardening plan |
 | [`plans/phase-8-5-end-to-end-cli-plan.md`](plans/phase-8-5-end-to-end-cli-plan.md) | Phase 8.5 end-to-end CLI recovery plan |
+| [`plans/phase-10-advisor-model-plan.md`](plans/phase-10-advisor-model-plan.md) | Phase 10 advisor model transformation plan |
 | [`contracts/domain-and-schema-plan.md`](contracts/domain-and-schema-plan.md) | Domain types, schemas, compatibility, and versioning plan |
 | [`contracts/security-rbac-contract.md`](contracts/security-rbac-contract.md) | Phase 0 read-only RBAC, external-command, redaction, and dependency contract |
 | [`plans/security-rbac-plan.md`](plans/security-rbac-plan.md) | Least-privilege Kubernetes/Azure access and security validation |
@@ -88,6 +89,7 @@ For operator setup and controlled staging execution steps, see the runbook in
 - [`ADR-0003`](decisions/0003-kubent-mvp-adapter.md): External kubent adapter for MVP
 - [`ADR-0004`](decisions/0004-destination-and-upgrade-path.md): Separate destination from sequential path
 - [`ADR-0005`](decisions/0005-local-first-provider-evidence.md): Local-first provider evidence and catalog lifecycle
+- [`ADR-0006`](decisions/0006-advisor-model.md): Advisor model with confidence scoring (Phase 10)
 
 ## Document states
 
