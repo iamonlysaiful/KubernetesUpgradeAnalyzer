@@ -262,6 +262,65 @@ func TestConfidenceCalculator_AllFactorsPresent(t *testing.T) {
 	}
 }
 
+func TestConfidenceCalculator_ProviderEvidenceUnavailable(t *testing.T) {
+	calc := NewConfidenceCalculator(RiskProfileBalanced)
+
+	limitations := []Limitation{
+		{
+			Code:    "PROVIDER_EVIDENCE_UNAVAILABLE",
+			Summary: "auto mode: no CLI access or evidence file",
+		},
+	}
+
+	model := calc.Calculate(nil, limitations)
+
+	for _, f := range model.Factors {
+		if f.Factor == FactorProviderEvidence && f.Confidence >= 1.0 {
+			t.Errorf("expected reduced provider evidence confidence, got %f", f.Confidence)
+		}
+	}
+}
+
+func TestConfidenceCalculator_APITargetUnavailable(t *testing.T) {
+	calc := NewConfidenceCalculator(RiskProfileBalanced)
+
+	limitations := []Limitation{
+		{
+			Code:    "API_TARGET_UNAVAILABLE",
+			Summary: "API compatibility target version is unavailable",
+		},
+	}
+
+	model := calc.Calculate(nil, limitations)
+
+	for _, f := range model.Factors {
+		if f.Factor == FactorAPICompatibility && f.Confidence >= 1.0 {
+			t.Errorf("expected reduced API compatibility confidence, got %f", f.Confidence)
+		}
+	}
+}
+
+func TestConfidenceCalculator_PartialComponents(t *testing.T) {
+	calc := NewConfidenceCalculator(RiskProfileBalanced)
+
+	findings := []Finding{
+		{
+			ID:       "COMPONENT_COREDNS_VERSION_PARTIAL",
+			Category: CategoryComponent,
+			Severity: SeverityWarning,
+			Summary:  "CoreDNS has known versions plus ambiguous version evidence",
+		},
+	}
+
+	model := calc.Calculate(findings, nil)
+
+	for _, f := range model.Factors {
+		if f.Factor == FactorComponentCompatibility && f.Confidence >= 1.0 {
+			t.Errorf("expected reduced component compatibility confidence for partial evidence, got %f", f.Confidence)
+		}
+	}
+}
+
 func TestConfidenceCalculator_Thresholds(t *testing.T) {
 	tests := []struct {
 		name       string

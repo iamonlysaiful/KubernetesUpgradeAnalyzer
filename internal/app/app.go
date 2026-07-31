@@ -358,6 +358,9 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 		APIFindings:         apiFindings,
 		ComponentDetections: detections,
 		ProviderEvidence:    providerEvidence,
+		InventorySnapshot:   &snapshot.Inventory,
+		ClusterName:         cfg.ClusterName,
+		ResourceGroup:       cfg.ResourceGroup,
 	}, recommendation.RecommendationOptions{
 		TargetVersion: cfg.TargetVersion,
 		MaxMinorSkip:  4,

@@ -248,6 +248,11 @@ func (c *ConfidenceCalculator) calculateAPICompatibility(findings []Finding, lim
 			result.evidence = "kubent analyzer unavailable"
 			return result
 		}
+		if lim.Code == "API_TARGET_UNAVAILABLE" {
+			result.confidence = 0.5
+			result.evidence = "API compatibility cannot be verified without a target version"
+			return result
+		}
 	}
 
 	return result
@@ -266,16 +271,19 @@ func (c *ConfidenceCalculator) calculateComponentCompatibility(findings []Findin
 
 	componentCount := 0
 	unknownCount := 0
+	partialCount := 0
 	incompatibleCount := 0
 
 	for _, f := range findings {
 		if f.Category == CategoryComponent {
 			componentCount++
-			if f.Severity == SeverityBlocker {
+			switch f.Severity {
+			case SeverityBlocker:
 				incompatibleCount++
-			}
-			if f.Severity == SeverityUnknown {
+			case SeverityUnknown:
 				unknownCount++
+			case SeverityWarning:
+				partialCount++
 			}
 		}
 	}
@@ -292,11 +300,16 @@ func (c *ConfidenceCalculator) calculateComponentCompatibility(findings []Findin
 		return result
 	}
 
-	if unknownCount > 0 {
-		// Reduce confidence proportionally to unknown components
-		knownRatio := float64(componentCount-unknownCount) / float64(componentCount)
+	if unknownCount > 0 || partialCount > 0 {
+		// Fully unknown components count fully against the known ratio;
+		// partial/ambiguous evidence counts at half weight.
+		penalized := float64(unknownCount) + 0.5*float64(partialCount)
+		knownRatio := (float64(componentCount) - penalized) / float64(componentCount)
+		if knownRatio < 0 {
+			knownRatio = 0
+		}
 		result.confidence = 0.7 + (0.3 * knownRatio) // Range: 0.7-1.0
-		result.evidence = "Some component versions unverified"
+		result.evidence = "Some component versions unverified or ambiguous"
 		return result
 	}
 
@@ -362,6 +375,11 @@ func (c *ConfidenceCalculator) calculateProviderEvidence(findings []Finding, lim
 		if lim.Code == "PROVIDER_EVIDENCE_ERROR" {
 			result.confidence = 0.3
 			result.evidence = "Provider evidence fetch failed"
+			return result
+		}
+		if lim.Code == "PROVIDER_EVIDENCE_UNAVAILABLE" {
+			result.confidence = 0.5
+			result.evidence = "Provider upgrade evidence unavailable (no CLI access or evidence file)"
 			return result
 		}
 	}
