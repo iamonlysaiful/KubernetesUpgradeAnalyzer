@@ -10,7 +10,7 @@ var (
 	version        = "0.0.0-dev"
 	commit         = "unknown"
 	buildDate      = "unknown"
-	catalogVersion = "unavailable"
+	catalogVersion = ""
 )
 
 func main() {
