@@ -137,6 +137,8 @@ type Recommendation struct {
 	Decision Decision `json:"decision,omitempty"`
 	// Confidence is the confidence model (Phase 10).
 	Confidence *ConfidenceModel `json:"confidence,omitempty"`
+	// Evidence summarizes what was analyzed (Phase 10).
+	Evidence *EvidenceSummary `json:"evidence,omitempty"`
 	// Findings contains all blockers, warnings, and info.
 	Findings []Finding `json:"findings"`
 	// Limitations lists evidence gaps.
