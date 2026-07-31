@@ -14,8 +14,7 @@ explicit owner approval.
 - Deprecated API adapter: installed `kubent` binary for MVP
 - Native API analyzer: planned
 - Architecture baseline: documented under [`docs/`](docs/README.md)
-- Implementation progress: Phases 1-8 complete, Phase 8.5 validation in
-  progress, Phase 9 publication blocked pending owner approval
+- Implementation progress: Phases 1-8.5 complete; Phase 10 (advisor model) in progress; Phase 9 publication blocked pending Phase 10 completion
 
 Follow [`AGENTS.md`](AGENTS.md) and the docs-first approval workflow.
 
@@ -28,42 +27,49 @@ resources.
 ### 1. Prerequisites
 
 - Go `1.25+`
-- `kubectl`
-- `jq`
-- Azure CLI (`az`) authenticated to the approved subscription
+- `kubectl` configured with access to target cluster
+- Azure CLI (`az`) authenticated to the subscription (for AKS upgrade info)
 - `kubent` installed and available on `PATH`
+- `jq` (optional, for inspecting JSON output)
 
-### 2. Build and validate locally
+### 2. Build and install locally
 
 ```bash
 git clone <repo-url>
 cd KubernetesUpgradeAnalyzer
-scripts/ci-local.sh
+scripts/ci-local.sh          # run tests
 go build -o ./bin/kua ./cmd/kua
 ./bin/kua version
+
+# Or install to /usr/local/bin:
+scripts/install-local.sh
 ```
 
-### 3. Pre-approval requirements for live staging runs
+### 3. Quick start (interactive mode)
 
-Before live commands, complete and approve:
+The simplest way to analyze a cluster:
 
-- [`docs/validation/phase-9-approval-record.md`](docs/validation/phase-9-approval-record.md)
-- approved staging context name
-- approved read-only command list
-- approved raw/sanitized output paths
+```bash
+kua analyze
+```
 
-No live command should be run outside the approved list.
+KUA will:
+1. Detect your current kubectl context and prompt for confirmation
+2. Collect cluster inventory and run health/API/component checks
+3. Prompt for any unknown component versions
+4. Prompt for target version if AKS upgrade info is unavailable
+5. Display the assessment result
 
-### 4. Analyze any AKS cluster (read-only)
+### 4. Scripted/CI mode (non-interactive)
+
+For automation, use `--yes` to skip prompts and provide all required flags:
 
 ```bash
 az login
 az account set --subscription "<SUBSCRIPTION_ID>"
 
-kubectl config get-contexts
-kubectl cluster-info --context "<AKS_CONTEXT>"
-
 ./bin/kua analyze \
+  --yes \
   --context "<AKS_CONTEXT>" \
   --format json \
   --redacted \
@@ -74,105 +80,83 @@ kubectl cluster-info --context "<AKS_CONTEXT>"
   > analyze.redacted.json
 ```
 
-Expected successful assessment states:
+### 5. Assessment states
 
-- `READY` / `LOW`: no blockers, no material warnings.
-- `READY_WITH_WARNINGS` / `MEDIUM`: no blockers, but review warnings before
-  upgrade.
-- `NOT_READY` / `HIGH`: blockers must be fixed before upgrade.
-- `INCONCLUSIVE` / `UNKNOWN`: required evidence is missing or failed.
+Current output states:
 
-Store raw or cluster-specific outputs locally only. Do not commit raw outputs,
-kubeconfigs, subscription IDs, resource groups, cluster names, node names,
-namespaces, workload names, registry hosts, or secrets.
+| Readiness | Risk | Meaning |
+|-----------|------|---------|
+| `READY` | `LOW` | No blockers, no material warnings |
+| `READY_WITH_WARNINGS` | `MEDIUM` | No blockers, review warnings before upgrade |
+| `NOT_READY` | `HIGH` | Blockers must be fixed before upgrade |
+| `INCONCLUSIVE` | `UNKNOWN` | Required evidence is missing or failed |
 
-### 5. Fill component version overrides when requested
+> **Note:** Phase 10 will replace these with confidence-based decisions:
+> 🟢 GO / 🟡 GO WITH CAUTION / 🔴 DO NOT PROCEED
 
-If component versions are missing, ambiguous, or confusing, JSON output includes
-a `componentVersionOverrides` helper:
+### 6. Component version overrides
+
+If component versions cannot be detected automatically, you have two options:
+
+**Option A: Interactive prompts (default)**
+
+When running `kua analyze` interactively, KUA prompts for unknown versions.
+
+**Option B: Override file (for scripting)**
 
 ```bash
-jq '.componentVersionOverrides' analyze.redacted.json
-```
-
-Generate `component-overrides.json` from the assessment:
-
-```bash
+# Generate override template from a previous assessment:
 ./bin/kua component-overrides \
   --input analyze.redacted.json \
   --output component-overrides.json
-```
 
-Review the generated file. KUA uses observed versions when present and leaves a
-`<fill-version>` placeholder only when no usable version was observed.
-
-Then rerun:
-
-```bash
+# Edit component-overrides.json with correct versions, then rerun:
 ./bin/kua analyze \
+  --yes \
   --context "<AKS_CONTEXT>" \
-  --format json \
-  --redacted \
-  --provider-source azure \
-  --subscription "<SUBSCRIPTION_ID>" \
-  --resource-group "<RESOURCE_GROUP>" \
-  --cluster-name "<AKS_CLUSTER_NAME>" \
   --component-overrides component-overrides.json \
-  > analyze.final.redacted.json
+  > analyze.final.json
 ```
 
-Overrides are local operator evidence. They can resolve missing component-version
-evidence, but they do not suppress API, provider, health, or explicit
-incompatibility findings.
+### 7. Offline provider evidence
 
-### 6. Optional provider evidence file mode
-
-If Azure CLI access is unavailable during analysis, collect AKS upgrade evidence
-separately and run file mode:
+If Azure CLI access is unavailable during analysis, pre-collect upgrade info:
 
 ```bash
+# Collect AKS upgrade evidence separately:
 az aks get-upgrades \
   --subscription "<SUBSCRIPTION_ID>" \
   --resource-group "<RESOURCE_GROUP>" \
   --name "<AKS_CLUSTER_NAME>" \
-  -o json > ./local-output/aks-upgrades.raw.json
+  -o json > ./local-output/aks-upgrades.json
 
+# Run analysis with file-based provider evidence:
 ./bin/kua analyze \
-  --context "<AKS_CONTEXT>" \
-  --format json \
-  --redacted \
   --provider-source file \
-  --provider-evidence ./local-output/aks-upgrades.raw.json \
-  > analyze.redacted.json
+  --provider-evidence ./local-output/aks-upgrades.json
 ```
 
-`local-output/` is ignored by Git and is intended for private local evidence.
-
-### 7. Generate release-candidate artifacts
+### 8. Output formats
 
 ```bash
-scripts/release-candidate.sh 0.1.0-rc.2
+kua analyze --format console   # Default: human-readable
+kua analyze --format json      # Machine-readable
+kua analyze --format markdown  # Documentation
+kua analyze --format html      # Self-contained report
+
+# Add --redacted to mask sensitive identifiers:
+kua analyze --format json --redacted > report.json
 ```
 
-This creates artifacts under `artifacts/release-candidate/<version>/` including:
+## Development
 
-- Linux/macOS binaries (`amd64`, `arm64`)
-- `SHA256SUMS`
-- `SBOM-go-modules.json`
-- `provenance.json`
-- `RELEASE_NOTES.md`
-
-### 8. Validation gates before publication
+See [`docs/`](docs/README.md) for architecture, contracts, and development process.
 
 ```bash
-scripts/ci-local.sh
-go test -race ./internal/recommendation ./internal/report
-git diff --check
-git fsck --full --strict
+scripts/ci-local.sh            # Run all quality checks
+go test -race ./...            # Run tests with race detector
 ```
 
-Also ensure no AppleDouble sidecars are present before publication.
+## License
 
-### 9. Publication control
-
-Release publication (tag/GitHub release/artifact publication) requires explicit owner approval after Phase 9 records are complete.
+Apache License 2.0

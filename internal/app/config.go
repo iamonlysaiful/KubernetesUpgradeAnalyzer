@@ -19,7 +19,7 @@ type Config struct {
 	ComponentOverrides string
 	Redacted           bool
 	Yes                bool              // skip interactive confirmation
-	inlineOverrides     map[string]string // component ID -> version, set by interactive prompts
+	inlineOverrides    map[string]string // component ID -> version, set by interactive prompts
 }
 
 func DefaultConfig() Config {

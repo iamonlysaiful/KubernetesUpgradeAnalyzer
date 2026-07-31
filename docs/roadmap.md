@@ -1,7 +1,7 @@
 # Roadmap
 
 Status: Approved sequencing; implementation requires approval per phase
-Last updated: 2026-07-23
+Last updated: 2026-07-31
 
 ## Phase 0 — Design freeze and contracts
 
@@ -117,6 +117,25 @@ an MVP release requires the real `kua analyze` user journey to pass first.
 
 Exit: owner approves validation evidence and publication of the MVP release.
 
+## Phase 10 — Advisor model transformation
+
+Transform KUA from analyzer (fact reporter) to advisor (decision engine).
+
+- Implement confidence scoring with weighted factors replacing binary pass/fail.
+- Replace four readiness states with traffic light decisions: 🟢 GO, 🟡 GO WITH CAUTION, 🔴 DO NOT PROCEED.
+- Localize unknowns with impact assessment instead of global INCONCLUSIVE.
+- Add mandatory action items to all findings with effort estimates.
+- Generate upgrade plan with time estimates, post-upgrade validation, and rollback guidance.
+- Add evidence summary ("Why do I trust this?") showing what was analyzed.
+- Implement pre-flight vs. day-of check separation.
+- Add version-specific gotcha warnings for breaking changes in upgrade path.
+- Add risk appetite configuration (conservative/balanced/aggressive thresholds).
+
+Exit: `kua analyze` produces confidence percentage, traffic light decision,
+actionable upgrade plan, and evidence summary. Clean break to JSON schema 2.0.0.
+
+See: [ADR-0006](decisions/0006-advisor-model.md), [phase-10-advisor-model-plan.md](plans/phase-10-advisor-model-plan.md)
+
 ## Later phases
 
 - Native API analyzer, initially compared with kubent.
@@ -124,3 +143,6 @@ Exit: owner approves validation evidence and publication of the MVP release.
 - Upgrade simulation; EKS, GKE, OpenShift, and vanilla provider adapters.
 - AKS best-practice checks, dashboard, and GitHub Action integration.
 - Historical comparison, drift, monitoring, security posture, cost impact, offline-safe AI explanations, and VS Code extension.
+- Multi-cluster promotion workflow (staging → production).
+- Integration with monitoring systems for day-of checks.
+- Machine learning calibration of confidence weights.

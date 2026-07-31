@@ -2,6 +2,22 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-07-31 — Phase 10 advisor model proposal
+
+- Proposed transformation from "Kubernetes Upgrade Analyzer" to "Kubernetes
+  Upgrade Advisor" with confidence scoring, traffic light decisions, and
+  actionable upgrade plans.
+- Added ADR-0006 documenting the decision to replace binary pass/fail with
+  weighted confidence scoring and localized unknowns.
+- Added Phase 10 to roadmap with 8 sub-phases covering confidence model,
+  traffic light decisions, evidence summary, upgrade plan generation, finding
+  enhancement, console renderer overhaul, version-specific gotchas, and
+  pre-flight/day-of separation.
+- Resolved OQ-008 through OQ-010:
+  - OQ-008: Start with heuristic weights, calibrate from real outcomes
+  - OQ-009: GO ≥90%, CAUTION 70–89%, STOP <70%; risk profiles in MVP
+  - OQ-010: Clean break to Schema 2.0.0; no legacy output mode
+
 ## 2026-07-30 — Version validation format-only and interactive target version prompt
 
 - Removed hardcoded minor-version list from the snapshot validator.
