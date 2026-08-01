@@ -7,6 +7,7 @@ import (
 
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/components"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/external/kubent"
+	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/gotcha"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/health"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/kube/inventory"
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/plan"
@@ -160,6 +161,18 @@ func (e *Engine) Generate(input Input, opts RecommendationOptions) (*Recommendat
 				Summary: fmt.Sprintf("Destination %s set from operator-provided target version; not validated against provider evidence", tv.String()),
 				Impact:  "Upgrade path stages and provider validation are unavailable; verify supported upgrade steps manually",
 			})
+		}
+	}
+
+	// Scan for version-specific gotchas along the upgrade path.
+	if rec.Destination != "" {
+		if from, err := provider.ParseVersion(input.CurrentVersion); err == nil {
+			if to, err := provider.ParseVersion(rec.Destination); err == nil {
+				isAKS := input.ProviderEvidence != nil && input.ProviderEvidence.Cluster.Provider == provider.ProviderAKS
+				for _, g := range gotcha.ScanPath(from.Minor, to.Minor, isAKS) {
+					rec.Findings = append(rec.Findings, gotchaFinding(g))
+				}
+			}
 		}
 	}
 
@@ -427,4 +440,19 @@ func (e *Engine) generateUpgradePlan(input Input, rec *Recommendation) *plan.Upg
 	}
 
 	return e.planGenerator.Generate(planInput)
+}
+
+// gotchaFinding converts a gotcha into a recommendation Finding.
+func gotchaFinding(g gotcha.Gotcha) Finding {
+	return Finding{
+		ID:       g.Code,
+		Category: CategoryGotcha,
+		Severity: SeverityWarning,
+		Summary:  g.Title,
+		Detail:   g.Summary,
+		Action: &ActionItem{
+			Description: g.Action,
+		},
+		IfIgnored: "Upgrade may succeed but the described behavioral change could cause post-upgrade issues.",
+	}
 }

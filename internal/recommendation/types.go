@@ -61,6 +61,8 @@ const (
 	CategoryComponent FindingCategory = "COMPONENT"
 	// CategoryProvider indicates a provider evidence finding.
 	CategoryProvider FindingCategory = "PROVIDER"
+	// CategoryGotcha indicates a version-specific behavioral breaking change.
+	CategoryGotcha FindingCategory = "GOTCHA"
 )
 
 // Finding represents a single recommendation finding.
