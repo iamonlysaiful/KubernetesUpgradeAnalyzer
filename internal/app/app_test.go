@@ -390,8 +390,9 @@ func TestRunAnalyzeCanReturnReadyWhenEvidencePasses(t *testing.T) {
 	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
 		t.Fatalf("Run(analyze ready) output is not JSON: %v\n%s", err, stdout.String())
 	}
-	if got.Readiness != recommendation.ReadinessReady || got.Risk != recommendation.RiskLow {
-		t.Fatalf("readiness/risk = %s/%s, want READY/LOW", got.Readiness, got.Risk)
+	// 1.30→1.33 crosses Phase 10.7 gotcha boundaries at 1.31 and 1.32 (AKS too).
+	if got.Readiness != recommendation.ReadinessReadyWithWarnings || got.Risk != recommendation.RiskMedium {
+		t.Fatalf("readiness/risk = %s/%s, want READY_WITH_WARNINGS/MEDIUM", got.Readiness, got.Risk)
 	}
 	if got.Destination != "1.33.12" || len(got.Path) != 3 {
 		t.Fatalf("destination/path = %q/%#v, want 1.33.12 with 3 stages", got.Destination, got.Path)

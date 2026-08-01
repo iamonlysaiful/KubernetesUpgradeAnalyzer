@@ -44,11 +44,12 @@ func TestEngine_Generate_Ready(t *testing.T) {
 		t.Fatalf("Generate: %v", err)
 	}
 
-	if rec.Readiness != ReadinessReady {
-		t.Errorf("Readiness = %v, want READY", rec.Readiness)
+	// 1.30→1.33 crosses gotcha boundaries at 1.31 and 1.32; expect warnings.
+	if rec.Readiness != ReadinessReadyWithWarnings {
+		t.Errorf("Readiness = %v, want READY_WITH_WARNINGS", rec.Readiness)
 	}
-	if rec.Risk != RiskLow {
-		t.Errorf("Risk = %v, want LOW", rec.Risk)
+	if rec.Risk != RiskMedium {
+		t.Errorf("Risk = %v, want MEDIUM", rec.Risk)
 	}
 	if rec.Destination != "1.33.0" {
 		t.Errorf("Destination = %v, want 1.33.0", rec.Destination)
@@ -306,7 +307,14 @@ func TestEngine_Generate_ProviderDirectMultiMinorPath(t *testing.T) {
 	if rec.Risk != RiskMedium {
 		t.Fatalf("Risk = %s, want MEDIUM", rec.Risk)
 	}
-	if len(rec.Findings) == 0 || rec.Findings[0].ID != "PROVIDER_DIRECT_MULTI_MINOR" {
+	hasProviderDirect := false
+	for _, f := range rec.Findings {
+		if f.ID == "PROVIDER_DIRECT_MULTI_MINOR" {
+			hasProviderDirect = true
+			break
+		}
+	}
+	if !hasProviderDirect {
 		t.Fatalf("Findings = %#v, want provider direct warning", rec.Findings)
 	}
 }
@@ -513,22 +521,22 @@ func TestAKS130ValidationCase(t *testing.T) {
 		t.Fatalf("Generate: %v", err)
 	}
 
-	// Expected per docs/recommendation-model.md:
+	// Expected per docs/recommendation-model.md (updated for Phase 10.7):
 	// - destination: 1.33.12
 	// - path: 1.30.x → 1.31.x → 1.32.x → 1.33.12
-	// - readiness: READY
-	// - risk: LOW
+	// - readiness: READY_WITH_WARNINGS (gotcha warnings for 1.31 and 1.32 crossings)
+	// - risk: MEDIUM
 
 	if rec.Destination != "1.33.12" {
 		t.Errorf("Destination = %v, want 1.33.12", rec.Destination)
 	}
 
-	if rec.Readiness != ReadinessReady {
-		t.Errorf("Readiness = %v, want READY", rec.Readiness)
+	if rec.Readiness != ReadinessReadyWithWarnings {
+		t.Errorf("Readiness = %v, want READY_WITH_WARNINGS", rec.Readiness)
 	}
 
-	if rec.Risk != RiskLow {
-		t.Errorf("Risk = %v, want LOW", rec.Risk)
+	if rec.Risk != RiskMedium {
+		t.Errorf("Risk = %v, want MEDIUM", rec.Risk)
 	}
 
 	// Verify path has 3 stages (1.30->1.31->1.32->1.33)
