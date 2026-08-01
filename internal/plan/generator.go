@@ -273,25 +273,33 @@ func (g *Generator) generateValidationSteps(input PlanInput) []PlanStep {
 		nextOrder++
 	}
 
-	// Add component-specific checks
+	// Add one validation step per distinct component type (multiple detections
+	// of the same component share one post-upgrade check).
+	seen := make(map[string]bool)
 	for _, comp := range input.DetectedComponents {
 		switch comp {
 		case "EMQX", "emqx":
-			steps = append(steps, PlanStep{
-				Order:       nextOrder,
-				Description: "EMQX cluster healthy",
-				Command:     "kubectl get emqxbrokers -A -o wide",
-				Expected:    "EMQX cluster showing Running status",
-			})
-			nextOrder++
+			if !seen["emqx"] {
+				seen["emqx"] = true
+				steps = append(steps, PlanStep{
+					Order:       nextOrder,
+					Description: "EMQX cluster healthy",
+					Command:     "kubectl get emqxbrokers -A -o wide",
+					Expected:    "EMQX cluster showing Running status",
+				})
+				nextOrder++
+			}
 		case "CoreDNS", "coredns":
-			steps = append(steps, PlanStep{
-				Order:       nextOrder,
-				Description: "CoreDNS responding",
-				Command:     "kubectl run test-dns --image=busybox --rm -it --restart=Never -- nslookup kubernetes",
-				Expected:    "DNS resolution succeeds",
-			})
-			nextOrder++
+			if !seen["coredns"] {
+				seen["coredns"] = true
+				steps = append(steps, PlanStep{
+					Order:       nextOrder,
+					Description: "CoreDNS responding",
+					Command:     "kubectl run test-dns --image=busybox --rm -it --restart=Never -- nslookup kubernetes",
+					Expected:    "DNS resolution succeeds",
+				})
+				nextOrder++
+			}
 		}
 	}
 
