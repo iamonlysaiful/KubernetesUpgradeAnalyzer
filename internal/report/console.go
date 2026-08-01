@@ -47,28 +47,33 @@ func RenderConsole(doc Document) ([]byte, error) {
 	fmt.Fprintln(&b)
 	fmt.Fprintf(&b, " Current:     %s\n", doc.Current)
 	dest := defaultString(doc.Destination, "n/a")
-	fmt.Fprintf(&b, " Destination: %s  (risk: %s)\n", dest, doc.Risk)
+	fmt.Fprintf(&b, " Destination: %s\n", dest)
 	if len(doc.Path) > 0 {
 		steps := make([]string, 0, len(doc.Path)+1)
 		steps = append(steps, doc.Path[0].From)
 		for _, stage := range doc.Path {
 			steps = append(steps, stage.To)
 		}
-		fmt.Fprintf(&b, " Path:        %s\n", strings.Join(steps, " → "))
+		fmt.Fprintf(&b, " Upgrade Path: %s\n", strings.Join(steps, " → "))
+	} else if doc.Destination != "" {
+		fmt.Fprintf(&b, " Upgrade Path: %s → %s\n", doc.Current, doc.Destination)
 	}
 	if doc.UpgradePlan != nil && doc.UpgradePlan.EstimatedTime > 0 {
-		fmt.Fprintf(&b, " Est. Time:   %s\n", doc.UpgradePlan.EstimatedTime.Round(time.Minute))
+		fmt.Fprintf(&b, " Est. Time:   %s\n", formatDuration(doc.UpgradePlan.EstimatedTime))
 	}
 
 	// ── blockers ────────────────────────────────────────────
 	blockers := findingsBySeverity(doc.Findings, recommendation.SeverityBlocker)
+	fmt.Fprintln(&b)
 	if len(blockers) > 0 {
-		fmt.Fprintln(&b)
 		fmt.Fprintf(&b, "── BLOCKERS (%d)  must fix before upgrading %s\n",
 			len(blockers), strings.Repeat("─", max(0, consoleWidth-43-len(fmt.Sprint(len(blockers))))))
 		for i, f := range blockers {
 			writeFinding(&b, i, f)
 		}
+	} else {
+		fmt.Fprintf(&b, "── BLOCKERS (0) %s\n", strings.Repeat("─", max(0, consoleWidth-16)))
+		fmt.Fprintln(&b, "   None — no issues blocking upgrade.")
 	}
 
 	// ── warnings ────────────────────────────────────────────
@@ -136,6 +141,9 @@ func RenderConsole(doc Document) ([]byte, error) {
 	// ── footer ──────────────────────────────────────────────
 	fmt.Fprintln(&b)
 	fmt.Fprintln(&b, strings.Repeat("─", consoleWidth))
+	if doc.Decision != "" {
+		fmt.Fprintf(&b, " Overall Decision: %s\n", decisionDisplay(doc.Decision))
+	}
 	fmt.Fprintf(&b, " Generated: %s  |  ID: %s\n",
 		doc.GeneratedAt.UTC().Format("2006-01-02T15:04:05Z"),
 		doc.AssessmentID)
@@ -200,9 +208,30 @@ func writePlanSteps(b *strings.Builder, title string, steps []plan.PlanStep) {
 			fmt.Fprintf(b, "     Expected: %s\n", s.Expected)
 		}
 		if s.EstimatedTime > 0 {
-			fmt.Fprintf(b, "     Est. time: %s\n", s.EstimatedTime.Round(time.Second))
+			fmt.Fprintf(b, "     Est. time: %s\n", formatDuration(s.EstimatedTime))
 		}
 	}
+}
+
+func formatDuration(d time.Duration) string {
+	d = d.Round(time.Minute)
+	h := int(d.Hours())
+	m := int(d.Minutes()) % 60
+	switch {
+	case h > 0 && m > 0:
+		return fmt.Sprintf("%d hour%s %d minute%s", h, plural(h), m, plural(m))
+	case h > 0:
+		return fmt.Sprintf("%d hour%s", h, plural(h))
+	default:
+		return fmt.Sprintf("%d minute%s", m, plural(m))
+	}
+}
+
+func plural(n int) string {
+	if n == 1 {
+		return ""
+	}
+	return "s"
 }
 
 func findingsBySeverity(findings []recommendation.Finding, sev recommendation.FindingSeverity) []recommendation.Finding {

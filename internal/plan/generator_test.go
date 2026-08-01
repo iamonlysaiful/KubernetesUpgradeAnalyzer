@@ -179,6 +179,33 @@ func TestGenerator_GenerateValidationSteps(t *testing.T) {
 	}
 }
 
+func TestGenerator_ValidationSteps_DeduplicatesComponents(t *testing.T) {
+	gen := NewGenerator()
+
+	// Simulate 2 EMQX detections + 4 CoreDNS detections (real cluster scenario)
+	input := PlanInput{
+		DetectedComponents: []string{"EMQX", "EMQX", "CoreDNS", "CoreDNS", "CoreDNS", "CoreDNS"},
+	}
+
+	steps := gen.generateValidationSteps(input)
+
+	emqxCount, corednsCount := 0, 0
+	for _, s := range steps {
+		if containsAll(s.Description, "EMQX") {
+			emqxCount++
+		}
+		if containsAll(s.Description, "CoreDNS") {
+			corednsCount++
+		}
+	}
+	if emqxCount != 1 {
+		t.Errorf("EMQX validation steps = %d, want 1", emqxCount)
+	}
+	if corednsCount != 1 {
+		t.Errorf("CoreDNS validation steps = %d, want 1", corednsCount)
+	}
+}
+
 func TestGenerator_GenerateRollbackGuidance(t *testing.T) {
 	gen := NewGenerator()
 
