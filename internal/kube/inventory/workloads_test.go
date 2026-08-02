@@ -104,6 +104,43 @@ func TestCollectWorkloadsBuildsDeterministicSummaries(t *testing.T) {
 	}
 }
 
+func TestWorkloadFromDeploymentExtractsVersionLabel(t *testing.T) {
+	replicas := int32(1)
+	dep := appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: "emqx", Namespace: "mqtt"},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app.kubernetes.io/version": "5.8.8"},
+				},
+				Spec: corev1.PodSpec{Containers: []corev1.Container{
+					{Name: "emqx", Image: "myregistry/emqx:prod_v2.0.1"},
+				}},
+			},
+		},
+	}
+	workload := workloadFromDeployment(dep)
+	if workload.VersionLabel != "5.8.8" {
+		t.Fatalf("VersionLabel = %q, want 5.8.8", workload.VersionLabel)
+	}
+}
+
+func TestWorkloadFromDeploymentVersionLabelEmptyWhenNotSet(t *testing.T) {
+	replicas := int32(1)
+	dep := appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: "api", Namespace: "default"},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+			Template: podTemplate(container("api", "example/api:1.0.0")),
+		},
+	}
+	workload := workloadFromDeployment(dep)
+	if workload.VersionLabel != "" {
+		t.Fatalf("VersionLabel = %q, want empty when label absent", workload.VersionLabel)
+	}
+}
+
 func podTemplate(containers ...corev1.Container) corev1.PodTemplateSpec {
 	return corev1.PodTemplateSpec{
 		Spec: corev1.PodSpec{Containers: containers},

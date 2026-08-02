@@ -29,6 +29,7 @@ func DefaultCoveragePolicy() CoveragePolicy {
 			"1.32": "kubent-0.7.3-fixture",
 			"1.33": "kubent-0.7.3-fixture",
 			"1.34": "kubent-0.7.3-live-validation",
+			"1.35": "kubent-0.7.3-live-validation",
 		},
 	}
 }

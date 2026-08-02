@@ -26,6 +26,22 @@ func NormalizeVersion(value string) (string, Confidence, Status) {
 	return version, ConfidenceHigh, StatusFound
 }
 
+// NormalizeLabelVersion normalizes a plain version string sourced from a
+// Kubernetes label (e.g. app.kubernetes.io/version: "5.8.8"). It strips a
+// leading 'v' prefix and returns ConfidenceHigh when a non-empty result is
+// found, which takes priority over image-tag extraction in detectors.
+func NormalizeLabelVersion(value string) (string, Confidence, Status) {
+	version := strings.TrimSpace(value)
+	if version == "" || strings.EqualFold(version, "unknown") {
+		return UnknownVersion, ConfidenceUnknown, StatusUnknown
+	}
+	version = strings.TrimPrefix(version, "v")
+	if version == "" {
+		return UnknownVersion, ConfidenceUnknown, StatusUnknown
+	}
+	return version, ConfidenceHigh, StatusFound
+}
+
 func hasImageTag(value string) bool {
 	colonIndex := strings.LastIndex(value, ":")
 	if colonIndex < 0 || colonIndex == len(value)-1 {
