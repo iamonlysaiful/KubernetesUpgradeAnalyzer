@@ -14,7 +14,7 @@ explicit owner approval.
 - Deprecated API adapter: installed `kubent` binary for MVP
 - Native API analyzer: planned
 - Architecture baseline: documented under [`docs/`](docs/README.md)
-- Implementation progress: Phases 1-8.5 complete; Phase 10 (advisor model) 10.1-10.6 merged — confidence scoring, traffic-light decisions, evidence summary, upgrade plan, and advisor console output are live; 10.7 (version-specific gotchas) and 10.8 (pre-flight/day-of modes) pending; Phase 9 publication blocked pending Phase 10 completion and owner approval
+- Implementation progress: Phases 1-8.5 and Phase 10 (advisor model) complete — confidence scoring, traffic-light decisions, evidence summary, upgrade plan, version-specific gotchas, and pre-flight/day-of modes are live; Phase 9 publication blocked pending owner approval
 
 Follow [`AGENTS.md`](AGENTS.md) and the docs-first approval workflow.
 
@@ -80,7 +80,29 @@ az account set --subscription "<SUBSCRIPTION_ID>"
   > analyze.redacted.json
 ```
 
-### 5. Assessment states
+### 5. Pre-flight/day-of workflow
+
+`kua analyze` supports a two-phase separation for production upgrade windows:
+
+**Pre-flight (run days or hours before upgrade)** — checks API compatibility,
+component versions, and provider upgrade availability; skips live health checks.
+Results are saved to `kua-preflight.json` for day-of reuse.
+
+```bash
+kua analyze --preflight --yes
+```
+
+**Day-of (run at upgrade time)** — loads cached pre-flight results and runs
+fresh health checks (node readiness, pod status, PVC binding, event analysis).
+
+```bash
+kua analyze --day-of --yes
+```
+
+Use `--preflight-cache <path>` to override the default cache file path.
+Running without either flag executes all checks in a single pass.
+
+### 6. Assessment states
 
 Console output leads with a confidence-based traffic-light decision:
 
@@ -102,7 +124,7 @@ The legacy `readiness`/`risk` fields (`READY` / `READY_WITH_WARNINGS` /
 `NOT_READY` / `INCONCLUSIVE`, `LOW` / `MEDIUM` / `HIGH` / `UNKNOWN`) remain in
 the JSON output for backward reference alongside `decision` and `confidence`.
 
-### 6. Component version overrides
+### 7. Component version overrides
 
 If component versions cannot be detected automatically, you have two options:
 
@@ -126,7 +148,7 @@ When running `kua analyze` interactively, KUA prompts for unknown versions.
   > analyze.final.json
 ```
 
-### 7. Offline provider evidence
+### 8. Offline provider evidence
 
 If Azure CLI access is unavailable during analysis, pre-collect upgrade info:
 
@@ -144,7 +166,7 @@ az aks get-upgrades \
   --provider-evidence ./local-output/aks-upgrades.json
 ```
 
-### 8. Output formats
+### 9. Output formats
 
 ```bash
 kua analyze --format console   # Default: human-readable

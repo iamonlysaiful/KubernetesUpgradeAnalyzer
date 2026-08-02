@@ -2,6 +2,31 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-08-02 — Phase 10.8: Pre-flight/day-of analysis modes
+
+- Added `--preflight` flag to `kua analyze`: runs API compatibility,
+  component detection, and provider evidence checks only; skips day-of
+  health analysis; writes results to `kua-preflight.json` for later reuse.
+- Added `--day-of` flag: loads the pre-flight cache; runs fresh health
+  checks (node readiness, pod status, PVC binding, events); merges with
+  cached findings; adds `DAY_OF_PREFLIGHT_CACHE` limitation showing cache age.
+- Added `--preflight-cache <path>` to override the default cache file path.
+- `--preflight` and `--day-of` are mutually exclusive (usage error if both).
+- Default `kua analyze` (no flags) runs both phases in a single pass unchanged.
+- Updated `docs/cli-and-reports.md` with new flags and command behaviors.
+
+## 2026-08-02 — Phase 10.7: Version-specific gotcha catalog
+
+- Added `internal/gotcha` package with a static catalog of 5 known
+  version-boundary breaking changes: sidecar containers GA behaviour (1.29),
+  SA token legacy cleanup (1.31), flowcontrol v1beta3 removal (1.32),
+  AKS 1.32 LTS designation, and AKS separate node-pool upgrade requirement.
+- Implemented `ScanPath(fromMinor, toMinor, isAKS)` returning gotchas whose
+  boundary falls within the upgrade window or carry `AlwaysApply`.
+- Engine calls `ScanPath` after destination is resolved; each matched gotcha
+  becomes a `SeverityWarning` finding with `CategoryGotcha`, `Action`, and
+  `IfIgnored` fields.
+
 ## 2026-07-31 — Phase 10 advisor model proposal
 
 - Proposed transformation from "Kubernetes Upgrade Analyzer" to "Kubernetes
