@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: 2026-07-31
+Last updated: 2026-08-02
 
 This page summarizes the current implementation phase, review gates, and
 publication state. Detailed history remains in Git and `docs/change-log.md`.
@@ -13,7 +13,7 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Gate B - collection safety | Passed for P2-02 | Core inventory has fake-client/golden coverage and locally approved live smoke-test record. |
 | Gate C - compatibility validity | Complete | Catalog foundation merged; kubent coverage validated for 1.30-1.34; go/no-go decision GO. |
 | Gate D - recommendation calibration | Complete | Recommendation matrix, path evaluation, and report rendering foundation merged. |
-| Gate E - release | Blocked | End-to-end `kua analyze` validated locally. Phase 10 advisor model in progress; publication blocked pending completion and owner approval. |
+| Gate E - release | Blocked | End-to-end `kua analyze` validated locally. Phase 10 complete; publication blocked pending owner approval. |
 
 ## Phase status
 
@@ -30,20 +30,11 @@ publication state. Detailed history remains in Git and `docs/change-log.md`.
 | Phase 8 - Reports and hardening | Complete | Multi-format rendering, redaction mode merged. |
 | Phase 8.5 - End-to-end CLI recovery | Complete | Interactive `kua analyze` with component/target version prompts, console UX rewrite, and local install script merged to `main`. |
 | Phase 9 - Staging validation and MVP release | Blocked | Staging validation passed locally. Blocked pending Phase 10 completion and owner approval. |
-| Phase 10 - Advisor model transformation | In progress | Confidence scoring, traffic light decisions, upgrade plans. See ADR-0006 and phase-10-advisor-model-plan.md. |
+| Phase 10 - Advisor model transformation | Complete | Confidence scoring, traffic-light decisions, evidence summary, upgrade plan, version-specific gotchas, pre-flight/day-of modes. See ADR-0006. |
 
 ## Current branch focus
 
-`fix/destination-fallback-catalog-version-emqx-detection` (awaiting PR merge):
-
-Live-cluster bugfixes verified against CFEMS-STAG (read-only `kua analyze`):
-
-- `catalogVersion: unavailable` → fixed: default changed to `""`, runtime fallback reads embedded catalog
-- `Destination: n/a` with `--target-version` → fixed: `DESTINATION_UNVALIDATED` fallback block in engine
-- Stale ReplicaSet inflation (EMQX 12→2, NGINX 6→4, etc.) → fixed: `isStaleDeploymentRevision()` filter
-- Component namespace-substring false-positive → fixed: match on workload name only
-
-Next branch (after merge): complete Phase 10.6 console renderer remaining items.
+Phase 10 is complete. All 8 sub-phases are implemented and merged or pending final PR merge:
 
 Transform KUA from "Kubernetes Upgrade Analyzer" to "Kubernetes Upgrade Advisor":
 
@@ -52,9 +43,9 @@ Transform KUA from "Kubernetes Upgrade Analyzer" to "Kubernetes Upgrade Advisor"
 - **Phase 10.3**: Evidence summary — "Why do I trust this?" ✅ Merged
 - **Phase 10.4**: Upgrade plan generator — step-by-step checklist with time estimates ✅ Merged
 - **Phase 10.5**: Finding enhancement — mandatory actions, impact, consequences ✅ Merged
-- **Phase 10.6**: Console renderer overhaul — advisor output format 🔄 Partial (structure done; remaining: clean Destination line, BLOCKERS(0) always shown, human-readable time range, upgrade path in header, footer Overall Decision line, Schema 2.0 field rename)
-- **Phase 10.7**: Version-specific gotchas — proactive breaking change warnings ⏳ Not started
-- **Phase 10.8**: Pre-flight/day-of modes — separate preparation from execution ⏳ Not started
+- **Phase 10.6**: Console renderer overhaul — advisor output format ✅ Merged
+- **Phase 10.7**: Version-specific gotchas — proactive breaking change warnings ✅ Merged
+- **Phase 10.8**: Pre-flight/day-of modes — separate preparation from execution ✅ Merged (PR pending final merge)
 
 Approved decisions:
 - OQ-008: Start with heuristic weights; calibrate from real outcomes
@@ -63,10 +54,14 @@ Approved decisions:
 
 ## What's merged to main
 
-All phases through 8.5 are complete and merged:
+All phases through 8.5 and Phase 10 are complete and merged:
 
 - Full `kua analyze` with interactive confirmation, component version prompts,
   target version prompts, and console report rendering
+- Confidence scoring, traffic-light decisions (🟢/🟡/🔴), and evidence summary
+- Step-by-step upgrade plan with time estimates, post-upgrade validation, and rollback guidance
+- Version-specific gotcha warnings for known breaking changes in the upgrade path
+- Pre-flight and day-of analysis modes with file-based cache handoff
 - `kua health`, `kua compatibility`, `kua report` commands
 - JSON/console/Markdown/HTML output formats
 - Redacted output mode for sharing
