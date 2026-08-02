@@ -17,6 +17,9 @@ type Config struct {
 	ClusterName        string
 	TargetVersion      string
 	ComponentOverrides string
+	Preflight          bool
+	DayOf              bool
+	PreflightCachePath string
 	Redacted           bool
 	Yes                bool              // skip interactive confirmation
 	inlineOverrides    map[string]string // component ID -> version, set by interactive prompts
@@ -28,6 +31,13 @@ func DefaultConfig() Config {
 		Format:         "console",
 		ProviderSource: "auto",
 	}
+}
+
+func (cfg Config) resolvedPreflightCachePath() string {
+	if cfg.PreflightCachePath != "" {
+		return cfg.PreflightCachePath
+	}
+	return "kua-preflight.json"
 }
 
 func parseArgs(args []string) (Config, []string, *AppError) {
@@ -84,7 +94,7 @@ func isFlag(value string) bool {
 
 func isKnownFlag(name string) bool {
 	switch name {
-	case "--log-level", "--format", "--provider-source", "--context", "--kubeconfig", "--config", "--output", "--input", "--provider-evidence", "--subscription", "--resource-group", "--cluster-name", "--target-version", "--component-overrides", "--redacted", "--yes":
+	case "--log-level", "--format", "--provider-source", "--context", "--kubeconfig", "--config", "--output", "--input", "--provider-evidence", "--subscription", "--resource-group", "--cluster-name", "--target-version", "--component-overrides", "--redacted", "--yes", "--preflight", "--day-of", "--preflight-cache":
 		return true
 	default:
 		return false
@@ -92,7 +102,7 @@ func isKnownFlag(name string) bool {
 }
 
 func isBoolFlag(name string) bool {
-	return name == "--redacted" || name == "--yes"
+	return name == "--redacted" || name == "--yes" || name == "--preflight" || name == "--day-of"
 }
 
 func applyFlag(cfg *Config, name string, value string) *AppError {
@@ -138,6 +148,18 @@ func applyFlag(cfg *Config, name string, value string) *AppError {
 		cfg.TargetVersion = value
 	case "--component-overrides":
 		cfg.ComponentOverrides = value
+	case "--preflight":
+		if !oneOf(value, "true", "false") {
+			return UsageError("invalid --preflight; expected true or false")
+		}
+		cfg.Preflight = value == "true"
+	case "--day-of":
+		if !oneOf(value, "true", "false") {
+			return UsageError("invalid --day-of; expected true or false")
+		}
+		cfg.DayOf = value == "true"
+	case "--preflight-cache":
+		cfg.PreflightCachePath = value
 	case "--redacted":
 		if !oneOf(value, "true", "false") {
 			return UsageError("invalid --redacted; expected true or false")

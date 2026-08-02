@@ -795,3 +795,146 @@ func TestParseArgsStoresConfig(t *testing.T) {
 		t.Fatalf("parseArgs config = %#v, want %#v", cfg, want)
 	}
 }
+
+func TestRunAnalyzePreflightAndDayOfMutuallyExclusive(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := RunWithDependencies([]string{
+		"--preflight", "--day-of", "--yes", "analyze",
+	}, &stdout, &stderr, BuildInfo{}, Dependencies{})
+
+	if code != ExitUsage {
+		t.Fatalf("code = %d, want %d", code, ExitUsage)
+	}
+	if !strings.Contains(stderr.String(), "mutually exclusive") {
+		t.Fatalf("stderr = %q, want mutually exclusive message", stderr.String())
+	}
+}
+
+func TestRunAnalyzePreflightSavesCacheAndShowsNote(t *testing.T) {
+	tmp := t.TempDir()
+	cachePath := tmp + "/preflight.json"
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := RunWithDependencies([]string{
+		"--format=console",
+		"--provider-source=none",
+		"--target-version", "1.33.0",
+		"--yes",
+		"--preflight",
+		"--preflight-cache", cachePath,
+		"analyze",
+	}, &stdout, &stderr, BuildInfo{}, Dependencies{
+		PreflightRunner:    fakePreflightRunner{result: validPreflight("ctx-pf", "v1.31.0")},
+		InventoryCollector: fakeInventoryCollector{snapshot: validCoreSnapshot("ctx-pf", "1.31.0")},
+		ProviderFactory:    fakeProviderFactory{provider: fakeProvider{}},
+		APIAnalyzer:        fakeAPIAnalyzer{limitation: recommendation.Limitation{Code: "API_TARGET_UNAVAILABLE", Summary: "target missing"}},
+		Clock:              func() time.Time { return time.Date(2026, 8, 2, 10, 0, 0, 0, time.UTC) },
+	})
+
+	if code != ExitReady {
+		t.Fatalf("code = %d, want %d; stderr=%q", code, ExitReady, stderr.String())
+	}
+	// Cache file must exist.
+	if _, statErr := os.Stat(cachePath); statErr != nil {
+		t.Fatalf("preflight cache not written: %v", statErr)
+	}
+	// stdout must mention the cache path and day-of command.
+	out := stdout.String()
+	if !strings.Contains(out, cachePath) {
+		t.Fatalf("stdout missing cache path in: %s", out)
+	}
+	if !strings.Contains(out, "--day-of") {
+		t.Fatalf("stdout missing day-of hint in: %s", out)
+	}
+	// Cache must carry PREFLIGHT_MODE limitation.
+	var entry PreflightCacheEntry
+	if data, readErr := os.ReadFile(cachePath); readErr != nil {
+		t.Fatalf("ReadFile: %v", readErr)
+	} else if jsonErr := json.Unmarshal(data, &entry); jsonErr != nil {
+		t.Fatalf("Unmarshal: %v", jsonErr)
+	}
+	if entry.SchemaVersion != preflightCacheSchema {
+		t.Fatalf("cache schema = %q, want %q", entry.SchemaVersion, preflightCacheSchema)
+	}
+	if entry.TargetVersion != "1.33.0" {
+		t.Fatalf("cache target = %q, want 1.33.0", entry.TargetVersion)
+	}
+}
+
+func TestRunAnalyzeDayOfLoadsCacheAndMerges(t *testing.T) {
+	tmp := t.TempDir()
+	cachePath := tmp + "/preflight.json"
+	now := time.Date(2026, 8, 2, 10, 0, 0, 0, time.UTC)
+
+	// Write a synthetic pre-flight cache.
+	entry := PreflightCacheEntry{
+		SchemaVersion: preflightCacheSchema,
+		CachedAt:      now.Add(-30 * time.Minute),
+		ContextName:   "ctx-dayof",
+		TargetVersion: "1.33.0",
+		APIFindings: []kubent.Finding{{
+			AnalyzerVersion: "0.7.3",
+			TargetVersion:   "1.33.0",
+			Status:          kubent.FindingPass,
+		}},
+		ComponentDetections: nil,
+		ProviderEvidence:    nil,
+	}
+	data, _ := json.Marshal(entry)
+	_ = os.WriteFile(cachePath, data, 0o600)
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := RunWithDependencies([]string{
+		"--format=json",
+		"--provider-source=none",
+		"--yes",
+		"--day-of",
+		"--preflight-cache", cachePath,
+		"analyze",
+	}, &stdout, &stderr, BuildInfo{}, Dependencies{
+		PreflightRunner:    fakePreflightRunner{result: validPreflight("ctx-dayof", "v1.31.0")},
+		InventoryCollector: fakeInventoryCollector{snapshot: validCoreSnapshot("ctx-dayof", "1.31.0")},
+		ProviderFactory:    fakeProviderFactory{provider: fakeProvider{}},
+		Clock:              func() time.Time { return now },
+	})
+
+	if code != ExitReady {
+		t.Fatalf("code = %d, want %d; stderr=%q stdout=%s", code, ExitReady, stderr.String(), stdout.String())
+	}
+	var got report.Document
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("day-of output is not JSON: %v\n%s", err, stdout.String())
+	}
+	// Must carry the cache-loaded limitation.
+	if !hasLimitation(got.Limitations, "DAY_OF_PREFLIGHT_CACHE") {
+		t.Fatalf("limitations = %#v, want DAY_OF_PREFLIGHT_CACHE", got.Limitations)
+	}
+}
+
+func TestRunAnalyzeDayOfFailsWithoutCache(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := RunWithDependencies([]string{
+		"--yes",
+		"--day-of",
+		"--preflight-cache", "/nonexistent/path/preflight.json",
+		"analyze",
+	}, &stdout, &stderr, BuildInfo{}, Dependencies{
+		PreflightRunner:    fakePreflightRunner{result: validPreflight("ctx-x", "v1.31.0")},
+		InventoryCollector: fakeInventoryCollector{snapshot: validCoreSnapshot("ctx-x", "1.31.0")},
+		ProviderFactory:    fakeProviderFactory{provider: fakeProvider{}},
+	})
+
+	if code != ExitExecution {
+		t.Fatalf("code = %d, want %d; stderr=%q", code, ExitExecution, stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "load preflight cache failed") {
+		t.Fatalf("stderr = %q, want cache load error", stderr.String())
+	}
+}
