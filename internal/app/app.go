@@ -135,6 +135,11 @@ func RunWithDependencies(args []string, stdout io.Writer, stderr io.Writer, buil
 }
 
 func runAnalyze(cfg Config, stdout io.Writer, stderr io.Writer, deps Dependencies) int {
+	if cfg.Preflight && cfg.DayOf {
+		fmt.Fprintln(stderr, "kua analyze: --preflight and --day-of are mutually exclusive")
+		return ExitUsage
+	}
+
 	interactive := isInteractiveTTY(deps.Stdin)
 
 	// Resolve display label for confirmation and --yes banner.
@@ -153,6 +158,14 @@ func runAnalyze(cfg Config, stdout io.Writer, stderr io.Writer, deps Dependencie
 		return ExitUsage
 	} else if cfg.Format == "console" {
 		fmt.Fprintf(stdout, "Analyzing cluster: %s\n", clusterLabel)
+	}
+
+	if cfg.Format == "console" {
+		if cfg.Preflight {
+			fmt.Fprintln(stdout, "Mode: PRE-FLIGHT (API + component + provider checks; day-of health checks skipped)")
+		} else if cfg.DayOf {
+			fmt.Fprintln(stdout, "Mode: DAY-OF (health checks + cached pre-flight data)")
+		}
 	}
 
 	doc, appErr := buildAssessmentDocument(cfg, deps)
@@ -192,7 +205,13 @@ func runAnalyze(cfg Config, stdout io.Writer, stderr io.Writer, deps Dependencie
 		}
 	}
 
-	return renderAssessment(cfg, doc, stdout, stderr)
+	exitCode := renderAssessment(cfg, doc, stdout, stderr)
+	if cfg.Preflight && cfg.Format == "console" {
+		cachePath := cfg.resolvedPreflightCachePath()
+		fmt.Fprintf(stdout, "\nPre-flight cache saved: %s\n", cachePath)
+		fmt.Fprintf(stdout, "Run day-of:  kua analyze --day-of --yes\n")
+	}
+	return exitCode
 }
 
 // isInteractiveTTY reports whether r is a character device (interactive terminal).
@@ -299,6 +318,12 @@ func redactCLIError(message string) string {
 }
 
 func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *AppError) {
+	if cfg.Preflight {
+		return buildPreflightDocument(cfg, deps)
+	}
+	if cfg.DayOf {
+		return buildDayOfDocument(cfg, deps)
+	}
 	if deps.PreflightRunner == nil {
 		return report.Document{}, ExecutionError("analyze preflight runner is not configured", nil)
 	}
@@ -381,6 +406,195 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 		doc.ComponentVersionOverrides = buildComponentOverrideTemplate(detections, cfg)
 	}
 	return doc, nil
+}
+
+// buildPreflightDocument runs pre-flight analyzers only (API, component, provider)
+// and writes the results to a local cache file for later --day-of reuse.
+func buildPreflightDocument(cfg Config, deps Dependencies) (report.Document, *AppError) {
+	if deps.PreflightRunner == nil {
+		return report.Document{}, ExecutionError("analyze preflight runner is not configured", nil)
+	}
+	if deps.InventoryCollector == nil {
+		return report.Document{}, ExecutionError("analyze inventory collector is not configured", nil)
+	}
+	if deps.ProviderFactory == nil {
+		deps.ProviderFactory = defaultProviderFactory{}
+	}
+	if deps.APIAnalyzer == nil {
+		deps.APIAnalyzer = kubentAnalyzer{}
+	}
+	clock := deps.Clock
+	if clock == nil {
+		clock = time.Now
+	}
+
+	options := preflight.KubeconfigOptions{Path: cfg.Kubeconfig, Context: cfg.Context}
+	preflightResult, err := deps.PreflightRunner.Run(options)
+	if err != nil {
+		return report.Document{}, ExecutionError("analyze preflight failed: "+err.Error(), err)
+	}
+	if preflightResult.HasRequiredFailure() {
+		rec := inconclusiveRecommendation(preflightResult.ServerVersion, clock(), "PREFLIGHT_REQUIRED_FAILURE", "Required Kubernetes preflight check failed")
+		return documentFromRecommendation(rec, clock()), nil
+	}
+
+	snapshot, err := deps.InventoryCollector.CollectAssessment(options, preflightResult)
+	if err != nil {
+		return report.Document{}, ExecutionError("analyze inventory collection failed: "+err.Error(), err)
+	}
+	if err := inventory.ValidateCoreSnapshot(snapshot); err != nil {
+		return report.Document{}, ExecutionError("analyze inventory snapshot validation failed: "+err.Error(), err)
+	}
+
+	detections := components.NewRunner(components.InitialDetectorCohort()...).Detect(snapshot)
+	overrides, err := loadComponentOverrides(cfg.ComponentOverrides)
+	if err != nil {
+		return report.Document{}, ExecutionError("read component overrides failed: "+err.Error(), err)
+	}
+	if len(cfg.inlineOverrides) > 0 {
+		overrides = mergeInlineOverrides(overrides, cfg.inlineOverrides)
+	}
+	detections = applyComponentOverrides(detections, overrides)
+
+	providerEvidence, providerLimit := collectProviderEvidence(context.Background(), cfg, deps.ProviderFactory.NewProvider(snapshot, cfg))
+	targetVersion := cfg.TargetVersion
+	if targetVersion == "" && providerEvidence != nil && len(providerEvidence.AvailableUpgrades) > 0 {
+		targetVersion = highestProviderVersion(providerEvidence.AvailableUpgrades)
+	}
+	apiFindings, apiLimit := deps.APIAnalyzer.Analyze(context.Background(), cfg, targetVersion)
+
+	cacheEntry := PreflightCacheEntry{
+		SchemaVersion:       preflightCacheSchema,
+		CachedAt:            clock().UTC(),
+		ContextName:         preflightResult.Context.Name,
+		TargetVersion:       targetVersion,
+		APIFindings:         apiFindings,
+		APILimitation:       apiLimit,
+		ComponentDetections: detections,
+		ProviderEvidence:    providerEvidence,
+		ProviderLimitation:  providerLimit,
+	}
+	if saveErr := savePreflightCache(cfg.resolvedPreflightCachePath(), cacheEntry); saveErr != nil {
+		return report.Document{}, ExecutionError("save preflight cache failed: "+saveErr.Error(), saveErr)
+	}
+
+	engine := recommendation.NewEngine().WithClock(clock)
+	rec, err := engine.Generate(recommendation.Input{
+		CurrentVersion:      trimVersionPrefix(snapshot.Kubernetes.ServerVersion),
+		APIFindings:         apiFindings,
+		ComponentDetections: detections,
+		ProviderEvidence:    providerEvidence,
+		InventorySnapshot:   &snapshot.Inventory,
+		ClusterName:         cfg.ClusterName,
+		ResourceGroup:       cfg.ResourceGroup,
+	}, recommendation.RecommendationOptions{
+		TargetVersion: cfg.TargetVersion,
+		MaxMinorSkip:  4,
+	})
+	if err != nil {
+		return report.Document{}, ExecutionError("generate recommendation failed: "+err.Error(), err)
+	}
+	if apiLimit.Code != "" {
+		rec.Limitations = append(rec.Limitations, apiLimit)
+	}
+	if providerLimit.Code != "" {
+		rec.Limitations = append(rec.Limitations, providerLimit)
+	}
+	rec.Limitations = append(rec.Limitations, recommendation.Limitation{
+		Code:    "PREFLIGHT_MODE",
+		Summary: "Pre-flight mode: day-of health checks (node readiness, pod status, PVC binding) were not run",
+		Impact:  "Health findings not included; run kua analyze --day-of to add them",
+	})
+
+	doc := documentFromRecommendation(rec, clock())
+	if cfg.ComponentOverrides == "" {
+		doc.ComponentVersionOverrides = buildComponentOverrideTemplate(detections, cfg)
+	}
+	return doc, nil
+}
+
+// buildDayOfDocument loads cached pre-flight results and runs day-of health checks.
+func buildDayOfDocument(cfg Config, deps Dependencies) (report.Document, *AppError) {
+	if deps.PreflightRunner == nil {
+		return report.Document{}, ExecutionError("analyze preflight runner is not configured", nil)
+	}
+	if deps.InventoryCollector == nil {
+		return report.Document{}, ExecutionError("analyze inventory collector is not configured", nil)
+	}
+	clock := deps.Clock
+	if clock == nil {
+		clock = time.Now
+	}
+
+	cachePath := cfg.resolvedPreflightCachePath()
+	cacheEntry, loadErr := loadPreflightCache(cachePath)
+	if loadErr != nil {
+		return report.Document{}, ExecutionError("load preflight cache failed: "+loadErr.Error()+" — run kua analyze --preflight first", loadErr)
+	}
+
+	options := preflight.KubeconfigOptions{Path: cfg.Kubeconfig, Context: cfg.Context}
+	preflightResult, err := deps.PreflightRunner.Run(options)
+	if err != nil {
+		return report.Document{}, ExecutionError("analyze preflight failed: "+err.Error(), err)
+	}
+	if preflightResult.HasRequiredFailure() {
+		rec := inconclusiveRecommendation(preflightResult.ServerVersion, clock(), "PREFLIGHT_REQUIRED_FAILURE", "Required Kubernetes preflight check failed")
+		return documentFromRecommendation(rec, clock()), nil
+	}
+
+	snapshot, err := deps.InventoryCollector.CollectAssessment(options, preflightResult)
+	if err != nil {
+		return report.Document{}, ExecutionError("analyze inventory collection failed: "+err.Error(), err)
+	}
+	if err := inventory.ValidateCoreSnapshot(snapshot); err != nil {
+		return report.Document{}, ExecutionError("analyze inventory snapshot validation failed: "+err.Error(), err)
+	}
+
+	healthFindings := health.NewRunner(health.DefaultRules()...).Evaluate(snapshot, health.Options{Now: clock})
+
+	engine := recommendation.NewEngine().WithClock(clock)
+	rec, err := engine.Generate(recommendation.Input{
+		CurrentVersion:      trimVersionPrefix(snapshot.Kubernetes.ServerVersion),
+		HealthFindings:      healthFindings,
+		APIFindings:         cacheEntry.APIFindings,
+		ComponentDetections: cacheEntry.ComponentDetections,
+		ProviderEvidence:    cacheEntry.ProviderEvidence,
+		InventorySnapshot:   &snapshot.Inventory,
+		ClusterName:         cfg.ClusterName,
+		ResourceGroup:       cfg.ResourceGroup,
+	}, recommendation.RecommendationOptions{
+		TargetVersion: cacheEntry.TargetVersion,
+		MaxMinorSkip:  4,
+	})
+	if err != nil {
+		return report.Document{}, ExecutionError("generate recommendation failed: "+err.Error(), err)
+	}
+	if cacheEntry.APILimitation.Code != "" {
+		rec.Limitations = append(rec.Limitations, cacheEntry.APILimitation)
+	}
+	if cacheEntry.ProviderLimitation.Code != "" {
+		rec.Limitations = append(rec.Limitations, cacheEntry.ProviderLimitation)
+	}
+	age := clock().UTC().Sub(cacheEntry.CachedAt.UTC()).Round(time.Minute)
+	rec.Limitations = append(rec.Limitations, recommendation.Limitation{
+		Code:    "DAY_OF_PREFLIGHT_CACHE",
+		Summary: fmt.Sprintf("Pre-flight data loaded from cache (cached %s ago)", formatDuration(age)),
+		Impact:  "API/component/provider findings reflect cache state, not live cluster",
+	})
+
+	return documentFromRecommendation(rec, clock()), nil
+}
+
+func formatDuration(d time.Duration) string {
+	if d < 0 {
+		d = 0
+	}
+	hours := int(d.Hours())
+	minutes := int(d.Minutes()) % 60
+	if hours > 0 {
+		return fmt.Sprintf("%dh%dm", hours, minutes)
+	}
+	return fmt.Sprintf("%dm", minutes)
 }
 
 type kubentAnalyzer struct{}
@@ -725,7 +939,10 @@ Commands:
   version        Print build and contract versions
 
 Flags (analyze):
-  --yes          Skip confirmation prompt (required when not running interactively)
+  --yes            Skip confirmation prompt (required when not running interactively)
+  --preflight      Run pre-flight checks only; save results to cache for --day-of
+  --day-of         Run day-of health checks using cached pre-flight results
+  --preflight-cache <path>  Override pre-flight cache file path (default: kua-preflight.json)
 `, binaryName, binaryName)
 }
 

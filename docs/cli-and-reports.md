@@ -1,16 +1,30 @@
 # CLI and report contracts
 
-Status: Accepted with Phase 8.5 recovery updates
-Last updated: 2026-07-27
+Status: Accepted with Phase 10.8 pre-flight/day-of updates
+Last updated: 2026-08-02
 
 ## 1. Common flags
 
 Common flags include `--context`, `--kubeconfig`, `--config`, `--input`,
 `--output`, `--format`, `--provider-source=auto`, `--provider-evidence`,
 `--subscription`, `--resource-group`, `--cluster-name`, `--target-version`,
-`--component-overrides`, `--redacted`, `--yes`, and `--log-level`. `--namespace`,
-`--timeout`, and `--catalog` remain planned flags and must not be documented as
-complete until wired.
+`--component-overrides`, `--redacted`, `--yes`, `--log-level`, `--preflight`,
+`--day-of`, and `--preflight-cache`. `--namespace`, `--timeout`, and `--catalog`
+remain planned flags and must not be documented as complete until wired.
+
+`--preflight` runs only pre-flight checks (API compatibility, component version
+checks, upgrade path validation, provider upgrade availability) and writes the
+results to a local cache file for later `--day-of` reuse. `--day-of` runs only
+day-of checks (node health, pod status, PVC binding, event analysis) and merges
+the results with a previously saved pre-flight cache. `--preflight` and `--day-of`
+are mutually exclusive; specifying both is a usage error. Running without either
+flag (the default) executes both pre-flight and day-of analyzers in a single pass
+and does not write a cache file.
+
+`--preflight-cache <path>` overrides the default pre-flight cache file path
+(`kua-preflight.json` in the current working directory). When running `--preflight`
+the file is written; when running `--day-of` the file is read. The cache file must
+not be committed to version control if it contains unredacted cluster identifiers.
 
 `--yes` skips the interactive confirmation prompt for `kua analyze`. It is
 required when running without a terminal (CI, scripts, pipes). Without `--yes`
@@ -24,6 +38,12 @@ Standard kubeconfig resolution applies: explicit `--kubeconfig`, then normal cli
 ## 2. Command behavior
 
 - `kua analyze`: preflight, collect, run all required analyzers, recommend, render.
+- `kua analyze --preflight`: run pre-flight analyzers only (API compatibility,
+  component checks, upgrade path, provider evidence); save results to cache file;
+  does not run health/day-of checks. Use days before upgrade window.
+- `kua analyze --day-of`: load pre-flight cache; run day-of analyzers (node
+  health, pod status, PVC binding, events); merge with cached pre-flight results;
+  produce combined recommendation. Requires prior `--preflight` run.
 - `kua inventory`: collect and render inventory; kubent is not required.
 - `kua health`: collect health inputs and render findings; kubent is not required.
 - `kua compatibility`: run component and API compatibility; kubent is required in MVP.
