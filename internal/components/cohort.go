@@ -94,6 +94,15 @@ func (detector WorkloadDetector) matchesWorkload(workload inventory.Workload) bo
 }
 
 func (detector WorkloadDetector) versions(workload inventory.Workload) ([]string, bool) {
+	// Prefer the explicit app.kubernetes.io/version label over image-tag
+	// extraction: it reflects the application version, not the image build tag.
+	if workload.VersionLabel != "" {
+		version, confidence, status := NormalizeLabelVersion(workload.VersionLabel)
+		if status == StatusFound && confidence != ConfidenceUnknown {
+			return []string{version}, false
+		}
+	}
+
 	seen := map[string]bool{}
 	var versions []string
 	hasAmbiguousEvidence := false

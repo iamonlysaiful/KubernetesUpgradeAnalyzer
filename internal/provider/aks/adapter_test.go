@@ -123,3 +123,52 @@ func TestValidateAllowedCommand(t *testing.T) {
 		})
 	}
 }
+
+func TestParseCLIOutput_ExtractsIdentityFromResourceID(t *testing.T) {
+	// Simulate az aks get-upgrades -o json output which embeds RG and cluster in id.
+	data := []byte(`{
+		"id": "/subscriptions/sub-123/resourcegroups/MY-RG/providers/Microsoft.ContainerService/managedClusters/MY-CLUSTER/upgradeProfiles/default",
+		"controlPlaneProfile": {"kubernetesVersion": "1.34.0", "upgrades": []},
+		"agentPoolProfiles": []
+	}`)
+
+	// Empty identity — simulates file-load path where no flags were provided.
+	identity := IdentityResult{Provider: provider.ProviderAKS, Confidence: provider.ConfidenceMedium}
+	evidence, err := ParseCLIOutput(data, identity, fixedTime())
+	if err != nil {
+		t.Fatalf("ParseCLIOutput: %v", err)
+	}
+
+	if evidence.Cluster.ResourceGroup != "MY-RG" {
+		t.Errorf("Cluster.ResourceGroup = %q, want MY-RG", evidence.Cluster.ResourceGroup)
+	}
+	if evidence.Cluster.ClusterName != "MY-CLUSTER" {
+		t.Errorf("Cluster.ClusterName = %q, want MY-CLUSTER", evidence.Cluster.ClusterName)
+	}
+}
+
+func TestParseCLIOutput_ExplicitIdentityTakesPrecedenceOverResourceID(t *testing.T) {
+	data := []byte(`{
+		"id": "/subscriptions/sub-123/resourcegroups/ID-RG/providers/Microsoft.ContainerService/managedClusters/ID-CLUSTER/upgradeProfiles/default",
+		"controlPlaneProfile": {"kubernetesVersion": "1.34.0", "upgrades": []},
+		"agentPoolProfiles": []
+	}`)
+
+	identity := IdentityResult{
+		Provider:      provider.ProviderAKS,
+		Confidence:    provider.ConfidenceHigh,
+		ResourceGroup: "EXPLICIT-RG",
+		ClusterName:   "EXPLICIT-CLUSTER",
+	}
+	evidence, err := ParseCLIOutput(data, identity, fixedTime())
+	if err != nil {
+		t.Fatalf("ParseCLIOutput: %v", err)
+	}
+
+	if evidence.Cluster.ResourceGroup != "EXPLICIT-RG" {
+		t.Errorf("Cluster.ResourceGroup = %q, want EXPLICIT-RG (explicit wins)", evidence.Cluster.ResourceGroup)
+	}
+	if evidence.Cluster.ClusterName != "EXPLICIT-CLUSTER" {
+		t.Errorf("Cluster.ClusterName = %q, want EXPLICIT-CLUSTER (explicit wins)", evidence.Cluster.ClusterName)
+	}
+}

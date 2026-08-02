@@ -80,6 +80,7 @@ func workloadFromDeployment(deployment appsv1.Deployment) Workload {
 		DesiredReplicas: int32Value(deployment.Spec.Replicas, 1),
 		ReadyReplicas:   int(deployment.Status.ReadyReplicas),
 		Critical:        "UNKNOWN",
+		VersionLabel:    podVersionLabel(deployment.Spec.Template.Labels),
 		Containers:      containers(deployment.Spec.Template.Spec.Containers),
 	}
 }
@@ -90,6 +91,7 @@ func workloadFromDaemonSet(daemonSet appsv1.DaemonSet) Workload {
 		DesiredReplicas: int(daemonSet.Status.DesiredNumberScheduled),
 		ReadyReplicas:   int(daemonSet.Status.NumberReady),
 		Critical:        "UNKNOWN",
+		VersionLabel:    podVersionLabel(daemonSet.Spec.Template.Labels),
 		Containers:      containers(daemonSet.Spec.Template.Spec.Containers),
 	}
 }
@@ -100,6 +102,7 @@ func workloadFromStatefulSet(statefulSet appsv1.StatefulSet) Workload {
 		DesiredReplicas: int32Value(statefulSet.Spec.Replicas, 1),
 		ReadyReplicas:   int(statefulSet.Status.ReadyReplicas),
 		Critical:        "UNKNOWN",
+		VersionLabel:    podVersionLabel(statefulSet.Spec.Template.Labels),
 		Containers:      containers(statefulSet.Spec.Template.Spec.Containers),
 	}
 }
@@ -110,6 +113,7 @@ func workloadFromReplicaSet(replicaSet appsv1.ReplicaSet) Workload {
 		DesiredReplicas: int32Value(replicaSet.Spec.Replicas, 1),
 		ReadyReplicas:   int(replicaSet.Status.ReadyReplicas),
 		Critical:        "UNKNOWN",
+		VersionLabel:    podVersionLabel(replicaSet.Spec.Template.Labels),
 		Containers:      containers(replicaSet.Spec.Template.Spec.Containers),
 	}
 }
@@ -135,6 +139,7 @@ func workloadFromJob(job batchv1.Job) Workload {
 		DesiredReplicas: int32Value(job.Spec.Parallelism, 1),
 		ReadyReplicas:   int(job.Status.Succeeded),
 		Critical:        "UNKNOWN",
+		VersionLabel:    podVersionLabel(job.Spec.Template.Labels),
 		Containers:      containers(job.Spec.Template.Spec.Containers),
 	}
 }
@@ -149,8 +154,16 @@ func workloadFromCronJob(cronJob batchv1.CronJob) Workload {
 		DesiredReplicas: desiredReplicas,
 		ReadyReplicas:   0,
 		Critical:        "UNKNOWN",
+		VersionLabel:    podVersionLabel(cronJob.Spec.JobTemplate.Spec.Template.Labels),
 		Containers:      containers(cronJob.Spec.JobTemplate.Spec.Template.Spec.Containers),
 	}
+}
+
+// podVersionLabel returns the value of app.kubernetes.io/version from
+// pod-template labels, which is set by Helm charts and operators to the actual
+// application version (e.g. "5.8.8" for EMQX). Returns empty string if absent.
+func podVersionLabel(labels map[string]string) string {
+	return labels["app.kubernetes.io/version"]
 }
 
 func workloadRef(apiVersion string, kind string, namespace string, name string) ResourceRef {

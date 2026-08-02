@@ -160,3 +160,35 @@ func workload(kind string, namespace string, name string, containerName string, 
 		},
 	}
 }
+
+func TestDetectorPrefersVersionLabelOverImageTag(t *testing.T) {
+	// EMQX uses a custom wrapper image tag (prod_v2.0.1) that does not reflect
+	// the real application version. app.kubernetes.io/version=5.8.8 is the
+	// authoritative source and must take priority.
+	detector := WorkloadDetector{componentID: "emqx", name: "EMQX", imageHints: []string{"emqx"}, nameHints: []string{"emqx"}}
+	snapshot := inventory.Snapshot{
+		Inventory: inventory.Inventory{
+			Workloads: []inventory.Workload{
+				{
+					Ref:          inventory.ResourceRef{APIVersion: "apps/v1", Kind: "StatefulSet", Namespace: "mqtt", Name: "emqx"},
+					VersionLabel: "5.8.8",
+					Containers:   []inventory.Container{{Name: "emqx", Image: "myregistry/emqx:prod_v2.0.1"}},
+				},
+			},
+		},
+	}
+
+	detections := detector.Detect(snapshot)
+	if len(detections) != 1 {
+		t.Fatalf("detections = %d, want 1", len(detections))
+	}
+	if detections[0].Version != "5.8.8" {
+		t.Fatalf("Version = %q, want 5.8.8 (from label, not image tag)", detections[0].Version)
+	}
+	if detections[0].Status != StatusFound || detections[0].Confidence != ConfidenceHigh {
+		t.Fatalf("Status/Confidence = %q/%q, want FOUND/HIGH", detections[0].Status, detections[0].Confidence)
+	}
+	if len(detections[0].Limitations) != 0 {
+		t.Fatalf("Limitations = %#v, want none", detections[0].Limitations)
+	}
+}

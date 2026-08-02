@@ -35,22 +35,29 @@ type Limitation struct {
 }
 
 func NormalizeFindings(report Report, analyzerVersion string, targetVersion string, coverage CoverageResult) []Finding {
+	// Build a coverage limitation to attach when rules aren't fully verified for
+	// this target. When unverified, we still return real kubent findings so that
+	// actual deprecated API hits are never silently discarded.
+	var coverageLim *Limitation
 	if coverage.Status != CoverageVerified {
-		return []Finding{{
-			AnalyzerVersion: analyzerVersion,
-			TargetVersion:   targetVersion,
-			Status:          FindingUnknown,
-			Limitations: []Limitation{{
-				Code:    "TARGET_COVERAGE_UNVERIFIED",
-				Summary: "kubent target-rule coverage is not verified",
-			}},
-		}}
+		coverageLim = &Limitation{
+			Code:    "TARGET_COVERAGE_UNVERIFIED",
+			Summary: "kubent target-rule coverage is not verified for " + targetVersion,
+		}
 	}
+
 	if len(report.DeprecatedAPIs) == 0 {
+		status := FindingPass
+		var limitations []Limitation
+		if coverageLim != nil {
+			status = FindingUnknown
+			limitations = []Limitation{*coverageLim}
+		}
 		return []Finding{{
 			AnalyzerVersion: analyzerVersion,
 			TargetVersion:   targetVersion,
-			Status:          FindingPass,
+			Status:          status,
+			Limitations:     limitations,
 		}}
 	}
 
@@ -59,6 +66,10 @@ func NormalizeFindings(report Report, analyzerVersion string, targetVersion stri
 		status := FindingWarn
 		if api.Deleted {
 			status = FindingFail
+		}
+		var limitations []Limitation
+		if coverageLim != nil {
+			limitations = []Limitation{*coverageLim}
 		}
 		findings = append(findings, Finding{
 			AnalyzerVersion: analyzerVersion,
@@ -69,6 +80,7 @@ func NormalizeFindings(report Report, analyzerVersion string, targetVersion stri
 			Kind:            api.Kind,
 			Replacement:     api.ReplaceWith,
 			RemovedIn:       api.Since,
+			Limitations:     limitations,
 		})
 	}
 	sort.SliceStable(findings, func(i, j int) bool {

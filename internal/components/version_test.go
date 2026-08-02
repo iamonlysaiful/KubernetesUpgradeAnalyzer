@@ -32,3 +32,25 @@ func TestNormalizeVersionReturnsUnknownForAmbiguousValues(t *testing.T) {
 		}
 	}
 }
+
+func TestNormalizeLabelVersionStripsLeadingV(t *testing.T) {
+	for _, tc := range []struct{ input, want string }{
+		{"5.8.8", "5.8.8"},
+		{"v5.8.8", "5.8.8"},
+		{" 1.2.3 ", "1.2.3"},
+	} {
+		version, confidence, status := NormalizeLabelVersion(tc.input)
+		if version != tc.want || confidence != ConfidenceHigh || status != StatusFound {
+			t.Fatalf("NormalizeLabelVersion(%q) = %q/%q/%q, want %q/HIGH/FOUND", tc.input, version, confidence, status, tc.want)
+		}
+	}
+}
+
+func TestNormalizeLabelVersionReturnsUnknownForEmptyOrUnknown(t *testing.T) {
+	for _, value := range []string{"", "unknown", "UNKNOWN", "v"} {
+		version, confidence, status := NormalizeLabelVersion(value)
+		if version != UnknownVersion || confidence != ConfidenceUnknown || status != StatusUnknown {
+			t.Fatalf("NormalizeLabelVersion(%q) = %q/%q/%q, want UNKNOWN/UNKNOWN/UNKNOWN", value, version, confidence, status)
+		}
+	}
+}

@@ -161,6 +161,10 @@ type ClusterIdentity struct {
 	Region string `json:"region,omitempty"`
 	// IdentityConfidence indicates how reliably identity was determined.
 	IdentityConfidence Confidence `json:"identityConfidence"`
+	// ResourceGroup and ClusterName are unredacted values used only for
+	// in-memory plan generation; they are never serialized to evidence files.
+	ResourceGroup string `json:"-"`
+	ClusterName   string `json:"-"`
 }
 
 // NodePoolEvidence contains per-node-pool version information.

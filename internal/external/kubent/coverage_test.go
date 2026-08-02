@@ -6,7 +6,7 @@ import (
 )
 
 func TestVerifyCoverageAcceptsDefaultTargetMinors(t *testing.T) {
-	for _, target := range []string{"1.30", "1.31.4", "v1.32.0", "1.33.12", "1.34.9"} {
+	for _, target := range []string{"1.30", "1.31.4", "v1.32.0", "1.33.12", "1.34.9", "1.35.0"} {
 		result := VerifyCoverage(target, DefaultCoveragePolicy())
 		if result.Status != CoverageVerified {
 			t.Fatalf("VerifyCoverage(%q) = %#v, want VERIFIED", target, result)
@@ -18,7 +18,7 @@ func TestVerifyCoverageAcceptsDefaultTargetMinors(t *testing.T) {
 }
 
 func TestVerifyCoverageRejectsMissingTargetMinor(t *testing.T) {
-	result := VerifyCoverage("1.35.0", DefaultCoveragePolicy())
+	result := VerifyCoverage("1.36.0", DefaultCoveragePolicy())
 
 	if result.Status != CoverageUnverified {
 		t.Fatalf("Status = %q, want %q", result.Status, CoverageUnverified)
@@ -40,7 +40,8 @@ func TestVerifyCoverageRejectsInvalidTarget(t *testing.T) {
 }
 
 func TestNormalizeFindingsRequiresVerifiedCoverage(t *testing.T) {
-	findings := NormalizeFindings(Report{}, SupportedVersion, "1.35.0", VerifyCoverage("1.35.0", DefaultCoveragePolicy()))
+	// Empty report + unverified target → single UNKNOWN finding with limitation.
+	findings := NormalizeFindings(Report{}, SupportedVersion, "1.36.0", VerifyCoverage("1.36.0", DefaultCoveragePolicy()))
 
 	if len(findings) != 1 {
 		t.Fatalf("findings = %d, want 1", len(findings))
@@ -50,6 +51,25 @@ func TestNormalizeFindingsRequiresVerifiedCoverage(t *testing.T) {
 	}
 	if len(findings[0].Limitations) != 1 || findings[0].Limitations[0].Code != "TARGET_COVERAGE_UNVERIFIED" {
 		t.Fatalf("Limitations = %#v, want TARGET_COVERAGE_UNVERIFIED", findings[0].Limitations)
+	}
+}
+
+func TestNormalizeFindingsReturnsActualFindingsEvenWhenCoverageUnverified(t *testing.T) {
+	// Real deprecated APIs found by kubent must not be discarded when coverage is
+	// unverified. They should be returned with the coverage limitation attached.
+	report := Report{DeprecatedAPIs: []DeprecatedAPI{
+		{Name: "old", Namespace: "default", Kind: "Ingress", APIVersion: "extensions/v1beta1", ReplaceWith: "networking.k8s.io/v1", Since: "1.22", Deleted: true},
+	}}
+	findings := NormalizeFindings(report, SupportedVersion, "1.36.0", VerifyCoverage("1.36.0", DefaultCoveragePolicy()))
+
+	if len(findings) != 1 {
+		t.Fatalf("findings = %d, want 1", len(findings))
+	}
+	if findings[0].Status != FindingFail {
+		t.Fatalf("Status = %q, want FAIL — deprecated APIs must not be suppressed", findings[0].Status)
+	}
+	if len(findings[0].Limitations) != 1 || findings[0].Limitations[0].Code != "TARGET_COVERAGE_UNVERIFIED" {
+		t.Fatalf("Limitations = %#v, want TARGET_COVERAGE_UNVERIFIED attached to finding", findings[0].Limitations)
 	}
 }
 
@@ -88,7 +108,7 @@ func TestDecideKubentMVP(t *testing.T) {
 		t.Fatalf("goDecision = %#v, want GO", goDecision)
 	}
 
-	noGoDecision := DecideKubentMVP(VerifyAllTargets([]string{"1.30", "1.35"}, DefaultCoveragePolicy()))
+	noGoDecision := DecideKubentMVP(VerifyAllTargets([]string{"1.30", "1.36"}, DefaultCoveragePolicy()))
 	if noGoDecision.Status != DecisionNoGo {
 		t.Fatalf("noGoDecision = %#v, want NO_GO", noGoDecision)
 	}

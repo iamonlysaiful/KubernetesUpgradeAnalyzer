@@ -67,7 +67,10 @@ type Workload struct {
 	DesiredReplicas int         `json:"desiredReplicas"`
 	ReadyReplicas   int         `json:"readyReplicas"`
 	Critical        string      `json:"critical,omitempty"`
-	Containers      []Container `json:"containers"`
+	// VersionLabel holds the value of the app.kubernetes.io/version pod-template
+	// label when present. Detectors prefer this over image-tag extraction.
+	VersionLabel string      `json:"versionLabel,omitempty"`
+	Containers   []Container `json:"containers"`
 }
 
 type Container struct {

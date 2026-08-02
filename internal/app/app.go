@@ -377,6 +377,7 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 	}
 	apiFindings, apiLimit := deps.APIAnalyzer.Analyze(context.Background(), cfg, targetVersion)
 
+	resGroupResolved, clusterResolved := resolveClusterIdentity(cfg, providerEvidence)
 	engine := recommendation.NewEngine().WithClock(clock)
 	rec, err := engine.Generate(recommendation.Input{
 		CurrentVersion:      trimVersionPrefix(snapshot.Kubernetes.ServerVersion),
@@ -385,8 +386,8 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 		ComponentDetections: detections,
 		ProviderEvidence:    providerEvidence,
 		InventorySnapshot:   &snapshot.Inventory,
-		ClusterName:         cfg.ClusterName,
-		ResourceGroup:       cfg.ResourceGroup,
+		ClusterName:         clusterResolved,
+		ResourceGroup:       resGroupResolved,
 	}, recommendation.RecommendationOptions{
 		TargetVersion: cfg.TargetVersion,
 		MaxMinorSkip:  4,
@@ -478,6 +479,7 @@ func buildPreflightDocument(cfg Config, deps Dependencies) (report.Document, *Ap
 		return report.Document{}, ExecutionError("save preflight cache failed: "+saveErr.Error(), saveErr)
 	}
 
+	resGroupResolved, clusterResolved := resolveClusterIdentity(cfg, providerEvidence)
 	engine := recommendation.NewEngine().WithClock(clock)
 	rec, err := engine.Generate(recommendation.Input{
 		CurrentVersion:      trimVersionPrefix(snapshot.Kubernetes.ServerVersion),
@@ -485,8 +487,8 @@ func buildPreflightDocument(cfg Config, deps Dependencies) (report.Document, *Ap
 		ComponentDetections: detections,
 		ProviderEvidence:    providerEvidence,
 		InventorySnapshot:   &snapshot.Inventory,
-		ClusterName:         cfg.ClusterName,
-		ResourceGroup:       cfg.ResourceGroup,
+		ClusterName:         clusterResolved,
+		ResourceGroup:       resGroupResolved,
 	}, recommendation.RecommendationOptions{
 		TargetVersion: cfg.TargetVersion,
 		MaxMinorSkip:  4,
@@ -553,6 +555,7 @@ func buildDayOfDocument(cfg Config, deps Dependencies) (report.Document, *AppErr
 	healthFindings := health.NewRunner(health.DefaultRules()...).Evaluate(snapshot, health.Options{Now: clock})
 
 	engine := recommendation.NewEngine().WithClock(clock)
+	resGroupResolved, clusterResolved := resolveClusterIdentity(cfg, cacheEntry.ProviderEvidence)
 	rec, err := engine.Generate(recommendation.Input{
 		CurrentVersion:      trimVersionPrefix(snapshot.Kubernetes.ServerVersion),
 		HealthFindings:      healthFindings,
@@ -560,8 +563,8 @@ func buildDayOfDocument(cfg Config, deps Dependencies) (report.Document, *AppErr
 		ComponentDetections: cacheEntry.ComponentDetections,
 		ProviderEvidence:    cacheEntry.ProviderEvidence,
 		InventorySnapshot:   &snapshot.Inventory,
-		ClusterName:         cfg.ClusterName,
-		ResourceGroup:       cfg.ResourceGroup,
+		ClusterName:         clusterResolved,
+		ResourceGroup:       resGroupResolved,
 	}, recommendation.RecommendationOptions{
 		TargetVersion: cacheEntry.TargetVersion,
 		MaxMinorSkip:  4,
@@ -672,6 +675,21 @@ func collectProviderEvidence(ctx context.Context, cfg Config, p provider.Provide
 		return nil, recommendation.Limitation{Code: "PROVIDER_EVIDENCE_ERROR", Summary: sanitizeProviderError(err.Error()), Impact: "provider availability remains unknown"}
 	}
 	return evidence, recommendation.Limitation{}
+}
+
+// resolveClusterIdentity returns resource group and cluster name, preferring
+// explicit cfg flags over values parsed from provider evidence.
+func resolveClusterIdentity(cfg Config, evidence *provider.ProviderEvidence) (resourceGroup, clusterName string) {
+	rg, cn := cfg.ResourceGroup, cfg.ClusterName
+	if evidence != nil {
+		if rg == "" {
+			rg = evidence.Cluster.ResourceGroup
+		}
+		if cn == "" {
+			cn = evidence.Cluster.ClusterName
+		}
+	}
+	return rg, cn
 }
 
 func sanitizeProviderError(message string) string {
