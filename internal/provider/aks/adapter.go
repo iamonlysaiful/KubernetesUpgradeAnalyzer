@@ -7,11 +7,16 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/iamonlysaiful/KubernetesUpgradeAnalyzer/internal/provider"
 )
+
+// aksResourceIDPattern extracts resource group and cluster name from an AKS
+// resource id: /subscriptions/.../resourcegroups/{rg}/.../managedClusters/{cluster}/...
+var aksResourceIDPattern = regexp.MustCompile(`(?i)/resourcegroups?/([^/]+)/providers/[^/]+/managedclusters/([^/]+)`)
 
 const (
 	// AllowedCommand is the only Azure CLI command permitted for provider evidence.
@@ -187,6 +192,7 @@ func validateAllowedCommand(cmd string) error {
 // ParseCLIOutput parses the JSON output from az aks get-upgrades.
 func ParseCLIOutput(data []byte, identity IdentityResult, capturedAt time.Time) (*provider.ProviderEvidence, error) {
 	var raw struct {
+		ID                  string `json:"id"`
 		ControlPlaneProfile struct {
 			KubernetesVersion string `json:"kubernetesVersion"`
 			Upgrades          []struct {
@@ -208,6 +214,19 @@ func ParseCLIOutput(data []byte, identity IdentityResult, capturedAt time.Time) 
 		return nil, fmt.Errorf("unmarshal CLI output: %w", err)
 	}
 
+	// Extract resource group and cluster name from the resource id when not
+	// already present in the caller-supplied identity (e.g. file-load path).
+	if (identity.ResourceGroup == "" || identity.ClusterName == "") && raw.ID != "" {
+		if m := aksResourceIDPattern.FindStringSubmatch(raw.ID); m != nil {
+			if identity.ResourceGroup == "" {
+				identity.ResourceGroup = m[1]
+			}
+			if identity.ClusterName == "" {
+				identity.ClusterName = m[2]
+			}
+		}
+	}
+
 	evidence := &provider.ProviderEvidence{
 		SchemaVersion:       "kua.provider-evidence.aks.v1",
 		EvidenceID:          fmt.Sprintf("aks-%d", capturedAt.Unix()),
@@ -220,6 +239,8 @@ func ParseCLIOutput(data []byte, identity IdentityResult, capturedAt time.Time) 
 			ResourceGroupAlias: identity.RedactedResourceGroup(),
 			ClusterNameAlias:   identity.RedactedClusterName(),
 			IdentityConfidence: identity.Confidence,
+			ResourceGroup:      identity.ResourceGroup,
+			ClusterName:        identity.ClusterName,
 		},
 		AvailableUpgrades: make([]provider.UpgradeOption, 0),
 		Limitations:       make([]provider.Limitation, 0),
