@@ -53,3 +53,4 @@ coverage.html
 /.cache/
 *.tmp
 *.log
+upgrades.json
