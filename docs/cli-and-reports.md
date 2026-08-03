@@ -12,6 +12,9 @@ Common flags include `--context`, `--kubeconfig`, `--config`, `--input`,
 `--day-of`, and `--preflight-cache`. `--namespace`, `--timeout`, and `--catalog`
 remain planned flags and must not be documented as complete until wired.
 
+`--help` is accepted globally and prints usage regardless of command position
+(for example `kua --help` and `kua report --help`).
+
 `--preflight` runs only pre-flight checks (API compatibility, component version
 checks, upgrade path validation, provider upgrade availability) and writes the
 results to a local cache file for later `--day-of` reuse. `--day-of` runs only
@@ -47,7 +50,14 @@ Standard kubeconfig resolution applies: explicit `--kubeconfig`, then normal cli
 - `kua inventory`: collect and render inventory; kubent is not required.
 - `kua health`: collect health inputs and render findings; kubent is not required.
 - `kua compatibility`: run component and API compatibility; kubent is required in MVP.
-- `kua report --input assessment.json`: render canonical JSON without cluster access.
+- `kua report [assessment.json]`: render a saved assessment without cluster access.
+  Input can be passed as positional path (`kua report assessment.json`) or with
+  `--input assessment.json`.
+  If neither is provided, KUA tries local defaults in this order:
+  `assessment.json`, `local-output/analyze.final.redacted.json`,
+  `local-output/analyze.redacted.json`.
+  If multiple inputs are provided (positional plus `--input`), KUA returns a
+  usage error.
 - `kua component-overrides --input assessment.json --output component-overrides.json`: generate a local operator-fillable component override file from an assessment's `componentVersionOverrides` helper without cluster or provider access.
 - `kua version`: show build, Go, schema, and embedded catalog versions.
 
@@ -76,8 +86,13 @@ component blockers are present, `kua analyze` may return `READY` or
 
 `kua health` and `kua compatibility` may initially render filtered views of the
 same assessment pipeline, as long as omitted evidence is reported as a
-limitation. `kua report --input <assessment.json>` renders a saved report
-document without Kubernetes or provider access.
+limitation. `kua report` renders a saved report document without Kubernetes or
+provider access.
+
+`kua report` honors `--format` exactly:
+- `console` (default): operator-focused summary view.
+- `json`: full canonical assessment document.
+- `markdown` / `html`: full narrative render suitable for sharing.
 
 `auto` provider behavior for detected AKS clusters is: use the local authenticated Azure CLI, fall back to supplied JSON evidence, then continue with exact provider availability `UNKNOWN`. `azure` and `file` require their named source. `offline` prohibits provider network access but may consume a local evidence file. `none` skips provider-specific analysis.
 

@@ -2,6 +2,20 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-08-03 — CLI report UX and help contract update
+
+- Updated `docs/cli-and-reports.md` to define global `--help` behavior
+  (`kua --help` and `<command> --help`).
+- Updated `kua report` contract to accept positional input
+  (`kua report <assessment.json>`) in addition to `--input`.
+- Defined `kua report` default input fallback order when no input is provided:
+  `assessment.json`, `local-output/analyze.final.redacted.json`,
+  `local-output/analyze.redacted.json`.
+- Defined `kua report` ambiguity behavior: positional plus `--input` is a usage
+  error.
+- Clarified report format expectations: `console` is summary-focused; `json`,
+  `markdown`, and `html` render the full saved assessment document.
+
 ## 2026-08-02 — Phase 10.8: Pre-flight/day-of analysis modes
 
 - Added `--preflight` flag to `kua analyze`: runs API compatibility,
