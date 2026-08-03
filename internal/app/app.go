@@ -101,6 +101,10 @@ func RunWithDependencies(args []string, stdout io.Writer, stderr io.Writer, buil
 		printUsage(stderr)
 		return err.Code
 	}
+	if cfg.Help {
+		printUsage(stdout)
+		return ExitReady
+	}
 	_ = newLogger(stderr, cfg.LogLevel)
 
 	if len(positional) == 0 {
@@ -121,6 +125,19 @@ func RunWithDependencies(args []string, stdout io.Writer, stderr io.Writer, buil
 	case "compatibility":
 		return runAnalyzeSubset(cfg, stdout, stderr, deps, "COMPATIBILITY")
 	case "report":
+		if len(positional) > 2 {
+			fmt.Fprintln(stderr, "report accepts at most one positional input path")
+			printUsage(stderr)
+			return ExitUsage
+		}
+		if len(positional) == 2 {
+			if cfg.InputPath != "" {
+				fmt.Fprintln(stderr, "report input is ambiguous: use either positional path or --input, not both")
+				printUsage(stderr)
+				return ExitUsage
+			}
+			cfg.InputPath = positional[1]
+		}
 		return runReport(cfg, stdout, stderr)
 	case "component-overrides":
 		return runComponentOverrides(cfg, stdout, stderr)
@@ -770,12 +787,12 @@ func renderAssessment(cfg Config, doc report.Document, stdout io.Writer, stderr 
 }
 
 func runReport(cfg Config, stdout io.Writer, stderr io.Writer) int {
-	if cfg.InputPath == "" {
-		appErr := UsageError("missing --input for report")
+	inputPath, appErr := resolveReportInputPath(cfg.InputPath)
+	if appErr != nil {
 		fmt.Fprintln(stderr, appErr.Message)
 		return appErr.Code
 	}
-	data, err := os.ReadFile(cfg.InputPath)
+	data, err := os.ReadFile(inputPath)
 	if err != nil {
 		appErr := ExecutionError("read report input failed: "+err.Error(), err)
 		fmt.Fprintln(stderr, appErr.Message)
@@ -788,6 +805,23 @@ func runReport(cfg Config, stdout io.Writer, stderr io.Writer) int {
 		return appErr.Code
 	}
 	return renderAssessment(cfg, doc, stdout, stderr)
+}
+
+func resolveReportInputPath(explicitPath string) (string, *AppError) {
+	if explicitPath != "" {
+		return explicitPath, nil
+	}
+	candidates := []string{
+		"assessment.json",
+		"local-output/analyze.final.redacted.json",
+		"local-output/analyze.redacted.json",
+	}
+	for _, path := range candidates {
+		if info, err := os.Stat(path); err == nil && !info.IsDir() {
+			return path, nil
+		}
+	}
+	return "", UsageError("missing report input: use kua report <assessment.json> or --input <assessment.json>; checked assessment.json, local-output/analyze.final.redacted.json, local-output/analyze.redacted.json")
 }
 
 func filterFindings(findings []recommendation.Finding, categories ...recommendation.FindingCategory) []recommendation.Finding {
@@ -953,7 +987,7 @@ Commands:
   inventory      Collect and summarize inventory
   health         Run health checks
   compatibility  Run API and component compatibility checks
-  report         Render a saved assessment
+report         Render a saved assessment (%s report <assessment.json> or --input <assessment.json>)
   version        Print build and contract versions
 
 Flags (analyze):
@@ -961,7 +995,16 @@ Flags (analyze):
   --preflight      Run pre-flight checks only; save results to cache for --day-of
   --day-of         Run day-of health checks using cached pre-flight results
   --preflight-cache <path>  Override pre-flight cache file path (default: kua-preflight.json)
-`, binaryName, binaryName)
+
+Flags (report):
+  --input <path>   Input assessment JSON file
+  --format <fmt>   Output format: console|json|markdown|html
+  --output <path>  Write rendered output to file
+  --redacted       Redact sensitive host details in output
+
+Global flags:
+  --help           Print this usage text and exit
+`, binaryName, binaryName, binaryName)
 }
 
 func printVersion(w io.Writer, build BuildInfo) {

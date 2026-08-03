@@ -276,6 +276,133 @@ func TestRunReportRendersInputDocument(t *testing.T) {
 	}
 }
 
+func TestRunReportRendersInputDocumentFromPositionalPath(t *testing.T) {
+	tmp := t.TempDir() + "/assessment-positional.json"
+	input := `{"schemaVersion":"kua.assessment.v1","assessmentId":"assessment-positional","generatedAt":"2026-07-27T04:02:00Z","redacted":false,"currentVersion":"1.30.0","readiness":"INCONCLUSIVE","risk":"UNKNOWN","findings":[],"limitations":[]}`
+	if err := os.WriteFile(tmp, []byte(input), 0o600); err != nil {
+		t.Fatalf("WriteFile returned error: %v", err)
+	}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := Run([]string{"report", tmp}, &stdout, &stderr, BuildInfo{})
+
+	if code != ExitInconclusive {
+		t.Fatalf("Run(report positional) exit code = %d, want %d", code, ExitInconclusive)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("Run(report positional) stderr = %q, want empty", stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "ID: assessment-positional") {
+		t.Fatalf("Run(report positional) output = %q, want rendered assessment", stdout.String())
+	}
+}
+
+func TestRunReportRejectsAmbiguousInputSources(t *testing.T) {
+	tmpA := t.TempDir() + "/assessment-a.json"
+	tmpB := t.TempDir() + "/assessment-b.json"
+	input := `{"schemaVersion":"kua.assessment.v1","assessmentId":"assessment-ambiguous","generatedAt":"2026-07-27T04:02:00Z","redacted":false,"currentVersion":"1.30.0","readiness":"INCONCLUSIVE","risk":"UNKNOWN","findings":[],"limitations":[]}`
+	if err := os.WriteFile(tmpA, []byte(input), 0o600); err != nil {
+		t.Fatalf("WriteFile(tmpA) returned error: %v", err)
+	}
+	if err := os.WriteFile(tmpB, []byte(input), 0o600); err != nil {
+		t.Fatalf("WriteFile(tmpB) returned error: %v", err)
+	}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := Run([]string{"--input", tmpA, "report", tmpB}, &stdout, &stderr, BuildInfo{})
+
+	if code != ExitUsage {
+		t.Fatalf("Run(report ambiguous input) exit code = %d, want %d", code, ExitUsage)
+	}
+	if !strings.Contains(stderr.String(), "report input is ambiguous") {
+		t.Fatalf("Run(report ambiguous input) stderr = %q, want ambiguity message", stderr.String())
+	}
+}
+
+func TestRunHelpFlagWorksWithSubcommand(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := Run([]string{"report", "--help"}, &stdout, &stderr, BuildInfo{})
+
+	if code != ExitReady {
+		t.Fatalf("Run(report --help) exit code = %d, want %d", code, ExitReady)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("Run(report --help) stderr = %q, want empty", stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Usage:") {
+		t.Fatalf("Run(report --help) stdout = %q, want usage text", stdout.String())
+	}
+}
+
+func TestRunReportUsesDefaultAssessmentPathWhenInputIsOmitted(t *testing.T) {
+	oldWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Getwd returned error: %v", err)
+	}
+	tmp := t.TempDir()
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatalf("Chdir(tmp) returned error: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = os.Chdir(oldWD)
+	})
+
+	input := `{"schemaVersion":"kua.assessment.v1","assessmentId":"assessment-default","generatedAt":"2026-07-27T04:02:00Z","redacted":false,"currentVersion":"1.30.0","readiness":"INCONCLUSIVE","risk":"UNKNOWN","findings":[],"limitations":[]}`
+	if err := os.WriteFile("assessment.json", []byte(input), 0o600); err != nil {
+		t.Fatalf("WriteFile(assessment.json) returned error: %v", err)
+	}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := Run([]string{"--format=json", "report"}, &stdout, &stderr, BuildInfo{})
+
+	if code != ExitInconclusive {
+		t.Fatalf("Run(report default input) exit code = %d, want %d", code, ExitInconclusive)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("Run(report default input) stderr = %q, want empty", stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "assessment-default") {
+		t.Fatalf("Run(report default input) output = %q, want rendered default assessment", stdout.String())
+	}
+}
+
+func TestRunReportMissingInputMentionsCheckedDefaultPaths(t *testing.T) {
+	oldWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Getwd returned error: %v", err)
+	}
+	tmp := t.TempDir()
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatalf("Chdir(tmp) returned error: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = os.Chdir(oldWD)
+	})
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := Run([]string{"report"}, &stdout, &stderr, BuildInfo{})
+
+	if code != ExitUsage {
+		t.Fatalf("Run(report missing input) exit code = %d, want %d", code, ExitUsage)
+	}
+	wantParts := []string{
+		"missing report input",
+		"assessment.json",
+		"local-output/analyze.final.redacted.json",
+		"local-output/analyze.redacted.json",
+	}
+	for _, want := range wantParts {
+		if !strings.Contains(stderr.String(), want) {
+			t.Fatalf("Run(report missing input) stderr = %q, want %q", stderr.String(), want)
+		}
+	}
+}
+
 func TestProcessRunnerCapturesSuccessfulStderr(t *testing.T) {
 	result, err := processRunner{}.Run(context.Background(), kubent.Command{
 		Path:      "sh",
