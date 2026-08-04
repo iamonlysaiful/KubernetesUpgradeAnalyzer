@@ -247,35 +247,35 @@ func RenderHTML(doc Document) ([]byte, error) {
 
 	var out bytes.Buffer
 	if err := reportTemplate.Execute(&out, struct {
-		AssessmentID      string
-		GeneratedAt       string
-		Current           string
-		Destination       string
-		Readiness         string
-		Risk              string
-		Redacted          bool
-		Decision          string
-		DecisionClass     string
-		DecisionEmoji     string
-		DecisionLabel     string
-		Confidence        *int
-		UpgradePath       string
-		EstimatedTime     string
-		Blockers          []htmlFinding
-		HasBlockers       bool
-		BlockerCount      int
-		Warnings          []htmlFinding
-		HasWarnings       bool
-		WarningCount      int
-		Limitations       []recommendation.Limitation
-		HasLimitations    bool
-		LimitationCount   int
-		Evidence          *recommendation.EvidenceSummary
-		UpgradeSteps      []htmlStep
-		HasUpgradeSteps   bool
-		ValidationSteps   []htmlStep
+		AssessmentID       string
+		GeneratedAt        string
+		Current            string
+		Destination        string
+		Readiness          string
+		Risk               string
+		Redacted           bool
+		Decision           string
+		DecisionClass      string
+		DecisionEmoji      string
+		DecisionLabel      string
+		Confidence         *int
+		UpgradePath        string
+		EstimatedTime      string
+		Blockers           []htmlFinding
+		HasBlockers        bool
+		BlockerCount       int
+		Warnings           []htmlFinding
+		HasWarnings        bool
+		WarningCount       int
+		Limitations        []recommendation.Limitation
+		HasLimitations     bool
+		LimitationCount    int
+		Evidence           *recommendation.EvidenceSummary
+		UpgradeSteps       []htmlStep
+		HasUpgradeSteps    bool
+		ValidationSteps    []htmlStep
 		HasValidationSteps bool
-		RollbackGuidance  string
+		RollbackGuidance   string
 	}{
 		AssessmentID:       doc.AssessmentID,
 		GeneratedAt:        doc.GeneratedAt.UTC().Format("2006-01-02T15:04:05Z"),

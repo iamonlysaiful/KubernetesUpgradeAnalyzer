@@ -53,7 +53,7 @@ type Dependencies struct {
 	ProviderFactory    ProviderFactory
 	APIAnalyzer        APIAnalyzer
 	Clock              func() time.Time
-	Stdin              io.Reader // set to os.Stdin for interactive terminal sessions
+	Stdin              io.Reader         // set to os.Stdin for interactive terminal sessions
 	Progress           func(step string) // optional callback for progress updates
 }
 
@@ -415,7 +415,7 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 
 	progress("Running health checks...")
 	healthFindings := health.NewRunner(health.DefaultRules()...).Evaluate(snapshot, health.Options{Now: clock})
-	
+
 	progress("Detecting components...")
 	detections := components.NewRunner(components.InitialDetectorCohort()...).Detect(snapshot)
 	overrides, err := loadComponentOverrides(cfg.ComponentOverrides)
@@ -433,7 +433,7 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 	if targetVersion == "" && providerEvidence != nil && len(providerEvidence.AvailableUpgrades) > 0 {
 		targetVersion = highestProviderVersion(providerEvidence.AvailableUpgrades)
 	}
-	
+
 	progress("Analyzing API compatibility...")
 	apiFindings, apiLimit := deps.APIAnalyzer.Analyze(context.Background(), cfg, targetVersion)
 
@@ -531,7 +531,7 @@ func buildPreflightDocument(cfg Config, deps Dependencies) (report.Document, *Ap
 	if targetVersion == "" && providerEvidence != nil && len(providerEvidence.AvailableUpgrades) > 0 {
 		targetVersion = highestProviderVersion(providerEvidence.AvailableUpgrades)
 	}
-	
+
 	progress("Analyzing API compatibility...")
 	apiFindings, apiLimit := deps.APIAnalyzer.Analyze(context.Background(), cfg, targetVersion)
 

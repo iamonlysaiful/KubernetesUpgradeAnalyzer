@@ -2,15 +2,38 @@
 
 This log records material scope and architecture changes. Git remains the detailed history.
 
+## 2026-08-04 — CLI UX improvements: spinner, report format parity
+
+- Added animated spinner during `kua analyze` to show real-time progress
+  through analysis phases (preflight checks, inventory collection, health
+  checks, component detection, provider evidence, API compatibility,
+  recommendation generation).
+- Upgraded Markdown and HTML report formats to match console output content:
+  - Decision with emoji (🟢/🟡/🔴) and confidence percentage
+  - Upgrade path table with estimated time
+  - Blockers and warnings with full details, impacts, and remediation commands
+  - Evidence summary table (deployments, nodes, PVCs, CRDs, deprecated APIs)
+  - Detected components table with version and status
+  - Step-by-step upgrade plan with bash commands
+  - Post-upgrade validation steps
+  - Rollback guidance
+- Added `WriteAtomicOverwrite` helper to allow `assessment.json` auto-save to
+  overwrite existing files (required for repeated `kua analyze` runs).
+- `kua analyze` now always saves the JSON assessment to `assessment.json`
+  (unless `--output` specifies a different path), ensuring `kua report` reads
+  the most recent assessment regardless of `--format` used for display.
+
 ## 2026-08-03 — CLI report UX and help contract update
 
 - Updated `docs/cli-and-reports.md` to define global `--help` behavior
   (`kua --help` and `<command> --help`).
 - Updated `kua report` contract to accept positional input
   (`kua report <assessment.json>`) in addition to `--input`.
-- Defined `kua report` default input fallback order when no input is provided:
-  `assessment.json`, `local-output/analyze.final.redacted.json`,
-  `local-output/analyze.redacted.json`.
+- Defined `kua report` default input fallback behavior when no input is
+  provided: it checks `assessment.json`,
+  `local-output/analyze.final.redacted.json`, and
+  `local-output/analyze.redacted.json`, then selects the newest existing file
+  by modification time.
 - Defined `kua report` ambiguity behavior: positional plus `--input` is a usage
   error.
 - Clarified report format expectations: `console` is summary-focused; `json`,

@@ -41,6 +41,11 @@ Standard kubeconfig resolution applies: explicit `--kubeconfig`, then normal cli
 ## 2. Command behavior
 
 - `kua analyze`: preflight, collect, run all required analyzers, recommend, render.
+  The JSON assessment is always saved to `assessment.json` (overwrite) unless
+  `--output` specifies a different path. This ensures `kua report` can render
+  the most recent assessment. The `--format` flag controls what displays to
+  stdout: `console` for human-readable summary, `json`/`markdown`/`html` for
+  full document output.
 - `kua analyze --preflight`: run pre-flight analyzers only (API compatibility,
   component checks, upgrade path, provider evidence); save results to cache file;
   does not run health/day-of checks. Use days before upgrade window.
@@ -53,9 +58,10 @@ Standard kubeconfig resolution applies: explicit `--kubeconfig`, then normal cli
 - `kua report [assessment.json]`: render a saved assessment without cluster access.
   Input can be passed as positional path (`kua report assessment.json`) or with
   `--input assessment.json`.
-  If neither is provided, KUA tries local defaults in this order:
+  If neither is provided, KUA checks these local default paths:
   `assessment.json`, `local-output/analyze.final.redacted.json`,
-  `local-output/analyze.redacted.json`.
+  `local-output/analyze.redacted.json` and automatically selects the newest
+  existing file by modification time.
   If multiple inputs are provided (positional plus `--input`), KUA returns a
   usage error.
 - `kua component-overrides --input assessment.json --output component-overrides.json`: generate a local operator-fillable component override file from an assessment's `componentVersionOverrides` helper without cluster or provider access.

@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: 2026-08-02
+Last updated: 2026-08-04
 
 This page summarizes the current implementation phase, review gates, and
 publication state. Detailed history remains in Git and `docs/change-log.md`.
@@ -58,12 +58,14 @@ All phases through 8.5 and Phase 10 are complete and merged:
 
 - Full `kua analyze` with interactive confirmation, component version prompts,
   target version prompts, and console report rendering
+- Animated progress spinner during analysis phases
 - Confidence scoring, traffic-light decisions (🟢/🟡/🔴), and evidence summary
 - Step-by-step upgrade plan with time estimates, post-upgrade validation, and rollback guidance
 - Version-specific gotcha warnings for known breaking changes in the upgrade path
 - Pre-flight and day-of analysis modes with file-based cache handoff
 - `kua health`, `kua compatibility`, `kua report` commands
-- JSON/console/Markdown/HTML output formats
+- JSON/console/Markdown/HTML output formats with content parity across all formats
+- Auto-save `assessment.json` on analyze for seamless `kua report` workflow
 - Redacted output mode for sharing
 - Component override file and helper workflows
 - AKS provider evidence via CLI or file
