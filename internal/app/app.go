@@ -54,6 +54,7 @@ type Dependencies struct {
 	APIAnalyzer        APIAnalyzer
 	Clock              func() time.Time
 	Stdin              io.Reader // set to os.Stdin for interactive terminal sessions
+	Progress           func(step string) // optional callback for progress updates
 }
 
 type PreflightRunner interface {
@@ -185,7 +186,19 @@ func runAnalyze(cfg Config, stdout io.Writer, stderr io.Writer, deps Dependencie
 		}
 	}
 
+	// Wire up progress callback with spinner for console output
+	var ps *progressSpinner
+	if cfg.Format == "console" {
+		ps = newProgressSpinner(stdout)
+		deps.Progress = func(step string) {
+			ps.Update(step)
+		}
+	}
+
 	doc, appErr := buildAssessmentDocument(cfg, deps)
+	if ps != nil {
+		ps.Finish(appErr == nil)
+	}
 	if appErr != nil {
 		fmt.Fprintln(stderr, errorMessageForOutput(appErr.Message, cfg.Redacted))
 		return appErr.Code
@@ -196,7 +209,10 @@ func runAnalyze(cfg Config, stdout io.Writer, stderr io.Writer, deps Dependencie
 		reader := bufio.NewReader(deps.Stdin)
 		if v := promptTargetVersion(reader, stdout); v != "" {
 			cfg.TargetVersion = v
+			ps = newProgressSpinner(stdout)
+			deps.Progress = func(step string) { ps.Update(step) }
 			doc, appErr = buildAssessmentDocument(cfg, deps)
+			ps.Finish(appErr == nil)
 			if appErr != nil {
 				fmt.Fprintln(stderr, errorMessageForOutput(appErr.Message, cfg.Redacted))
 				return appErr.Code
@@ -214,10 +230,25 @@ func runAnalyze(cfg Config, stdout io.Writer, stderr io.Writer, deps Dependencie
 		if len(answers) > 0 {
 			cfg.inlineOverrides = answers
 			fmt.Fprintln(stdout, "\nRe-analyzing with provided component versions...")
+			ps = newProgressSpinner(stdout)
+			deps.Progress = func(step string) { ps.Update(step) }
 			doc, appErr = buildAssessmentDocument(cfg, deps)
+			ps.Finish(appErr == nil)
 			if appErr != nil {
 				fmt.Fprintln(stderr, errorMessageForOutput(appErr.Message, cfg.Redacted))
 				return appErr.Code
+			}
+		}
+	}
+
+	// Always save JSON assessment to assessment.json for kua report to pick up,
+	// unless user specified explicit --output (handled by renderAssessment).
+	if cfg.OutputPath == "" {
+		jsonContent, err := report.Render(doc, report.RenderOptions{Format: report.FormatJSON, Redacted: cfg.Redacted})
+		if err == nil {
+			if writeErr := report.WriteAtomicOverwrite("assessment.json", jsonContent); writeErr != nil {
+				// Non-fatal warning: display output will still succeed
+				fmt.Fprintf(stderr, "warning: failed to save assessment.json: %v\n", writeErr)
 			}
 		}
 	}
@@ -357,7 +388,12 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 	if clock == nil {
 		clock = time.Now
 	}
+	progress := deps.Progress
+	if progress == nil {
+		progress = func(string) {} // no-op if not set
+	}
 
+	progress("Running preflight checks...")
 	options := preflight.KubeconfigOptions{Path: cfg.Kubeconfig, Context: cfg.Context}
 	preflightResult, err := deps.PreflightRunner.Run(options)
 	if err != nil {
@@ -368,6 +404,7 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 		return documentFromRecommendation(rec, clock()), nil
 	}
 
+	progress("Collecting cluster inventory...")
 	snapshot, err := deps.InventoryCollector.CollectAssessment(options, preflightResult)
 	if err != nil {
 		return report.Document{}, ExecutionError("analyze inventory collection failed: "+err.Error(), err)
@@ -376,7 +413,10 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 		return report.Document{}, ExecutionError("analyze inventory snapshot validation failed: "+err.Error(), err)
 	}
 
+	progress("Running health checks...")
 	healthFindings := health.NewRunner(health.DefaultRules()...).Evaluate(snapshot, health.Options{Now: clock})
+	
+	progress("Detecting components...")
 	detections := components.NewRunner(components.InitialDetectorCohort()...).Detect(snapshot)
 	overrides, err := loadComponentOverrides(cfg.ComponentOverrides)
 	if err != nil {
@@ -387,13 +427,17 @@ func buildAssessmentDocument(cfg Config, deps Dependencies) (report.Document, *A
 	}
 	detections = applyComponentOverrides(detections, overrides)
 
+	progress("Collecting provider evidence...")
 	providerEvidence, providerLimit := collectProviderEvidence(context.Background(), cfg, deps.ProviderFactory.NewProvider(snapshot, cfg))
 	targetVersion := cfg.TargetVersion
 	if targetVersion == "" && providerEvidence != nil && len(providerEvidence.AvailableUpgrades) > 0 {
 		targetVersion = highestProviderVersion(providerEvidence.AvailableUpgrades)
 	}
+	
+	progress("Analyzing API compatibility...")
 	apiFindings, apiLimit := deps.APIAnalyzer.Analyze(context.Background(), cfg, targetVersion)
 
+	progress("Generating upgrade recommendation...")
 	resGroupResolved, clusterResolved := resolveClusterIdentity(cfg, providerEvidence)
 	engine := recommendation.NewEngine().WithClock(clock)
 	rec, err := engine.Generate(recommendation.Input{
@@ -445,7 +489,12 @@ func buildPreflightDocument(cfg Config, deps Dependencies) (report.Document, *Ap
 	if clock == nil {
 		clock = time.Now
 	}
+	progress := deps.Progress
+	if progress == nil {
+		progress = func(string) {}
+	}
 
+	progress("Running preflight checks...")
 	options := preflight.KubeconfigOptions{Path: cfg.Kubeconfig, Context: cfg.Context}
 	preflightResult, err := deps.PreflightRunner.Run(options)
 	if err != nil {
@@ -456,6 +505,7 @@ func buildPreflightDocument(cfg Config, deps Dependencies) (report.Document, *Ap
 		return documentFromRecommendation(rec, clock()), nil
 	}
 
+	progress("Collecting cluster inventory...")
 	snapshot, err := deps.InventoryCollector.CollectAssessment(options, preflightResult)
 	if err != nil {
 		return report.Document{}, ExecutionError("analyze inventory collection failed: "+err.Error(), err)
@@ -464,6 +514,7 @@ func buildPreflightDocument(cfg Config, deps Dependencies) (report.Document, *Ap
 		return report.Document{}, ExecutionError("analyze inventory snapshot validation failed: "+err.Error(), err)
 	}
 
+	progress("Detecting components...")
 	detections := components.NewRunner(components.InitialDetectorCohort()...).Detect(snapshot)
 	overrides, err := loadComponentOverrides(cfg.ComponentOverrides)
 	if err != nil {
@@ -474,13 +525,17 @@ func buildPreflightDocument(cfg Config, deps Dependencies) (report.Document, *Ap
 	}
 	detections = applyComponentOverrides(detections, overrides)
 
+	progress("Collecting provider evidence...")
 	providerEvidence, providerLimit := collectProviderEvidence(context.Background(), cfg, deps.ProviderFactory.NewProvider(snapshot, cfg))
 	targetVersion := cfg.TargetVersion
 	if targetVersion == "" && providerEvidence != nil && len(providerEvidence.AvailableUpgrades) > 0 {
 		targetVersion = highestProviderVersion(providerEvidence.AvailableUpgrades)
 	}
+	
+	progress("Analyzing API compatibility...")
 	apiFindings, apiLimit := deps.APIAnalyzer.Analyze(context.Background(), cfg, targetVersion)
 
+	progress("Caching preflight data...")
 	cacheEntry := PreflightCacheEntry{
 		SchemaVersion:       preflightCacheSchema,
 		CachedAt:            clock().UTC(),
@@ -544,13 +599,19 @@ func buildDayOfDocument(cfg Config, deps Dependencies) (report.Document, *AppErr
 	if clock == nil {
 		clock = time.Now
 	}
+	progress := deps.Progress
+	if progress == nil {
+		progress = func(string) {}
+	}
 
+	progress("Loading preflight cache...")
 	cachePath := cfg.resolvedPreflightCachePath()
 	cacheEntry, loadErr := loadPreflightCache(cachePath)
 	if loadErr != nil {
 		return report.Document{}, ExecutionError("load preflight cache failed: "+loadErr.Error()+" — run kua analyze --preflight first", loadErr)
 	}
 
+	progress("Running preflight checks...")
 	options := preflight.KubeconfigOptions{Path: cfg.Kubeconfig, Context: cfg.Context}
 	preflightResult, err := deps.PreflightRunner.Run(options)
 	if err != nil {
@@ -561,6 +622,7 @@ func buildDayOfDocument(cfg Config, deps Dependencies) (report.Document, *AppErr
 		return documentFromRecommendation(rec, clock()), nil
 	}
 
+	progress("Collecting cluster inventory...")
 	snapshot, err := deps.InventoryCollector.CollectAssessment(options, preflightResult)
 	if err != nil {
 		return report.Document{}, ExecutionError("analyze inventory collection failed: "+err.Error(), err)
@@ -569,8 +631,10 @@ func buildDayOfDocument(cfg Config, deps Dependencies) (report.Document, *AppErr
 		return report.Document{}, ExecutionError("analyze inventory snapshot validation failed: "+err.Error(), err)
 	}
 
+	progress("Running health checks...")
 	healthFindings := health.NewRunner(health.DefaultRules()...).Evaluate(snapshot, health.Options{Now: clock})
 
+	progress("Generating upgrade recommendation...")
 	engine := recommendation.NewEngine().WithClock(clock)
 	resGroupResolved, clusterResolved := resolveClusterIdentity(cfg, cacheEntry.ProviderEvidence)
 	rec, err := engine.Generate(recommendation.Input{
@@ -816,10 +880,29 @@ func resolveReportInputPath(explicitPath string) (string, *AppError) {
 		"local-output/analyze.final.redacted.json",
 		"local-output/analyze.redacted.json",
 	}
-	for _, path := range candidates {
+	type reportInputCandidate struct {
+		path    string
+		modTime time.Time
+		rank    int
+	}
+	available := make([]reportInputCandidate, 0, len(candidates))
+	for i, path := range candidates {
 		if info, err := os.Stat(path); err == nil && !info.IsDir() {
-			return path, nil
+			available = append(available, reportInputCandidate{path: path, modTime: info.ModTime(), rank: i})
 		}
+	}
+	if len(available) > 0 {
+		selected := available[0]
+		for _, candidate := range available[1:] {
+			if candidate.modTime.After(selected.modTime) {
+				selected = candidate
+				continue
+			}
+			if candidate.modTime.Equal(selected.modTime) && candidate.rank < selected.rank {
+				selected = candidate
+			}
+		}
+		return selected.path, nil
 	}
 	return "", UsageError("missing report input: use kua report <assessment.json> or --input <assessment.json>; checked assessment.json, local-output/analyze.final.redacted.json, local-output/analyze.redacted.json")
 }
