@@ -370,6 +370,55 @@ func TestRunReportUsesDefaultAssessmentPathWhenInputIsOmitted(t *testing.T) {
 	}
 }
 
+func TestRunReportUsesNewestDefaultAssessmentPathWhenMultipleExist(t *testing.T) {
+	oldWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Getwd returned error: %v", err)
+	}
+	tmp := t.TempDir()
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatalf("Chdir(tmp) returned error: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = os.Chdir(oldWD)
+	})
+
+	if err := os.MkdirAll("local-output", 0o755); err != nil {
+		t.Fatalf("MkdirAll(local-output) returned error: %v", err)
+	}
+	older := `{"schemaVersion":"kua.assessment.v1","assessmentId":"assessment-older","generatedAt":"2026-07-27T04:02:00Z","redacted":false,"currentVersion":"1.30.0","readiness":"INCONCLUSIVE","risk":"UNKNOWN","findings":[],"limitations":[]}`
+	newer := `{"schemaVersion":"kua.assessment.v1","assessmentId":"assessment-newer","generatedAt":"2026-07-27T05:02:00Z","redacted":false,"currentVersion":"1.30.0","readiness":"INCONCLUSIVE","risk":"UNKNOWN","findings":[],"limitations":[]}`
+	if err := os.WriteFile("assessment.json", []byte(older), 0o600); err != nil {
+		t.Fatalf("WriteFile(assessment.json) returned error: %v", err)
+	}
+	newerPath := "local-output/analyze.final.redacted.json"
+	if err := os.WriteFile(newerPath, []byte(newer), 0o600); err != nil {
+		t.Fatalf("WriteFile(local-output/analyze.final.redacted.json) returned error: %v", err)
+	}
+
+	base := time.Date(2026, 8, 4, 0, 0, 0, 0, time.UTC)
+	if err := os.Chtimes("assessment.json", base.Add(-2*time.Hour), base.Add(-2*time.Hour)); err != nil {
+		t.Fatalf("Chtimes(assessment.json) returned error: %v", err)
+	}
+	if err := os.Chtimes(newerPath, base, base); err != nil {
+		t.Fatalf("Chtimes(local-output/analyze.final.redacted.json) returned error: %v", err)
+	}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := Run([]string{"--format=json", "report"}, &stdout, &stderr, BuildInfo{})
+
+	if code != ExitInconclusive {
+		t.Fatalf("Run(report newest default) exit code = %d, want %d", code, ExitInconclusive)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("Run(report newest default) stderr = %q, want empty", stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "assessment-newer") {
+		t.Fatalf("Run(report newest default) output = %q, want newest assessment", stdout.String())
+	}
+}
+
 func TestRunReportMissingInputMentionsCheckedDefaultPaths(t *testing.T) {
 	oldWD, err := os.Getwd()
 	if err != nil {
