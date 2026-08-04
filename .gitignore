@@ -39,6 +39,8 @@ kubeconfig.*
 /reports/
 /kua-report.*
 /aks-upgrades*.json
+assessment.json
+**/assessment.json
 
 # Go build and test outputs
 /bin/
@@ -53,3 +55,4 @@ coverage.html
 /.cache/
 *.tmp
 *.log
+upgrades.json

@@ -8,14 +8,25 @@ import (
 
 // WriteAtomic writes report content atomically and refuses to overwrite existing files.
 func WriteAtomic(path string, content []byte) error {
+	return writeAtomicImpl(path, content, false)
+}
+
+// WriteAtomicOverwrite writes report content atomically, overwriting if the file exists.
+func WriteAtomicOverwrite(path string, content []byte) error {
+	return writeAtomicImpl(path, content, true)
+}
+
+func writeAtomicImpl(path string, content []byte, allowOverwrite bool) error {
 	if path == "" {
 		return fmt.Errorf("output path is required")
 	}
 
-	if _, err := os.Stat(path); err == nil {
-		return fmt.Errorf("output file already exists: %s", path)
-	} else if !os.IsNotExist(err) {
-		return fmt.Errorf("check output path: %w", err)
+	if !allowOverwrite {
+		if _, err := os.Stat(path); err == nil {
+			return fmt.Errorf("output file already exists: %s", path)
+		} else if !os.IsNotExist(err) {
+			return fmt.Errorf("check output path: %w", err)
+		}
 	}
 
 	dir := filepath.Dir(path)
